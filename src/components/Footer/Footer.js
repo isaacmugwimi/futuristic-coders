@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { Mail, Phone, MapPin, Code2 } from "lucide-react";
-import { FaXTwitter, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa6";
+import { FaXTwitter, FaFacebook, FaInstagram, FaLinkedin, FaMapPin, FaEnvelope, FaPhone } from "react-icons/fa6";
+import { FaCode } from "react-icons/fa";
 import "./Footer.css";
 
 const QUICK_LINKS = ["Home", "Programs", "About", "Contact", "Apply Now"];
@@ -24,7 +24,7 @@ export default function Footer() {
           {/* BRAND */}
           <div className="fc-footer-brand">
             <div className="fc-footer-logo">
-              <Code2 className="fc-logo-icon" size={32} strokeWidth={2.5} />
+              <FaCode className="fc-logo-icon" size={28} />
               <span className="fc-logo-text">Futuristic Coders</span>
             </div>
             <p className="fc-footer-description">
@@ -78,13 +78,16 @@ export default function Footer() {
             <h4 className="fc-footer-title">Contact</h4>
             <div className="fc-contact-list">
               <p>
-                <MapPin size={16} className="fc-accent-icon" /> Nairobi, Kenya
+                <FaMapPin className="fc-accent-icon" size={15} />
+                Nairobi, Kenya
               </p>
               <p>
-                <Mail size={16} className="fc-accent-icon" /> hello@futuristic.com
+                <FaEnvelope className="fc-accent-icon" size={15} />
+                hello@futuristic.com
               </p>
               <p>
-                <Phone size={16} className="fc-accent-icon" /> +254 700 000 000
+                <FaPhone className="fc-accent-icon" size={15} />
+                +254 700 000 000
               </p>
             </div>
           </div>
