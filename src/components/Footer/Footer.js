@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
+
 import { FaXTwitter, FaFacebook, FaInstagram, FaLinkedin, FaMapPin, FaEnvelope, FaPhone } from "react-icons/fa6";
 import { FaCode } from "react-icons/fa";
 import "./Footer.css";
@@ -23,10 +25,28 @@ export default function Footer() {
 
           {/* BRAND */}
           <div className="fc-footer-brand">
-            <div className="fc-footer-logo">
-              <FaCode className="fc-logo-icon" size={28} />
-              <span className="fc-logo-text">Futuristic Coders</span>
-            </div>
+              <Link href="/" className="navbar-logo">
+          <div className="navbar-logo-image">
+            <Image
+              src="/flogo.png"
+              alt="Futuristic Coders Logo"
+              width={62}
+              height={62}
+              priority
+            />
+          </div>
+
+          <div className="navbar-logo-text">
+            <span className="navbar-logo-title">
+              {" "}
+              <span> Futuristic</span> <span> Coders</span>{" "}
+            </span>
+
+            <span className="navbar-logo-subtitle">
+              Learn • Build • Innovate
+            </span>
+          </div>
+        </Link>
             <p className="fc-footer-description">
               Empowering the next generation of developers through structured
               coding education.

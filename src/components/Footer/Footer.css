@@ -118,6 +118,11 @@
 .fc-bottom-links {
   display: flex;
   gap: 24px;
+  
+}
+
+.fc-bottom-links a{
+  color: darkcyan;
 }
 
 .fc-bottom-links a:hover {
