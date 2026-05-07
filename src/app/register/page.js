@@ -1,10 +1,15 @@
 import { Suspense } from "react";
-import RegisterClient from "./RegisterClient";
+// import RegisterPage from "@/components/Register/register";
+import RegisterPage from "./RegisterClient"
 
-export default function RegisterPage() {
+export default function Register() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <RegisterClient />
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "#080d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+        Loading...
+      </div>
+    }>
+      <RegisterPage />
     </Suspense>
   );
 }
