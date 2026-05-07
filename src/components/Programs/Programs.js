@@ -1,81 +1,107 @@
 import Image from "next/image";
-import styles from "./Programs.module.css";
 import Link from "next/link";
+import "./Programs.css";
 
 const PROGRAMS = [
   {
     id: "beginner",
     badge: "Beginner",
-    badgeVariant: "",
+    badgeClass: "",
     age: "Ages 7 – 11",
     title: "Foundations of Coding",
-    desc: "Students discover the joy of programming through Scratch, block-based logic, and simple games. We build computational thinking before syntax.",
+    desc: "Students discover the joy of programming through Scratch, block-based logic, and simple games.",
     skills: ["Scratch", "Logic & Loops", "Animations", "Game Design"],
-    image: "https://images.unsplash.com/photo-1603354350317-6f7aaa5911c5?w=600&q=75",
-    imageAlt: "Young students learning coding basics",
+    image:
+      "https://images.unsplash.com/photo-1603354350317-6f7aaa5911c5?w=600&q=75",
   },
+
   {
     id: "intermediate",
     badge: "Intermediate",
-    badgeVariant: "intermediate",
+    badgeClass: "badge-intermediate",
     age: "Ages 12 – 15",
     title: "Web Development",
-    desc: "Students move into real code — building websites and interactive apps with HTML, CSS, and JavaScript. Projects go live on the web.",
+    desc: "Students move into real code — building websites and interactive apps with HTML, CSS, and JavaScript.",
     skills: ["HTML & CSS", "JavaScript", "Responsive Design", "Git Basics"],
-    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=600&q=75",
-    imageAlt: "Teen learning web development",
+    image:
+      "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=600&q=75",
   },
+
   {
     id: "advanced",
     badge: "Advanced",
-    badgeVariant: "advanced",
+    badgeClass: "badge-advanced",
     age: "Ages 15 – 18",
     title: "React & AI Basics",
-    desc: "Our most rigorous track covers modern React development and an introduction to AI concepts. Students graduate with portfolio-ready projects.",
+    desc: "Students learn React development and AI fundamentals through portfolio-ready projects.",
     skills: ["React", "APIs", "AI & ML Basics", "Portfolio Projects"],
-    image: "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=600&q=75",
-    imageAlt: "Advanced student working on code",
+    image:
+      "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=600&q=75",
   },
 ];
 
 export default function Programs() {
   return (
-    <section className={styles.programs} id="programs">
+    <section className="programs" id="programs">
       <div className="container">
-        <div className={styles.programs__header}>
+        {/* HEADER */}
+        <div className="programs-header">
           <span className="section-label">Our Programs</span>
+
           <h2 className="section-title">Choose Your Learning Path</h2>
+
           <p className="section-subtitle">
-            Three carefully designed tracks take students from zero to confident
-            developer — each building on the last.
+            Carefully designed tracks that take students from beginner to
+            confident developer.
           </p>
         </div>
 
-        <div className={styles.programs__grid}>
-          {PROGRAMS.map((prog) => (
-            <article key={prog.id} className={styles.card}>
-              <div className={styles.card__image}>
+        {/* GRID */}
+        <div className="programs-grid">
+          {PROGRAMS.map((program) => (
+            <article key={program.id} className="program-card">
+              {/* IMAGE */}
+              <div className="program-card-image">
                 <Image
-                  src={prog.image}
-                  alt={prog.imageAlt}
+                  src={program.image}
+                  alt={program.title}
                   width={600}
                   height={400}
-                  style={{ objectFit: "cover", width: "100%", height: "100%" }}
                 />
-                <span className={`${styles.card__badge} ${styles[`card__badge--${prog.badgeVariant}`] || ""}`}>
-                  {prog.badge}
+
+                <span className={`program-badge ${program.badgeClass}`}>
+                  {program.badge}
                 </span>
               </div>
-              <div className={styles.card__body}>
-                <span className={styles.card__age}>{prog.age}</span>
-                <h3 className={styles.card__title}>{prog.title}</h3>
-                <p className={styles.card__desc}>{prog.desc}</p>
-                <div className={styles.card__skills}>
-                  {prog.skills.map((s) => (
-                    <span key={s} className={styles.card__skill}>{s}</span>
+
+              {/* BODY */}
+              <div className="program-card-body">
+                <span className="program-age">{program.age}</span>
+
+                <h3 className="program-title">{program.title}</h3>
+
+                <p className="program-description">{program.desc}</p>
+
+                <div className="program-skills">
+                  {program.skills.map((skill) => (
+                    <span key={skill} className="program-skill">
+                      {skill}
+                    </span>
                   ))}
                 </div>
-                <Link href="/register" className="btn-blue">Learn More</Link>
+
+                <Link
+                  href={{
+                    pathname: "/register",
+                    query: {
+                      course: program.title,
+                      age: program.age,
+                    },
+                  }}
+                  className="btn-blue"
+                >
+                  Learn More
+                </Link>
               </div>
             </article>
           ))}
