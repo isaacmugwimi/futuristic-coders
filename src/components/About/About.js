@@ -67,7 +67,7 @@ export default function About() {
             {/* FLOATING BADGE */}
             <div className="about-badge">
               <span className="about-badge-dot"></span>
-              Est. 2020 · Nairobi, Kenya
+              Est. 2026 · Nairobi, Kenya
             </div>
 
           </div>
