@@ -25,21 +25,39 @@ const STEPS = [
 export default function RegisterPage() {
   const searchParams = useSearchParams();
   const selectedCourse = searchParams.get("course") || "";
+  const [readyToSubmit, setReadyToSubmit] = useState(false);
 
   const [state, handleSubmit] = useForm("xpqblykn");
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
+    // Parent
     parentName: "",
     parentPhone: "",
     parentEmail: "",
+    parentOccupation: "",
+    emergencyContact: "",
+    location: "",
+
+    // Child
     childName: "",
     ageGroup: "",
     gender: "",
+    schoolGrade: "",
+    codingExperience: "",
+
+    // Program
     course: selectedCourse,
     preferredTime: "",
+    preferredMode: "",
     deviceType: "",
+    internetAccess: "",
+    heardAboutUs: "",
+    startDate: "",
+
+    // Extra
+    medicalNotes: "",
     notes: "",
   });
 
@@ -75,11 +93,23 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const next = () => {
-    if (validateStep()) {
-      setStep((s) => Math.min(s + 1, 4));
-    }
-  };
+ const next = () => {
+
+  if (!validateStep()) return;
+
+  if (step === 3) {
+
+    setStep(4);
+
+    setTimeout(() => {
+      setReadyToSubmit(true);
+    }, 0);
+
+    return;
+  }
+
+  setStep((s) => s + 1);
+};
 
   const prev = () => {
     setErrors({});
@@ -152,7 +182,14 @@ export default function RegisterPage() {
 
         {/* CARD */}
         <div className="reg-card">
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form
+            onSubmit={handleFormSubmit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && step !== 4) {
+                e.preventDefault();
+              }
+            }}
+          >
             {/* ── STEP 1: PARENT ── */}
             {step === 1 && (
               <div className="reg-step-content">
@@ -223,6 +260,42 @@ export default function RegisterPage() {
                       field="parentEmail"
                       errors={state.errors}
                     />
+
+                    <div className="reg-field">
+                      <label>Emergency Contact</label>
+
+                      <input
+                        type="tel"
+                        name="emergencyContact"
+                        placeholder="+254 700 111 222"
+                        value={formData.emergencyContact}
+                        onChange={handleChange}
+                      />
+                    </div>
+
+                    <div className="reg-field">
+                      <label>Parent Occupation</label>
+
+                      <input
+                        type="text"
+                        name="parentOccupation"
+                        placeholder="e.g. Teacher"
+                        value={formData.parentOccupation}
+                        onChange={handleChange}
+                      />
+                    </div>
+
+                    <div className="reg-field reg-field--full">
+                      <label>Location / City</label>
+
+                      <input
+                        type="text"
+                        name="location"
+                        placeholder="e.g. Nairobi"
+                        value={formData.location}
+                        onChange={handleChange}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -301,6 +374,32 @@ export default function RegisterPage() {
                     {errors.gender && (
                       <p className="reg-error-msg">Please select a gender</p>
                     )}
+                  </div>
+                  <div className="reg-field">
+                    <label>School Grade / Class</label>
+
+                    <input
+                      type="text"
+                      name="schoolGrade"
+                      placeholder="e.g. Grade 6"
+                      value={formData.schoolGrade}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="reg-field">
+                    <label>Coding Experience</label>
+
+                    <select
+                      name="codingExperience"
+                      value={formData.codingExperience}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select</option>
+                      <option value="None">None</option>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -382,6 +481,76 @@ export default function RegisterPage() {
                       onChange={handleChange}
                     />
                   </div>
+
+                  <div className="reg-field">
+                    <label>Learning Mode</label>
+
+                    <select
+                      name="preferredMode"
+                      value={formData.preferredMode}
+                      onChange={handleChange}
+                    >
+                      <option value="">Choose Mode</option>
+                      <option value="Online">Online</option>
+                      <option value="Physical">Physical</option>
+                      <option value="Hybrid">Hybrid</option>
+                    </select>
+                  </div>
+
+                  <div className="reg-field">
+                    <label>Internet Access</label>
+
+                    <select
+                      name="internetAccess"
+                      value={formData.internetAccess}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select</option>
+                      <option value="Good">Good</option>
+                      <option value="Average">Average</option>
+                      <option value="Limited">Limited</option>
+                    </select>
+                  </div>
+
+                  <div className="reg-field">
+                    <label>How Did You Hear About Us?</label>
+
+                    <select
+                      name="heardAboutUs"
+                      value={formData.heardAboutUs}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select</option>
+                      <option value="Facebook">Facebook</option>
+                      <option value="Instagram">Instagram</option>
+                      <option value="Friend">Friend</option>
+                      <option value="School">School</option>
+                      <option value="Google">Google</option>
+                    </select>
+                  </div>
+
+                  <div className="reg-field">
+                    <label>Preferred Start Date</label>
+
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="reg-field reg-field--full">
+                    <label>Medical Conditions / Special Needs</label>
+
+                    <textarea
+                      name="medicalNotes"
+                      rows={3}
+                      placeholder="Optional..."
+                      value={formData.medicalNotes}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -400,58 +569,129 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="reg-summary">
+                  {/* PARENT */}
                   <div className="reg-summary-group">
                     <h4>Parent / Guardian</h4>
+
                     <div className="reg-summary-row">
                       <span>Name</span>
                       <strong>{formData.parentName || "—"}</strong>
                     </div>
+
                     <div className="reg-summary-row">
                       <span>Phone</span>
                       <strong>{formData.parentPhone || "—"}</strong>
                     </div>
+
                     <div className="reg-summary-row">
                       <span>Email</span>
                       <strong>{formData.parentEmail || "—"}</strong>
                     </div>
+
+                    <div className="reg-summary-row">
+                      <span>Emergency Contact</span>
+                      <strong>{formData.emergencyContact || "—"}</strong>
+                    </div>
+
+                    <div className="reg-summary-row">
+                      <span>Occupation</span>
+                      <strong>{formData.parentOccupation || "—"}</strong>
+                    </div>
+
+                    <div className="reg-summary-row">
+                      <span>Location</span>
+                      <strong>{formData.location || "—"}</strong>
+                    </div>
                   </div>
 
+                  {/* CHILD */}
                   <div className="reg-summary-group">
-                    <h4>Child</h4>
+                    <h4>Child Information</h4>
+
                     <div className="reg-summary-row">
                       <span>Name</span>
                       <strong>{formData.childName || "—"}</strong>
                     </div>
+
                     <div className="reg-summary-row">
                       <span>Age Group</span>
                       <strong>{formData.ageGroup || "—"}</strong>
                     </div>
+
                     <div className="reg-summary-row">
                       <span>Gender</span>
                       <strong>{formData.gender || "—"}</strong>
                     </div>
+
+                    <div className="reg-summary-row">
+                      <span>School Grade</span>
+                      <strong>{formData.schoolGrade || "—"}</strong>
+                    </div>
+
+                    <div className="reg-summary-row">
+                      <span>Coding Experience</span>
+                      <strong>{formData.codingExperience || "—"}</strong>
+                    </div>
                   </div>
 
+                  {/* PROGRAM */}
                   <div className="reg-summary-group">
-                    <h4>Program</h4>
+                    <h4>Program & Preferences</h4>
+
                     <div className="reg-summary-row">
                       <span>Course</span>
                       <strong>{formData.course || "—"}</strong>
                     </div>
+
                     <div className="reg-summary-row">
-                      <span>Time</span>
+                      <span>Preferred Time</span>
                       <strong>{formData.preferredTime || "—"}</strong>
                     </div>
+
+                    <div className="reg-summary-row">
+                      <span>Learning Mode</span>
+                      <strong>{formData.preferredMode || "—"}</strong>
+                    </div>
+
                     <div className="reg-summary-row">
                       <span>Device</span>
                       <strong>{formData.deviceType || "—"}</strong>
                     </div>
+
+                    <div className="reg-summary-row">
+                      <span>Internet Access</span>
+                      <strong>{formData.internetAccess || "—"}</strong>
+                    </div>
+
+                    <div className="reg-summary-row">
+                      <span>Start Date</span>
+                      <strong>{formData.startDate || "—"}</strong>
+                    </div>
+
+                    <div className="reg-summary-row">
+                      <span>Heard About Us</span>
+                      <strong>{formData.heardAboutUs || "—"}</strong>
+                    </div>
                   </div>
 
-                  {formData.notes && (
+                  {/* NOTES */}
+                  {(formData.notes || formData.medicalNotes) && (
                     <div className="reg-summary-group">
-                      <h4>Notes</h4>
-                      <p className="reg-summary-notes">{formData.notes}</p>
+                      <h4>Additional Information</h4>
+
+                      {formData.notes && (
+                        <div className="reg-summary-block">
+                          <span>Notes</span>
+                          <p>{formData.notes}</p>
+                        </div>
+                      )}
+
+                      {formData.medicalNotes && (
+                        <div className="reg-summary-block">
+                          <span>Medical / Special Needs</span>
+                          <p>{formData.medicalNotes}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -471,7 +711,7 @@ export default function RegisterPage() {
                 </button>
               )}
 
-              {step < 4 ? (
+              {step < 4 || !readyToSubmit ? (
                 <button type="button" className="reg-btn-next" onClick={next}>
                   Continue <FaArrowRight size={14} />
                 </button>
@@ -480,9 +720,9 @@ export default function RegisterPage() {
                   type="submit"
                   className="reg-btn-submit"
                   disabled={state.submitting}
-                  onClick={async (e) => {
-                    await handleSubmit(e);
-                  }}
+                  // onClick={async (e) => {
+                  //   await handleSubmit(e);
+                  // }}
                 >
                   {state.submitting
                     ? "Submitting..."
