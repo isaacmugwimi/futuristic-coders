@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm, ValidationError } from "@formspree/react";
 import { useState } from "react";
@@ -22,7 +23,7 @@ const STEPS = [
   { id: 4, label: "Confirmation", icon: <FiCheck /> },
 ];
 
-export default function RegisterPage() {
+ function RegisterForm() {
   const searchParams = useSearchParams();
   const selectedCourse = searchParams.get("course") || "";
   const [readyToSubmit, setReadyToSubmit] = useState(false);
@@ -741,5 +742,20 @@ export default function RegisterPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+
+
+// Wrapper with Suspense
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "#080d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
+        Loading...
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
