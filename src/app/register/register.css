@@ -133,14 +133,14 @@
   gap: 0;
 }
 
-.reg-stepper-item{
-  position:relative;
+.reg-stepper-item {
+  position: relative;
 
-  display:flex;
-  flex-direction:column;
-  align-items:center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
-  min-width:140px;
+  min-width: 140px;
 }
 
 .reg-step-circle {
@@ -173,35 +173,35 @@
   color: #0a0f1e;
 }
 
-.reg-step-label{
-  position:absolute;
+.reg-step-label {
+  position: absolute;
 
-  top:56px;
-  left:50%;
+  top: 56px;
+  left: 50%;
 
-  transform:translateX(-50%);
+  transform: translateX(-50%);
 
-  white-space:nowrap;
+  white-space: nowrap;
 
-  font-size:0.72rem;
-  font-weight:500;
+  font-size: 0.72rem;
+  font-weight: 500;
 
-  color:#475569;
+  color: #475569;
 
-  letter-spacing:0.02em;
+  letter-spacing: 0.02em;
 
-  transition:0.3s ease;
+  transition: 0.3s ease;
 }
 
-.reg-step-label.active{
-  color:#38bdf8;
-  font-weight:700;
+.reg-step-label.active {
+  color: #38bdf8;
+  font-weight: 700;
 }
 
 .reg-step-line {
   position: absolute;
-  top:50%;
-  left:60%;
+  top: 50%;
+  left: 60%;
   width: 100px;
   height: 2px;
   background: rgba(255, 255, 255, 0.06);

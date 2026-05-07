@@ -1,4 +1,3 @@
-
 export const metadata = {
   title: "Futuristic Coders | Coding Education for the Next Generation",
   description:

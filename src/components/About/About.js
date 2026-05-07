@@ -25,24 +25,21 @@ const VALUES = [
 
 const STATS = [
   { number: "500+", label: "Students Trained" },
-  { number: "3",    label: "Learning Tracks" },
-  { number: "98%",  label: "Parent Satisfaction" },
-  { number: "5★",   label: "Average Rating" },
+  { number: "3", label: "Learning Tracks" },
+  { number: "98%", label: "Parent Satisfaction" },
+  { number: "5★", label: "Average Rating" },
 ];
 
 export default function About() {
   return (
     <section className="about" id="about">
-
       <div className="about-bg-grid"></div>
       <div className="about-bg-glow"></div>
 
       <div className="about-container">
         <div className="about-inner">
-
           {/* IMAGE SIDE */}
           <div className="about-image-wrap">
-
             <div className="about-image-main">
               <Image
                 src="https://images.unsplash.com/photo-1544717302-de2939b7ef71?w=800&q=80"
@@ -69,12 +66,10 @@ export default function About() {
               <span className="about-badge-dot"></span>
               Est. 2026 · Nairobi, Kenya
             </div>
-
           </div>
 
           {/* TEXT SIDE */}
           <div className="about-content">
-
             <div className="about-label">
               <span className="about-label-dot"></span>
               About Us
@@ -86,8 +81,8 @@ export default function About() {
             </h2>
 
             <p className="about-desc">
-              Futuristic Coders was founded on the belief that coding is the
-              new literacy. Our mission is to give every child a structured,
+              Futuristic Coders was founded on the belief that coding is the new
+              literacy. Our mission is to give every child a structured,
               confidence-building path into technology.
             </p>
 
@@ -106,9 +101,7 @@ export default function About() {
                   className="about-value"
                   style={{ "--accent": value.accent }}
                 >
-                  <div className="about-value-icon">
-                    {value.icon}
-                  </div>
+                  <div className="about-value-icon">{value.icon}</div>
                   <div className="about-value-text">
                     <h4>{value.title}</h4>
                     <p>{value.desc}</p>
@@ -125,7 +118,6 @@ export default function About() {
                 Get in Touch
               </a>
             </div>
-
           </div>
         </div>
       </div>

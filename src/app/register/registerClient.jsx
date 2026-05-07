@@ -23,7 +23,7 @@ const STEPS = [
   { id: 4, label: "Confirmation", icon: <FiCheck /> },
 ];
 
- function RegisterForm() {
+function RegisterForm() {
   const searchParams = useSearchParams();
   const selectedCourse = searchParams.get("course") || "";
   const [readyToSubmit, setReadyToSubmit] = useState(false);
@@ -94,23 +94,21 @@ const STEPS = [
     return Object.keys(newErrors).length === 0;
   };
 
- const next = () => {
+  const next = () => {
+    if (!validateStep()) return;
 
-  if (!validateStep()) return;
+    if (step === 3) {
+      setStep(4);
 
-  if (step === 3) {
+      setTimeout(() => {
+        setReadyToSubmit(true);
+      }, 0);
 
-    setStep(4);
+      return;
+    }
 
-    setTimeout(() => {
-      setReadyToSubmit(true);
-    }, 0);
-
-    return;
-  }
-
-  setStep((s) => s + 1);
-};
+    setStep((s) => s + 1);
+  };
 
   const prev = () => {
     setErrors({});
@@ -745,16 +743,25 @@ const STEPS = [
   );
 }
 
-
-
 // Wrapper with Suspense
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: "100vh", background: "#080d1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
-        Loading...
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "#080d1a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#64748b",
+          }}
+        >
+          Loading...
+        </div>
+      }
+    >
       <RegisterForm />
     </Suspense>
   );

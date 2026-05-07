@@ -47,19 +47,19 @@ const CONTACT_INFO = [
 ];
 
 const SOCIALS = [
-  { icon: <FaXTwitter />,   label: "X / Twitter", href: "#" },
-  { icon: <FaFacebook />,   label: "Facebook",    href: "#" },
-  { icon: <FaInstagram />,  label: "Instagram",   href: "#" },
-  { icon: <FaLinkedin />,   label: "LinkedIn",    href: "#" },
+  { icon: <FaXTwitter />, label: "X / Twitter", href: "#" },
+  { icon: <FaFacebook />, label: "Facebook", href: "#" },
+  { icon: <FaInstagram />, label: "Instagram", href: "#" },
+  { icon: <FaLinkedin />, label: "LinkedIn", href: "#" },
 ];
 
 export default function ContactPage() {
   const [state, handleSubmit] = useForm("xpqblykn");
 
   const [formData, setFormData] = useState({
-    name:    "",
-    email:   "",
-    phone:   "",
+    name: "",
+    email: "",
+    phone: "",
     subject: "",
     message: "",
   });
@@ -75,8 +75,8 @@ export default function ContactPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.name)    newErrors.name    = true;
-    if (!formData.email)   newErrors.email   = true;
+    if (!formData.name) newErrors.name = true;
+    if (!formData.email) newErrors.email = true;
     if (!formData.subject) newErrors.subject = true;
     if (!formData.message) newErrors.message = true;
     setErrors(newErrors);
@@ -95,21 +95,21 @@ export default function ContactPage() {
         <div className="contact-success-icon">✉️</div>
         <h1>Message Sent!</h1>
         <p>Thanks for reaching out. We'll get back to you within 24 hours.</p>
-        <a href="/" className="contact-success-btn">Back to Home</a>
+        <a href="/" className="contact-success-btn">
+          Back to Home
+        </a>
       </div>
     );
   }
 
   return (
     <section className="contact-page">
-
       {/* BG */}
       <div className="contact-bg-grid"></div>
       <div className="contact-bg-glow contact-bg-glow--1"></div>
       <div className="contact-bg-glow contact-bg-glow--2"></div>
 
       <div className="contact-wrapper">
-
         {/* HEADER */}
         <div className="contact-header">
           <div className="contact-label">
@@ -117,20 +117,19 @@ export default function ContactPage() {
             Get In Touch
           </div>
           <h1 className="contact-title">
-            We'd Love to <span className="contact-title-accent">Hear From You</span>
+            We'd Love to{" "}
+            <span className="contact-title-accent">Hear From You</span>
           </h1>
           <p className="contact-subtitle">
-            Have questions about our programs? Ready to enroll? Or just want
-            to learn more? Drop us a message and we'll be in touch.
+            Have questions about our programs? Ready to enroll? Or just want to
+            learn more? Drop us a message and we'll be in touch.
           </p>
         </div>
 
         {/* MAIN GRID */}
         <div className="contact-grid">
-
           {/* LEFT — INFO */}
           <div className="contact-info-col">
-
             {/* INFO CARDS */}
             <div className="contact-info-cards">
               {CONTACT_INFO.map((item) => (
@@ -181,24 +180,22 @@ export default function ContactPage() {
                 </a>
               </div>
             </div>
-
           </div>
 
           {/* RIGHT — FORM */}
           <div className="contact-form-col">
             <div className="contact-form-card">
-
               <div className="contact-form-header">
                 <h2>Send a Message</h2>
                 <p>Fill in the form and we'll respond within 24 hours.</p>
               </div>
 
               <form onSubmit={handleFormSubmit} className="contact-form">
-
                 <div className="contact-fields">
-
                   <div className="contact-field">
-                    <label>Full Name <span>*</span></label>
+                    <label>
+                      Full Name <span>*</span>
+                    </label>
                     <input
                       type="text"
                       name="name"
@@ -207,11 +204,15 @@ export default function ContactPage() {
                       onChange={handleChange}
                       className={errors.name ? "field-error" : ""}
                     />
-                    {errors.name && <p className="field-error-msg">Name is required</p>}
+                    {errors.name && (
+                      <p className="field-error-msg">Name is required</p>
+                    )}
                   </div>
 
                   <div className="contact-field">
-                    <label>Email Address <span>*</span></label>
+                    <label>
+                      Email Address <span>*</span>
+                    </label>
                     <input
                       type="email"
                       name="email"
@@ -220,8 +221,14 @@ export default function ContactPage() {
                       onChange={handleChange}
                       className={errors.email ? "field-error" : ""}
                     />
-                    {errors.email && <p className="field-error-msg">Email is required</p>}
-                    <ValidationError prefix="Email" field="email" errors={state.errors} />
+                    {errors.email && (
+                      <p className="field-error-msg">Email is required</p>
+                    )}
+                    <ValidationError
+                      prefix="Email"
+                      field="email"
+                      errors={state.errors}
+                    />
                   </div>
 
                   <div className="contact-field">
@@ -236,7 +243,9 @@ export default function ContactPage() {
                   </div>
 
                   <div className="contact-field">
-                    <label>Subject <span>*</span></label>
+                    <label>
+                      Subject <span>*</span>
+                    </label>
                     <select
                       name="subject"
                       value={formData.subject}
@@ -250,11 +259,15 @@ export default function ContactPage() {
                       <option value="Partnership">Partnership</option>
                       <option value="Other">Other</option>
                     </select>
-                    {errors.subject && <p className="field-error-msg">Please select a subject</p>}
+                    {errors.subject && (
+                      <p className="field-error-msg">Please select a subject</p>
+                    )}
                   </div>
 
                   <div className="contact-field contact-field--full">
-                    <label>Message <span>*</span></label>
+                    <label>
+                      Message <span>*</span>
+                    </label>
                     <textarea
                       name="message"
                       rows={5}
@@ -263,9 +276,10 @@ export default function ContactPage() {
                       onChange={handleChange}
                       className={errors.message ? "field-error" : ""}
                     />
-                    {errors.message && <p className="field-error-msg">Message is required</p>}
+                    {errors.message && (
+                      <p className="field-error-msg">Message is required</p>
+                    )}
                   </div>
-
                 </div>
 
                 <button
@@ -276,14 +290,14 @@ export default function ContactPage() {
                   {state.submitting ? (
                     <>Sending...</>
                   ) : (
-                    <>Send Message <FaArrowRight size={14} /></>
+                    <>
+                      Send Message <FaArrowRight size={14} />
+                    </>
                   )}
                 </button>
-
               </form>
             </div>
           </div>
-
         </div>
       </div>
     </section>

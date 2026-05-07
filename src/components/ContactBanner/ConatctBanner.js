@@ -5,7 +5,6 @@ import "./ContactBanner.css";
 export default function ContactBanner() {
   return (
     <section className="cb-section">
-
       {/* BG EFFECTS */}
       <div className="cb-bg-grid"></div>
       <div className="cb-glow cb-glow--left"></div>
@@ -13,10 +12,8 @@ export default function ContactBanner() {
 
       <div className="cb-container">
         <div className="cb-inner">
-
           {/* LEFT */}
           <div className="cb-text">
-
             <div className="cb-label">
               <span className="cb-label-dot"></span>
               Let's Talk
@@ -29,8 +26,8 @@ export default function ContactBanner() {
 
             <p className="cb-desc">
               Have questions about our programs or need help choosing the right
-              track? Our team is happy to help — reach out and we'll get back
-              to you within 24 hours.
+              track? Our team is happy to help — reach out and we'll get back to
+              you within 24 hours.
             </p>
 
             <div className="cb-contact-pills">
@@ -43,12 +40,10 @@ export default function ContactBanner() {
                 hello@futuristiccoders.com
               </a>
             </div>
-
           </div>
 
           {/* RIGHT */}
           <div className="cb-actions">
-
             <div className="cb-card">
               <div className="cb-card-icon">💬</div>
               <h3>Talk to an Advisor</h3>
@@ -60,9 +55,7 @@ export default function ContactBanner() {
                 Contact Us <FaArrowRight size={14} />
               </Link>
             </div>
-
           </div>
-
         </div>
       </div>
     </section>

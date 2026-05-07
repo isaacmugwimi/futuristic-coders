@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import "../../global.css"
+import "../../global.css";
 import { FaBars, FaTimes, FaChevronRight, FaCode } from "react-icons/fa";
 
 import "./Navbar.css";
