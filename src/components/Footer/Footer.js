@@ -110,7 +110,7 @@ export default function Footer() {
               </p>
               <p>
                 <FaEnvelope className="fc-accent-icon" size={15} />
-                hello@futuristic.com
+                mugwimiisaac230@gmail.com
               </p>
               <p>
                 <FaPhone className="fc-accent-icon" size={15} />
