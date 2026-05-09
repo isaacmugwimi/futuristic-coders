@@ -33,11 +33,11 @@ export default function ContactBanner() {
             <div className="cb-contact-pills">
               <a href="tel:+254700000000" className="cb-pill">
                 <FaPhone size={13} />
-                +254 700 000 000
+                +254 757 810 818
               </a>
-              <a href="mailto:hello@futuristiccoders.com" className="cb-pill">
+              <a href="mailto:mugwimiisaac230@gmail.com" className="cb-pill">
                 <FaEnvelope size={13} />
-                hello@futuristiccoders.com
+                mugwimiisaac230@gmail.com
               </a>
             </div>
           </div>

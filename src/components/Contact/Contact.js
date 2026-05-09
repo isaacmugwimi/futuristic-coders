@@ -26,14 +26,14 @@ const CONTACT_INFO = [
   {
     icon: <FaPhone />,
     label: "Phone",
-    value: "+254 700 000 000",
+    value: "+254 757 810 818",
     sub: "Mon – Sat, 8am – 6pm",
     accent: "#818cf8",
   },
   {
     icon: <FaEnvelope />,
     label: "Email",
-    value: "hello@futuristiccoders.com",
+    value: "mugwimiisaac230@gmail.com",
     sub: "We reply within 24 hours",
     accent: "#34d399",
   },
@@ -236,7 +236,7 @@ export default function ContactPage() {
                     <input
                       type="tel"
                       name="phone"
-                      placeholder="+254 700 000 000"
+                      placeholder="+254 757 810 818"
                       value={formData.phone}
                       onChange={handleChange}
                     />

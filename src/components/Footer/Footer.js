@@ -114,7 +114,7 @@ export default function Footer() {
               </p>
               <p>
                 <FaPhone className="fc-accent-icon" size={15} />
-                +254 700 000 000
+                +254 757 810 818
               </p>
             </div>
           </div>

@@ -224,12 +224,12 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>
-                      Phone Number <span>*</span>
+                      Phone Number <span>*</span> 
                     </label>
                     <input
                       type="tel"
                       name="parentPhone"
-                      placeholder="+254 700 000 000"
+                      placeholder="+254 757 810 818"
                       value={formData.parentPhone}
                       onChange={handleChange}
                       className={errors.parentPhone ? "reg-input-error" : ""}
