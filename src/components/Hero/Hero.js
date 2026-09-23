@@ -117,7 +117,7 @@ export default function Hero() {
               <div
                 key={feature.title}
                 className="hero-feature"
-                style={{ animationDelay: `${i * 0.1}s` }}
+                style={{ animationDelay: `${i * 0.5}s` }}
               >
                 <div className="hero-feature-icon">{feature.icon}</div>
                 <div className="hero-feature-text">
