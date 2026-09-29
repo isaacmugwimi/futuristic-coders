@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: "Programs", href: "/#programs" },
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/#contact" },
+  { label: "Verify Certificate", href: "/verify-certificate" },
 ];
 
 export default function Navbar() {

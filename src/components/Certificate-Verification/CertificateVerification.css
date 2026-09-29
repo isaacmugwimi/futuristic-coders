@@ -1,0 +1,139 @@
+.cv {
+  min-height: 100vh;
+  padding: 9rem 1.5rem 5rem;
+  background: #060d20;
+  color: #e8eefc;
+  display: flex;
+  justify-content: center;
+}
+
+.cv-inner {
+  width: 100%;
+  max-width: 620px;
+}
+
+.cv-title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 0.75rem;
+}
+
+.cv-lede {
+  color: #8a97b8;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0 0 2rem;
+  max-width: 52ch;
+}
+
+.cv-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cv-form {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cv-input {
+  flex: 1 1 240px;
+  padding: 0.95rem 1.1rem;
+  font-size: 1.05rem;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+  color: #e8eefc;
+  background: #0d1730;
+  border: 1px solid #1f2d52;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cv-input::placeholder { color: #4a5a80; }
+
+.cv-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+.cv-button {
+  padding: 0.95rem 1.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.15s;
+}
+
+.cv-button:hover:not(:disabled) { transform: translateY(-1px); }
+.cv-button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.cv-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cv-result { margin-top: 2rem; min-height: 1px; }
+
+.cv-card {
+  padding: 1.75rem;
+  border-radius: 14px;
+  background: #0d1730;
+  border: 1px solid #1f2d52;
+  border-left-width: 5px;
+  animation: cv-in 0.25s ease-out;
+}
+
+.cv-card--valid   { border-left-color: #22c55e; }
+.cv-card--revoked { border-left-color: #f59e0b; }
+.cv-card--missing { border-left-color: #ef4444; }
+
+.cv-badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+}
+.cv-badge--valid   { background: rgba(34, 197, 94, 0.15);  color: #4ade80; }
+.cv-badge--revoked { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.cv-badge--missing { background: rgba(239, 68, 68, 0.15);  color: #f87171; }
+
+.cv-statement {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+}
+
+.cv-note {
+  color: #8a97b8;
+  line-height: 1.6;
+  margin: -0.5rem 0 0;
+}
+
+.cv-details { margin: 0; display: grid; gap: 1rem; }
+.cv-details div { display: grid; gap: 0.15rem; }
+.cv-details dt { color: #8a97b8; font-size: 0.9rem; }
+.cv-details dd { margin: 0; font-size: 1.1rem; font-weight: 600; }
+
+@keyframes cv-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-card { animation: none; }
+  .cv-button { transition: none; }
+}
+
+@media (max-width: 520px) {
+  .cv { padding-top: 7rem; }
+  .cv-button { width: 100%; }
+}
