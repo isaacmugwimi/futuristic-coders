@@ -2,16 +2,16 @@
 import Image from "next/image";
 import { useState } from "react";
 import Link from "next/link";
-import "../../global.css";
-import { FaBars, FaTimes, FaChevronRight, FaCode } from "react-icons/fa";
+
+import { FaBars, FaTimes, FaChevronRight } from "react-icons/fa";
 
 import "./Navbar.css";
 
 const NAV_LINKS = [
-  { label: "Home", href: "#home" },
-  { label: "Programs", href: "#programs" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+  { label: "Home", href: "/" },
+  { label: "Programs", href: "/#programs" },
+  { label: "About", href: "/#about" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export default function Navbar() {
@@ -47,17 +47,17 @@ export default function Navbar() {
         {/* DESKTOP NAV */}
         <nav className="navbar-links">
           {NAV_LINKS.map((link) => (
-            <a key={link.label} href={link.href} className="navbar-link">
+            <Link key={link.label} href={link.href} className="navbar-link">
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
         {/* CTA */}
         <div className="navbar-actions">
-          <a href="#programs" className="navbar-btn">
+          <Link href="/#programs" className="navbar-btn">
             Apply Now
-          </a>
+          </Link>
         </div>
 
         {/* MOBILE TOGGLE */}
@@ -73,7 +73,7 @@ export default function Navbar() {
       <div className={`navbar-mobile ${menuOpen ? "open" : ""}`}>
         <div className="navbar-mobile-links">
           {NAV_LINKS.map((link) => (
-            <a
+            <Link
               key={link.label}
               href={link.href}
               className="navbar-mobile-link"
@@ -82,17 +82,17 @@ export default function Navbar() {
               <span>{link.label}</span>
 
               <FaChevronRight />
-            </a>
+            </Link>
           ))}
         </div>
 
-        <a
-          href="#programs"
+        <Link
+          href="/#programs"
           className="navbar-mobile-btn"
           onClick={() => setMenuOpen(false)}
         >
           Apply Now
-        </a>
+        </Link>
       </div>
     </header>
   );

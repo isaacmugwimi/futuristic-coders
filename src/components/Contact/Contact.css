@@ -1,4 +1,12 @@
 /* ─── PAGE ───────────────────────────────────────────────── */
+
+.contact-page,
+.contact-page *,
+.contact-page *::before,
+.contact-page *::after {
+  box-sizing: border-box;
+}
+
 .contact-page {
   position: relative;
   min-height: 100vh;

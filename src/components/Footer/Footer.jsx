@@ -11,11 +11,15 @@ import {
   FaEnvelope,
   FaPhone,
 } from "react-icons/fa6";
-import { FaCode } from "react-icons/fa";
 import "./Footer.css";
 
-const QUICK_LINKS = ["Home", "Programs", "About", "Contact", "Apply Now"];
-const PROGRAMS = [
+const QUICK_LINKS = [
+  { label: "Home", href: "/" },
+  { label: "Programs", href: "/#programs" },
+  { label: "About", href: "/#about" },
+  { label: "Contact", href: "/contact" },
+  { label: "Apply Now", href: "/register" },
+];const PROGRAMS = [
   "Foundations (Beginner)",
   "Web Development",
   "React & AI",
@@ -79,9 +83,9 @@ export default function Footer() {
             <h4 className="fc-footer-title">Quick Links</h4>
             <ul className="fc-footer-links">
               {QUICK_LINKS.map((link) => (
-                <li key={link}>
-                  <Link href={`/${link.toLowerCase().replace(/\s+/g, "-")}`}>
-                    {link}
+                <li key={link.label}>
+                  <Link href={link.href}>
+                    {link.label}
                   </Link>
                 </li>
               ))}
