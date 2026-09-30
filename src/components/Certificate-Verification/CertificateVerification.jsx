@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,7 +21,9 @@ export default function CertificateVerification() {
 
     setState({ phase: "loading" });
     try {
-      const res = await fetch(`/api/verify-certificate?code=${encodeURIComponent(value)}`);
+      const res = await fetch(
+        `/api/verify-certificate?code=${encodeURIComponent(value)}`,
+      );
       const data = await res.json();
 
       if (data.status === "valid" || data.status === "revoked") {
@@ -35,7 +34,11 @@ export default function CertificateVerification() {
         setState({ phase: "error", message: data.message });
       }
     } catch {
-      setState({ phase: "error", message: "Could not reach the server. Check your connection and try again." });
+      setState({
+        phase: "error",
+        message:
+          "Could not reach the server. Check your connection and try again.",
+      });
     }
   }
 
@@ -58,13 +61,18 @@ export default function CertificateVerification() {
   return (
     <section className="cv">
       <div className="cv-inner">
-        <h1 className="cv-title">Verify a certificate</h1>
+        <h1 className="cv-title">Verify a Futuristic Coders Certificate</h1>
+
         <p className="cv-lede">
-          Enter the certificate ID printed on the certificate, or scan its QR code, to confirm it was issued by Futuristic Coders.
+          Enter the certificate ID printed on the certificate or scan its QR
+          code to verify its authenticity and confirm that it was issued by
+          Futuristic Coders Academy.
         </p>
 
         <form className="cv-form" onSubmit={handleSubmit}>
-          <label htmlFor="cv-code" className="cv-sr">Certificate ID</label>
+          <label htmlFor="cv-code" className="cv-sr">
+            Certificate ID
+          </label>
           <input
             id="cv-code"
             className="cv-input"
@@ -76,7 +84,11 @@ export default function CertificateVerification() {
             spellCheck={false}
             maxLength={30}
           />
-          <button className="cv-button" type="submit" disabled={loading || !code.trim()}>
+          <button
+            className="cv-button"
+            type="submit"
+            disabled={loading || !code.trim()}
+          >
             {loading ? "Checking…" : "Verify certificate"}
           </button>
         </form>
@@ -87,10 +99,22 @@ export default function CertificateVerification() {
               <div className="cv-badge cv-badge--valid">Verified</div>
               <p className="cv-statement">This certificate is genuine.</p>
               <dl className="cv-details">
-                <div><dt>Awarded to</dt><dd>{state.certificate.learnerName}</dd></div>
-                <div><dt>Course</dt><dd>{state.certificate.course}</dd></div>
-                <div><dt>Issued on</dt><dd>{formatDate(state.certificate.issuedOn)}</dd></div>
-                <div><dt>Certificate ID</dt><dd>{state.certificate.code}</dd></div>
+                <div>
+                  <dt>Awarded to</dt>
+                  <dd>{state.certificate.learnerName}</dd>
+                </div>
+                <div>
+                  <dt>Course</dt>
+                  <dd>{state.certificate.course}</dd>
+                </div>
+                <div>
+                  <dt>Issued on</dt>
+                  <dd>{formatDate(state.certificate.issuedOn)}</dd>
+                </div>
+                <div>
+                  <dt>Certificate ID</dt>
+                  <dd>{state.certificate.code}</dd>
+                </div>
               </dl>
             </div>
           )}
@@ -98,9 +122,13 @@ export default function CertificateVerification() {
           {state.phase === "revoked" && (
             <div className="cv-card cv-card--revoked">
               <div className="cv-badge cv-badge--revoked">Revoked</div>
-              <p className="cv-statement">This certificate is no longer valid.</p>
+              <p className="cv-statement">
+                This certificate is no longer valid.
+              </p>
               <p className="cv-note">
-                Certificate {state.certificate.code} was issued by Futuristic Coders but has since been withdrawn. Contact us if you think this is a mistake.
+                Certificate {state.certificate.code} was issued by Futuristic
+                Coders but has since been withdrawn. Contact us if you think
+                this is a mistake.
               </p>
             </div>
           )}
@@ -108,9 +136,12 @@ export default function CertificateVerification() {
           {state.phase === "not_found" && (
             <div className="cv-card cv-card--missing">
               <div className="cv-badge cv-badge--missing">Not found</div>
-              <p className="cv-statement">We have no certificate with ID {state.code}.</p>
+              <p className="cv-statement">
+                We have no certificate with ID {state.code}.
+              </p>
               <p className="cv-note">
-                Check the ID for typos (0 vs O, 1 vs I). If it still fails, the certificate may not be from Futuristic Coders.
+                Check the ID for typos (0 vs O, 1 vs I). If it still fails, the
+                certificate may not be from Futuristic Coders.
               </p>
             </div>
           )}

@@ -1,0 +1,338 @@
+.pp {
+  min-height: 100vh;
+  padding: 9rem 1.5rem 5rem;
+  background: #060d20;
+  color: #e8eefc;
+  display: flex;
+  justify-content: center;
+}
+
+.pp-inner {
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Header */
+.pp-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.pp-title {
+  font-size: clamp(2.25rem, 5.5vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+  color: #fff;
+}
+
+.pp-grad {
+  background: linear-gradient(90deg, #38bdf8, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pp-lede {
+  color: #7c88a8;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  max-width: 44ch;
+  margin: 0 auto;
+}
+
+/* Category tabs */
+.pp-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-bottom: 3.5rem;
+}
+
+.pp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #b7c3e0;
+  background: #0c1426;
+  border: 1px solid #1a2340;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.pp-tab:hover {
+  color: #fff;
+  border-color: #38bdf8;
+}
+.pp-tab:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.pp-tab.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #38bdf8, #3b82f6);
+}
+
+.pp-count {
+  font-size: 0.78rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Category headings */
+.pp-category {
+  margin-bottom: 4rem;
+}
+.pp-cat-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem;
+  color: #fff;
+}
+.pp-cat-blurb {
+  color: #7c88a8;
+  line-height: 1.6;
+  max-width: 62ch;
+  margin: 0 0 2rem;
+}
+
+.pp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.75rem;
+}
+
+/* Cards (same look as the homepage learning path) */
+.pp-card {
+  --accent: #38bdf8;
+  --accent-rgb: 56, 189, 248;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0c1426;
+  border: 1px solid #1a2340;
+  border-radius: 22px;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.pp-card.tier-intermediate {
+  --accent: #f59e0b;
+  --accent-rgb: 245, 158, 11;
+}
+.pp-card.tier-advanced {
+  --accent: #34d399;
+  --accent-rgb: 52, 211, 153;
+}
+
+.pp-card:hover,
+.pp-card:focus-within {
+  transform: translateY(-8px);
+  border-color: var(--accent);
+  box-shadow: 0 22px 40px -14px rgba(var(--accent-rgb), 0.4);
+}
+
+/* Image area */
+.pp-media {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.pp-img {
+  position: absolute;
+  inset: 0;
+  background-color: #0c1426;
+  background-image: linear-gradient(
+    135deg,
+    rgba(var(--accent-rgb), 0.35),
+    #0c1426 75%
+  );
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+
+.pp-card:hover .pp-img {
+  transform: scale(1.06);
+}
+
+.pp-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(12, 20, 38, 0) 35%, #0c1426 100%);
+  pointer-events: none;
+}
+
+.pp-badge {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(6, 13, 32, 0.7);
+  border: 1px solid rgba(var(--accent-rgb), 0.55);
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.pp-num {
+  position: absolute;
+  z-index: 2;
+  top: 0.75rem;
+  right: 1.25rem;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.14);
+}
+
+/* Body */
+.pp-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.5rem 1.75rem 1.75rem;
+}
+
+.pp-ages {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pp-dot {
+  opacity: 0.6;
+  margin: 0 0.15rem;
+}
+
+.pp-card-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  color: #fff;
+}
+.pp-summary {
+  color: #7c88a8;
+  line-height: 1.7;
+  margin: 0 0 1.4rem;
+}
+
+.pp-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.6rem;
+  padding: 0;
+}
+
+.pp-tags li {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dbe4f8;
+  background: #0a1122;
+  border: 1px solid #222d4d;
+  border-radius: 6px;
+}
+
+.pp-enroll {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  background: #0a1122;
+  border: 1px solid #222d4d;
+  border-radius: 12px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.pp-card:hover .pp-enroll,
+.pp-enroll:focus-visible {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.pp-enroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Help line */
+.pp-help {
+  text-align: center;
+  color: #7c88a8;
+  margin: 0;
+  font-size: 1.05rem;
+}
+.pp-help-link {
+  color: #38bdf8;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pp-help-link:hover {
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-card,
+  .pp-img,
+  .pp-tab,
+  .pp-enroll {
+    transition: none;
+  }
+  .pp-card:hover,
+  .pp-card:focus-within {
+    transform: none;
+  }
+  .pp-card:hover .pp-img {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .pp {
+    padding-top: 7rem;
+  }
+  .pp-grid {
+    grid-template-columns: 1fr;
+  }
+  .pp-tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 0.4rem;
+  }
+  .pp-tab {
+    white-space: nowrap;
+  }
+}

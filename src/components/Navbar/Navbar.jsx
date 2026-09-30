@@ -9,7 +9,7 @@ import "./Navbar.css";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Programs", href: "/#programs" },
+  { label: "Programs", href: "/programs" },
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/#contact" },
   { label: "Verify Certificate", href: "/verify-certificate" },
