@@ -1,0 +1,160 @@
+.pm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(3, 7, 18, 0.75);
+  backdrop-filter: blur(6px);
+  animation: pm-fade 0.2s ease;
+}
+
+.pm {
+  --accent: #38bdf8;
+  --accent-rgb: 56, 189, 248;
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: #e8eefc;
+  background: #0c1426;
+  border: 1px solid var(--accent);
+  border-radius: 22px;
+  box-shadow: 0 30px 60px -20px rgba(var(--accent-rgb), 0.45);
+  animation: pm-pop 0.25s ease;
+}
+.pm.tier-intermediate { --accent: #f59e0b; --accent-rgb: 245, 158, 11; }
+.pm.tier-advanced { --accent: #34d399; --accent-rgb: 52, 211, 153; }
+
+.pm-close {
+  position: absolute;
+  z-index: 3;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(6, 13, 32, 0.75);
+  border: 1px solid #222d4d;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.pm-close:hover { border-color: var(--accent); }
+.pm-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pm-media { position: relative; height: 180px; }
+.pm-img {
+  position: absolute;
+  inset: 0;
+  background-color: #0c1426;
+  background-image: linear-gradient(135deg, rgba(var(--accent-rgb), 0.35), #0c1426 75%);
+  background-size: cover;
+  background-position: center;
+}
+.pm-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(12, 20, 38, 0) 35%, #0c1426 100%);
+}
+.pm-badge {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(6, 13, 32, 0.7);
+  border: 1px solid rgba(var(--accent-rgb), 0.55);
+  border-radius: 999px;
+}
+
+.pm-body { padding: 0.25rem 2rem 2rem; }
+.pm-title { margin: 0 0 0.6rem; font-size: 1.8rem; font-weight: 800; color: #fff; }
+.pm-overview, .pm-text { margin: 0; color: #9aa6c4; line-height: 1.7; }
+
+.pm-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+.pm-facts div {
+  padding: 0.7rem 0.9rem;
+  background: #0a1122;
+  border: 1px solid #222d4d;
+  border-radius: 12px;
+}
+.pm-facts dt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.pm-facts dd { margin: 0.2rem 0 0; font-weight: 600; color: #fff; }
+
+.pm-section { margin-bottom: 1.5rem; }
+.pm-h { margin: 0 0 0.6rem; font-size: 1.05rem; font-weight: 700; color: #fff; }
+.pm-list { margin: 0; padding: 0; list-style: none; }
+.pm-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.45rem;
+  color: #b7c3e0;
+  line-height: 1.5;
+}
+.pm-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.pm-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.75rem; padding: 0; list-style: none; }
+.pm-tags li {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dbe4f8;
+  background: #0a1122;
+  border: 1px solid #222d4d;
+  border-radius: 6px;
+}
+
+.pm-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.pm-enroll, .pm-secondary {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.95rem 1rem;
+  text-align: center;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 12px;
+}
+.pm-enroll { color: #060d20; background: var(--accent); }
+.pm-enroll:hover { filter: brightness(1.1); }
+.pm-secondary { color: #fff; background: #0a1122; border: 1px solid #222d4d; }
+.pm-secondary:hover { border-color: var(--accent); }
+
+@keyframes pm-fade { from { opacity: 0; } }
+@keyframes pm-pop { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-backdrop, .pm { animation: none; }
+}
+
+@media (max-width: 520px) {
+  .pm-body { padding: 0.25rem 1.25rem 1.5rem; }
+  .pm-title { font-size: 1.5rem; }
+}

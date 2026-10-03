@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { categories, programs } from "./programsData";
+import ProgramModal from "./Programmodal/Programmodal";
 import "./Programs.css";
 
 const TIER_LABEL = {
@@ -22,6 +23,7 @@ function Arrow() {
 
 export default function Programs() {
   const [active, setActive] = useState("all");
+  const [selected, setSelected] = useState(null);
 
   const visible = active === "all" ? categories : categories.filter((c) => c.id === active);
   const countFor = (id) => programs.filter((p) => p.category === id).length;
@@ -69,7 +71,21 @@ export default function Programs() {
 
               <div className="pp-grid">
                 {items.map((p, i) => (
-                  <article className={`pp-card tier-${p.tier}`} key={p.slug}>
+                  <article
+                    className={`pp-card tier-${p.tier}`}
+                    key={p.slug}
+                    onClick={() => setSelected(p)}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                        e.preventDefault();
+                        setSelected(p);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-haspopup="dialog"
+                    aria-label={`View details for ${p.title}`}
+                  >
                     <div className="pp-media">
                       <div
                         className="pp-img"
@@ -98,6 +114,7 @@ export default function Programs() {
                         href={`/register?program=${p.slug}`}
                         className="pp-enroll"
                         aria-label={`Enroll in ${p.title}`}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         Enroll Now <Arrow />
                       </Link>
@@ -114,6 +131,8 @@ export default function Programs() {
           <Link href="/contact" className="pp-help-link">Talk to us</Link>
         </p>
       </div>
+
+      <ProgramModal program={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
