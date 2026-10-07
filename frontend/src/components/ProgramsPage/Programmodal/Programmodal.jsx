@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import "./ProgramModal.css";
+import "./Programmodal.css";
 
 const TIER_LABEL = {
   beginner: "Beginner",
