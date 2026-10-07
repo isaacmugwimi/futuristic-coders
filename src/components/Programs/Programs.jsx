@@ -44,6 +44,8 @@ const PROGRAMS = [
   },
 ];
 
+// Programs data
+
 export default function Programs() {
   return (
     <section className="programs" id="programs">
