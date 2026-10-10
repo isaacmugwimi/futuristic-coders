@@ -40,8 +40,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onNav
         <Image
           src="/images/flogo.png"
           alt="Futuristic Coders logo"
-          width={40}
-          height={40}
+          width={160}
+          height={160}
           className="dash-brand__logo"
           priority
         />
