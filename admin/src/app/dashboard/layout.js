@@ -1,4 +1,4 @@
-import DashboardShell from "@/src/components/Dashboardshell/Dashboardshell";
+import DashboardShell from "@/src/components/Dashboardshell/DashboardShell";
 
 export const metadata = {
   title: "Dashboard | Futuristic Coders Admin Portal",

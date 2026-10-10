@@ -1,3 +1,4 @@
+import "./DashboardPage.css"
 import Link from "next/link";
 import {
   Users,

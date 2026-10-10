@@ -1,4 +1,5 @@
 "use client";
+import "./Sidebar.css";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -76,7 +77,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onNav
 
       <div className="dash-sidebar__foot">
         <div className="dash-profile">
-          <span className="dash-avatar dash-avatar--soft">AD</span>
+          <span className="dash-profile__avatar">AD</span>
           <div className="dash-profile__meta">
             <strong>Admin</strong>
             <span>Owner</span>

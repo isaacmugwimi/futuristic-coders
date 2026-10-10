@@ -1,0 +1,114 @@
+/* ==========================================================================
+   DashboardShell: page frame (sidebar column | header + content column)
+   Also defines the shared design tokens used by the other dashboard CSS files.
+   ========================================================================== */
+
+   *{
+    margin: 0;
+    padding: 0;
+   }
+
+.dash {
+  /* Shared tokens (inherited by Sidebar, Header, pages) */
+  --dash-bg: #f3f5fb;
+  --dash-surface: #ffffff;
+  --dash-ink: #0b0f24;
+  --dash-muted: #667192;
+  --dash-line: #e4e8f3;
+
+  --dash-side: #090e26;
+  --dash-side-line: rgba(255, 255, 255, 0.08);
+  --dash-side-text: rgba(255, 255, 255, 0.72);
+
+  --dash-cyan: #14c0ff;
+  --dash-violet: #8b5cf6;
+  --dash-blue: #2f5bff;
+  --dash-grad: linear-gradient(90deg, #14c0ff 0%, #8b5cf6 100%);
+
+  --dash-side-w: 264px;
+  --dash-header-h: 76px;
+
+  display: grid;
+  grid-template-columns: var(--dash-side-w) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  color: var(--dash-ink);
+  background: var(--dash-bg);
+  font-family: var(--font-jakarta), "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: grid-template-columns 0.2s ease;
+}
+
+/* Low-specificity resets so component CSS always wins */
+:where(.dash, .dash *, .dash *::before, .dash *::after) {
+  box-sizing: border-box;
+}
+
+:where(.dash) :where(h1, h2, p, ul) {
+  margin: 0;
+}
+
+:where(.dash) :where(ul) {
+  padding: 0;
+  list-style: none;
+}
+
+:where(.dash) :where(button) {
+  font: inherit;
+}
+
+:where(.dash) :where(:focus-visible) {
+  outline: 3px solid var(--dash-cyan);
+  outline-offset: 2px;
+}
+
+/* ---------- Main column ---------- */
+.dash-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dash-content {
+  flex: 1;
+  min-height: 0;
+  padding: clamp(16px, 2.2vw, 32px);
+  overflow-y: auto;
+}
+
+/* ---------- Mobile drawer backdrop ---------- */
+.dash-backdrop {
+  display: none;
+}
+
+/* ---------- Responsive ---------- */
+@media (min-width: 901px) {
+  .dash[data-collapsed="true"] {
+    --dash-side-w: 84px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dash {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: block;
+    padding: 0;
+    background: rgba(5, 8, 24, 0.6);
+    border: 0;
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash {
+    transition: none;
+  }
+}

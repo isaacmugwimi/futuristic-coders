@@ -1,10 +1,10 @@
 "use client";
 
 import Sidebar from "../Sidebar/Sidebar";
-import "./Dashboard.css";
 import { useEffect, useState } from "react";
-// import Sidebar from "./Sidebar";
 import Header from "../Header/Header";
+
+import "./DashboardShell.css";
 
 export default function DashboardShell({ children }) {
   const [collapsed, setCollapsed] = useState(false); // desktop: icon-only sidebar
