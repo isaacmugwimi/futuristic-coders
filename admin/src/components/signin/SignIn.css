@@ -3,7 +3,6 @@
    One hero image spans the whole page; everything fits the screen height.
    ========================================================================== */
 
-/* ---------- Tokens ---------- */
 :root {
   --navy-950: #050818;
   --navy-900: #090e26;
@@ -88,9 +87,7 @@ a {
   background: var(--navy-950);
 }
 
-/* ==========================================================================
-   Shared hero image (sits behind both columns)
-   ========================================================================== */
+
 .hero-media {
   position: absolute;
   inset: 0;
@@ -108,8 +105,6 @@ a {
   object-position: 62% center; /* nudge to keep the subject between text and card */
 }
 
-/* Darken the left for readable text, keep the middle bright, add a soft
-   purple glow top-right behind the card */
 .hero-media::after {
   content: "";
   position: absolute;
@@ -161,9 +156,7 @@ a {
   backdrop-filter: blur(6px);
 }
 
-/* Floating icon chips over the photo.
-   Delete the three <span className="chip ..."> in the JSX if your
-   hero image already includes them. */
+
 .chip {
   position: absolute;
   display: grid;
