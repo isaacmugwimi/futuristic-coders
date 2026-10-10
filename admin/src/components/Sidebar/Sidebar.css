@@ -18,7 +18,7 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 12px;
+  gap: 0px;
   height: var(--dash-header-h);
   padding: 0 20px;
   border-bottom: 1px solid var(--dash-side-line);
@@ -26,8 +26,8 @@
 
 .dash-brand__logo {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
 }
 
