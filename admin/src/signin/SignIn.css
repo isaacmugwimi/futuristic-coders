@@ -227,9 +227,7 @@ a {
   height: auto;
 }
 
-.showcase__header .logo__mark {
-  width: clamp(48px, 8vh, 80px);
-}
+
 
 .logo__text {
   display: flex;
