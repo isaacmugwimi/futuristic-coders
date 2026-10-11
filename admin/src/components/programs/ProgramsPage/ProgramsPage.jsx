@@ -27,7 +27,7 @@ import ProgramActionsMenu from "../ProgramActionsMenu/ProgramActionsMenu";
 import ProgramDetailsModal from "../ProgramDetailsModal/ProgramDetailsModal";
 import ProgramFormModal from "../ProgramFormModal/ProgramFormModal";
 import {
-  CATEGORIES,
+  CATEGORY_DETAILS,
   CATEGORY_TONES,
   INITIAL_PROGRAMS,
   LEVELS,
@@ -40,6 +40,7 @@ const PAGE_SIZES = [5, 8, 15, 25];
 
 const SORT_OPTIONS = [
   { value: "recent", label: "Recently updated" },
+  { value: "website", label: "Website order" },
   { value: "title", label: "Title (A–Z)" },
   { value: "price-desc", label: "Price: high to low" },
   { value: "price-asc", label: "Price: low to high" },
@@ -56,7 +57,56 @@ const SORTERS = {
   start: (a, b) => (a.startDate || "9999").localeCompare(b.startDate || "9999"),
 };
 
+// Same order the public site uses: by category, then "Order in category".
+const websiteSorter = (categoryOrder) => (a, b) => {
+  const byCategory =
+    (categoryOrder.get(a.category) ?? 999) -
+    (categoryOrder.get(b.category) ?? 999);
+  if (byCategory) return byCategory;
+  return (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999);
+};
+
+// Colour for the initials fallback. Categories created in the form have no
+// entry in CATEGORY_TONES, so pick a stable tone from the name.
+const FALLBACK_TONES = ["blue", "violet", "green", "amber", "magenta", "cyan"];
+function toneFor(category) {
+  if (CATEGORY_TONES[category]) return CATEGORY_TONES[category];
+  let hash = 0;
+  for (const ch of category ?? "") hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return FALLBACK_TONES[hash % FALLBACK_TONES.length];
+}
+
 const now = () => new Date().toISOString();
+
+// Everything the form sends that is not a plain program field.
+const CONTROL_KEYS = [
+  "publish",
+  "featured",
+  "code",
+  "thumbnailFile",
+  "thumbnail",
+  "thumbnailSource",
+  "removeThumbnail",
+  "isNewCategory",
+  "categoryDescription",
+];
+
+/**
+ * TODO: replace with a real upload (your storage, Cloudinary, S3, or a
+ * FormData POST to an API route) and return the final public URL.
+ * The object URL below only lives until the page reloads.
+ */
+async function uploadThumbnail(file) {
+  return URL.createObjectURL(file);
+}
+
+/** Works out the final thumbnail URL from the form / details-modal payload. */
+async function resolveThumbnail(payload) {
+  if (payload.thumbnailSource === "upload" && payload.thumbnailFile)
+    return uploadThumbnail(payload.thumbnailFile);
+  if (payload.removeThumbnail) return null;
+  return payload.thumbnail ?? null;
+}
 
 function pageWindow(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -101,8 +151,39 @@ function buildConfirm(action, targets) {
   };
 }
 
+/** Small picture in the table. Falls back to initials if there is no image or it fails to load. */
+function ProgramThumb({ program }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(program.thumbnail) && !failed;
+
+  return (
+    <span
+      className={`fc-prog__thumb fc-prog__thumb--${toneFor(program.category)}${
+        showImage ? " has-image" : ""
+      }`}
+    >
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={program.thumbnail}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        initials(program.title)
+      )}
+    </span>
+  );
+}
+
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState(INITIAL_PROGRAMS);
+  // Categories shown on the website. `description` is the tagline under the
+  // category heading. Persist this list alongside your programs.
+  const [categories, setCategories] = useState(() =>
+    CATEGORY_DETAILS.map(({ name, description }) => ({ name, description })),
+  );
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -126,8 +207,22 @@ export default function ProgramsPage() {
   const closeModal = useCallback(() => setModal(null), []);
 
   /* ---------------- derived data ---------------- */
+  // Saved categories first, then any category a program uses that isn't saved yet.
+  const categoryNames = useMemo(() => {
+    const names = categories.map((c) => c.name);
+    programs.forEach((p) => {
+      if (p.category && !names.includes(p.category)) names.push(p.category);
+    });
+    return names;
+  }, [categories, programs]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const comparator =
+      sort === "website"
+        ? websiteSorter(new Map(categoryNames.map((n, i) => [n, i])))
+        : SORTERS[sort];
+
     return programs
       .filter((p) => {
         if (statusFilter !== "all" && p.status !== statusFilter) return false;
@@ -145,9 +240,10 @@ export default function ProgramsPage() {
           p.mode,
         ].some((v) => v.toLowerCase().includes(q));
       })
-      .sort(SORTERS[sort]);
+      .sort(comparator);
   }, [
     programs,
+    categoryNames,
     query,
     statusFilter,
     categoryFilter,
@@ -306,6 +402,7 @@ export default function ProgramsPage() {
       code: `${p.code}-COPY`,
       status: "draft",
       featured: false,
+      displayOrder: null,
       enrolled: 0,
       rating: null,
       completionRate: null,
@@ -328,10 +425,32 @@ export default function ProgramsPage() {
     }
   }
 
-  function saveProgram(data, existing) {
+  function addCategory(name, description) {
+    setCategories((prev) =>
+      prev.some((c) => c.name.toLowerCase() === name.toLowerCase())
+        ? prev
+        : [...prev, { name, description: description ?? "" }],
+    ); // TODO: POST /api/categories
+  }
+
+  async function saveProgram(data, existing) {
     const ts = now();
-    const { publish, featured, code, ...fields } = data;
+    const { publish, featured, code } = data;
+    const fields = Object.fromEntries(
+      Object.entries(data).filter(([key]) => !CONTROL_KEYS.includes(key)),
+    );
     const status = publish ? "published" : "draft";
+
+    let thumbnail;
+    try {
+      thumbnail = await resolveThumbnail(data);
+    } catch {
+      showToast("Couldn't upload the thumbnail. Try again.", "danger");
+      return; // keep the form open
+    }
+
+    if (data.isNewCategory)
+      addCategory(data.category, data.categoryDescription);
 
     if (existing) {
       setPrograms((prev) =>
@@ -340,6 +459,7 @@ export default function ProgramsPage() {
             ? {
                 ...p,
                 ...fields,
+                thumbnail,
                 code: code || p.code,
                 status,
                 featured,
@@ -353,6 +473,7 @@ export default function ProgramsPage() {
     } else {
       const created = {
         ...fields,
+        thumbnail,
         id: `prg_${Date.now()}`,
         code: code || `FC-NEW-${String(programs.length + 1).padStart(3, "0")}`,
         status,
@@ -374,6 +495,15 @@ export default function ProgramsPage() {
       );
     }
     closeModal();
+  }
+
+  // Used by the "Change image" editor in the details modal.
+  // Errors are left to throw so the editor can show them.
+  async function changeThumbnail(p, payload) {
+    const thumbnail = await resolveThumbnail(payload);
+    const ts = now(); // TODO: PATCH /api/programs/:id/thumbnail
+    patch([p.id], (prog) => ({ ...prog, thumbnail, updatedAt: ts }));
+    showToast(thumbnail ? "Thumbnail updated" : "Thumbnail removed", "info");
   }
 
   /* ---------------- confirmations ---------------- */
@@ -523,7 +653,7 @@ export default function ProgramsPage() {
             aria-label="Filter by category"
           >
             <option value="all">All categories</option>
-            {CATEGORIES.map((c) => (
+            {categoryNames.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -715,11 +845,8 @@ export default function ProgramsPage() {
 
                     <td>
                       <div className="fc-prog__program">
-                        <span
-                          className={`fc-prog__thumb fc-prog__thumb--${CATEGORY_TONES[p.category] ?? "blue"}`}
-                        >
-                          {initials(p.title)}
-                        </span>
+                        {/* key resets the "failed to load" state when the image changes */}
+                        <ProgramThumb key={p.thumbnail ?? "none"} program={p} />
                         <div className="fc-prog__program-text">
                           <button
                             type="button"
@@ -753,6 +880,7 @@ export default function ProgramsPage() {
                       {p.durationWeeks} wks
                       <span className="fc-prog__sub fc-prog__sub--block">
                         {p.sessionsPerWeek}×/week
+                        {p.sessionMinutes ? ` · ${p.sessionMinutes} min` : ""}
                       </span>
                     </td>
                     <td className="fc-prog__price">{formatKSh(p.price)}</td>
@@ -965,6 +1093,9 @@ export default function ProgramsPage() {
           onToggleFeatured={() => toggleFeatured(modalProgram)}
           onCopyLink={() => copyLink(modalProgram)}
           onDelete={() => requestAction("delete", [modalProgram.id])}
+          onChangeThumbnail={(payload) =>
+            changeThumbnail(modalProgram, payload)
+          }
         />
       )}
 
@@ -972,6 +1103,7 @@ export default function ProgramsPage() {
         <ProgramFormModal
           key={modal.id ?? "new"}
           program={modalProgram}
+          categories={categoryNames}
           onSave={(data) => saveProgram(data, modalProgram)}
           onClose={closeModal}
         />
