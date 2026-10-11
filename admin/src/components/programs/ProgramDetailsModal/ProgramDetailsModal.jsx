@@ -33,6 +33,7 @@ import Button from "../Button/Button";
 import Badge from "../Badge/Badge";
 import { LEVEL_TONES, PUBLIC_SITE_URL } from "@/src/data/programs";
 import { formatDate, formatKSh } from "@/src/utils/format";
+import ReactMarkdown from "react-markdown";
 
 const THUMB_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const THUMB_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
@@ -435,7 +436,9 @@ export default function ProgramDetailsModal({
 
         <p className="fc-pdetails__summary">{p.summary}</p>
         {p.description ? (
-          <p className="fc-pdetails__text">{p.description}</p>
+          <div className="fc-pdetails__text fc-pdetails__markdown">
+            <ReactMarkdown>{p.description}</ReactMarkdown>
+          </div>
         ) : (
           <p className="fc-pdetails__text fc-pdetails__text--empty">
             No full description yet. Add one before publishing.

@@ -60,6 +60,48 @@
   color: #9aa2bd;
 }
 
+
+.fc-pdetails__markdown {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.fc-pdetails__markdown h1,
+.fc-pdetails__markdown h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.6rem;
+}
+
+.fc-pdetails__markdown h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+}
+
+.fc-pdetails__markdown p {
+  margin: 0 0 0.9rem;
+}
+
+.fc-pdetails__markdown ul,
+.fc-pdetails__markdown ol {
+  padding-left: 1.5rem;
+  margin: 0 0 1rem;
+}
+
+.fc-pdetails__markdown li {
+  margin-bottom: 0.35rem;
+}
+
+.fc-pdetails__markdown strong {
+  font-weight: 700;
+}
+
+.fc-pdetails__markdown > :first-child {
+  margin-top: 0;
+}
+
+
 /* ---------- Website readiness note ---------- */
 .fc-pdetails__missing {
   display: flex;
