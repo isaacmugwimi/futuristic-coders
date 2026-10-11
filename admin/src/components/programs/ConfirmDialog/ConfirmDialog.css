@@ -1,0 +1,50 @@
+/* ConfirmDialog: delete / publish / pull confirmations */
+
+.fc-confirm {
+  display: flex;
+  gap: 16px;
+}
+
+.fc-confirm__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.fc-confirm__icon--danger {
+  color: #c62842;
+  background: #fdecef;
+}
+
+.fc-confirm__icon--primary {
+  color: #2f5bff;
+  background: #e8f0ff;
+}
+
+.fc-confirm__message {
+  margin: 2px 0 0;
+  line-height: 1.55;
+  color: #343c58;
+}
+
+.fc-confirm__list {
+  margin: 12px 0 0;
+  padding: 10px 14px 10px 30px;
+  font-size: 0.9rem;
+  color: #343c58;
+  background: #f6f7fc;
+  border-radius: 12px;
+}
+
+.fc-confirm__list li + li {
+  margin-top: 4px;
+}
+
+.fc-confirm__more {
+  list-style: none;
+  margin-left: -16px;
+  color: #667192;
+}

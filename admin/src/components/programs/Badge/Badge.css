@@ -1,0 +1,48 @@
+/* Badge: small status / label pill */
+
+.fc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  border-radius: 999px;
+}
+
+.fc-badge--neutral {
+  color: #4a5370;
+  background: #eceff7;
+}
+
+.fc-badge--success {
+  color: #12803f;
+  background: #e6f8ee;
+}
+
+.fc-badge--warning {
+  color: #a76400;
+  background: #fff4de;
+}
+
+.fc-badge--info {
+  color: #1d4fd8;
+  background: #e8f0ff;
+}
+
+.fc-badge--violet {
+  color: #6d28d9;
+  background: #f0eaff;
+}
+
+.fc-badge--danger {
+  color: #b4233f;
+  background: #fdecef;
+}
+
+.fc-badge--gold {
+  color: #92600a;
+  background: #fff1cc;
+}
