@@ -116,6 +116,132 @@ select.fc-pform__input {
   color: #c62842;
 }
 
+.fc-pform__preview {
+  margin: 10px 0 0;
+}
+
+.fc-pform__preview strong {
+  color: #4a5578;
+}
+
+/* ---------- New category box ---------- */
+.fc-pform__newcat {
+  padding: 16px;
+  background: #f6f7fc;
+  border: 1px dashed #c5cce4;
+  border-radius: 12px;
+}
+
+/* ---------- Thumbnail upload ---------- */
+/* Visually hidden but still focusable/clickable via the buttons. */
+.fc-pform__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fc-pform__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  aspect-ratio: 16 / 6;
+  min-height: 140px;
+  padding: 16px;
+  font: inherit;
+  color: #667192;
+  cursor: pointer;
+  background: #f6f7fc;
+  border: 2px dashed #c5cce4;
+  border-radius: 14px;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.fc-pform__drop strong {
+  font-size: 0.93rem;
+  color: var(--dash-ink, #0b0f24);
+}
+
+.fc-pform__drop small {
+  font-size: 0.82rem;
+}
+
+.fc-pform__drop:hover,
+.fc-pform__drop.is-dragging {
+  color: var(--dash-blue, #2f5bff);
+  background: rgba(47, 91, 255, 0.05);
+  border-color: var(--dash-blue, #2f5bff);
+}
+
+.fc-pform__drop:focus-visible {
+  outline: none;
+  border-color: var(--dash-blue, #2f5bff);
+  box-shadow: 0 0 0 4px rgba(47, 91, 255, 0.14);
+}
+
+.fc-pform__thumb {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  max-height: 260px;
+  width: 100%;
+  background: #0b0f24;
+  border: 1px solid var(--dash-line, #dde1ee);
+  border-radius: 14px;
+}
+
+.fc-pform__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fc-pform__thumb-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.fc-pform__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--dash-ink, #0b0f24);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.95);
+  border: 0;
+  border-radius: 9px;
+}
+
+.fc-pform__chip:hover {
+  background: #fff;
+}
+
+.fc-pform__chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 91, 255, 0.5);
+}
+
+.fc-pform__chip--danger {
+  color: #c62842;
+}
+
 /* ---------- Visibility checkboxes ---------- */
 .fc-pform__check {
   display: flex;
@@ -170,10 +296,58 @@ select.fc-pform__input {
   .fc-pform__grid--4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .fc-pform__drop {
+    aspect-ratio: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fc-pform__input {
+  .fc-pform__input,
+  .fc-pform__drop {
     transition: none;
   }
+}
+
+/* ---------- Thumbnail source switch (upload / link) ---------- */
+.fc-pform__seg {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  gap: 2px;
+  background: #eef1fa;
+  border-radius: 11px;
+}
+
+.fc-pform__seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #667192;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+}
+
+.fc-pform__seg button[aria-pressed="true"] {
+  color: var(--dash-ink, #0b0f24);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(11, 15, 36, 0.12);
+}
+
+.fc-pform__seg button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 91, 255, 0.35);
+}
+
+.fc-pform__drop.is-compact {
+  aspect-ratio: auto;
+  min-height: 0;
+  padding: 14px;
 }
