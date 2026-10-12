@@ -1,0 +1,246 @@
+/* RegisterPage.css: page layout, hero image and the left showcase */
+
+/* ----- page layout + hero ----- */
+
+/* RegisterPage: full-screen layout, shared hero image and colour tokens */
+
+body {
+  margin: 0;
+}
+
+.reg-page {
+  /* tokens used by AuthField, AuthButton, RegisterWizard... */
+  --auth-ink: #0b0f24;
+  --auth-muted: #55607f;
+  --auth-line: #dde1ee;
+  --auth-blue: #2f5bff;
+  --auth-danger: #c62842;
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(500px, 40vw, 700px);
+  grid-template-rows: minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
+  color: #fff;
+  background: #050818;
+  font-family: var(--font-jakarta), "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.reg-page *,
+.reg-page *::before,
+.reg-page *::after {
+  box-sizing: border-box;
+}
+
+.reg-page :focus-visible {
+  outline: 3px solid #14c0ff;
+  outline-offset: 2px;
+}
+
+/* ---------- Hero image behind both columns ---------- */
+.reg-page__hero {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(45% 60% at 60% 55%, rgba(139, 92, 246, 0.45), transparent 100%),
+    #050818;
+}
+
+.reg-page__hero-img {
+  object-fit: cover;
+  object-position: 62% center;
+}
+
+.reg-page__hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(40% 40% at 100% 0%, rgba(105, 75, 240, 0.55), transparent 100%),
+    linear-gradient(90deg, rgba(5, 8, 24, 0.96) 0%, rgba(5, 8, 24, 0.86) 26%, rgba(5, 8, 24, 0.35) 52%, rgba(5, 8, 24, 0) 72%),
+    linear-gradient(180deg, rgba(5, 8, 24, 0.5) 0%, transparent 22%, transparent 72%, rgba(5, 8, 24, 0.7) 100%);
+}
+
+/* ---------- Card column ---------- */
+.reg-page__card-col {
+  display: grid;
+  align-items: center;
+  min-height: 0;
+  padding: clamp(12px, 3vh, 40px) clamp(16px, 2.4vw, 40px) clamp(12px, 3vh, 40px) 0;
+}
+
+/* ---------- Tablet / mobile: stack and scroll ---------- */
+@media (max-width: 1100px) {
+  .reg-page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .reg-page__hero::after {
+    background: linear-gradient(180deg, rgba(5, 8, 24, 0.88) 0%, rgba(5, 8, 24, 0.75) 100%);
+  }
+
+  .reg-page__card-col {
+    justify-items: center;
+    padding: 0 16px 40px;
+  }
+
+  .reg-page__card-col > * {
+    max-width: 600px;
+    max-height: none;
+  }
+}
+
+/* ----- left showcase ----- */
+
+/* RegisterShowcase: left side of the register page */
+
+.reg-showcase {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(14px, 4vh, 40px) 0 clamp(14px, 4vh, 40px) clamp(24px, 5.4vw, 96px);
+  color: #fff;
+}
+
+.reg-showcase__pill {
+  position: absolute;
+  top: clamp(14px, 4vh, 40px);
+  right: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: clamp(8px, 1.3vh, 12px) 24px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+
+.reg-showcase__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  max-width: 36rem;
+}
+
+.reg-showcase__eyebrow {
+  margin: 0 0 clamp(8px, 2.4vh, 24px);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.reg-showcase__headline {
+  margin: 0;
+  font-size: clamp(2.2rem, min(4.4vw, 7.6vh), 4.4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.reg-showcase__headline span {
+  display: block;
+}
+
+.reg-showcase__accent {
+  width: fit-content;
+  background: linear-gradient(90deg, #14c0ff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.reg-showcase__lede {
+  max-width: 32rem;
+  margin: clamp(10px, 2.6vh, 26px) 0 0;
+  font-size: clamp(0.95rem, min(1.2vw, 2.1vh), 1.2rem);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.reg-showcase__perks {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.8vh, 16px);
+  margin: clamp(16px, 4vh, 40px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reg-showcase__perks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(0.92rem, 1.9vh, 1.05rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reg-showcase__perks svg {
+  flex: none;
+  color: #14c0ff;
+}
+
+.reg-showcase__footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.reg-showcase__footer span {
+  width: 42px;
+  height: 3px;
+  background: linear-gradient(90deg, #14c0ff, #8b5cf6);
+  border-radius: 3px;
+}
+
+@media (max-width: 1100px) {
+  .reg-showcase {
+    height: auto;
+    padding: 28px 28px 36px;
+  }
+
+  .reg-showcase__pill {
+    top: 28px;
+    right: 28px;
+  }
+
+  .reg-showcase__body {
+    padding-block: 32px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .reg-showcase {
+    padding: 22px 20px 20px;
+  }
+
+  .reg-showcase__pill,
+  .reg-showcase__perks,
+  .reg-showcase__footer {
+    display: none;
+  }
+
+  .reg-showcase__body {
+    padding-block: 24px 0;
+  }
+}
