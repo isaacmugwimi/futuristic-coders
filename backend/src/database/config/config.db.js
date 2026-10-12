@@ -2,15 +2,10 @@ import pkg from "pg";
 
 const { Pool } = pkg;
 
-// ========================================
-// 🔹 Environment Variables
-// ========================================
+// Environment variables
 const { PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT } = process.env;
 
-// ========================================
-// 🔹 PostgreSQL Pool
-// ========================================
-
+// PostgreSQL connection pool
 const pool = new Pool({
   host: PGHOST,
   user: PGUSER,
@@ -25,50 +20,52 @@ const pool = new Pool({
 
 console.log("🟢 DB HOST:", PGHOST);
 
-// Prevent crashes on idle client errors
+// Handle unexpected idle connection errors
 pool.on("error", (err) => {
-  console.error("❌ Unexpected PG Pool Error:", err);
+  console.error("❌ Unexpected PG Pool Error:", err.message);
 });
 
-// ========================================
-// 🔹 Query Helper
-// ========================================
-
+// Query helper
 export const query = async (text, params = []) => {
   try {
-    const result = await pool.query(text, params);
-    return result;
+    return await pool.query(text, params);
   } catch (error) {
     console.error("❌ Database Query Error:", error.message);
     throw error;
   }
 };
 
-// ========================================
-// 🔹 Initialize Database & Tables
-// ========================================
-
+// Test database connectivity
 export const initDb = async () => {
+  let client;
+
   try {
-    // call tables here
+    client = await pool.connect();
 
-    // await query(CREATE_USERS_TABLE);
+    const result = await client.query(`
+      SELECT
+        NOW() AS database_time,
+        current_database() AS database_name,
+        current_user AS connected_user,
+        version() AS postgres_version
+    `);
 
-    console.log("✅ tables will be initialized here");
+    const db = result.rows[0];
+
+    console.log("✅ Supabase database connected successfully!");
+    console.log("📦 Database:", db.database_name);
+    console.log("👤 Connected user:", db.connected_user);
+    console.log("🕒 Database time:", db.database_time);
+    console.log("🐘 PostgreSQL:", db.postgres_version);
   } catch (error) {
-    console.error("❌ Error initializing DB:", error);
+    console.error("❌ Supabase database connection failed!");
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
     throw error;
+  } finally {
+    client?.release();
   }
 };
 
-// ========================================
-// 🔹 Graceful Shutdown
-// ========================================
-
-process.on("SIGINT", async () => {
-  await pool.end();
-  console.log("🛑 PostgreSQL Pool Closed");
-  process.exit(0);
-});
-
+export { pool };
 export default pool;
