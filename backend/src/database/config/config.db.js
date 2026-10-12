@@ -44,6 +44,22 @@ export const query = async (text, params = []) => {
   }
 };
 
+// ========================================
+// 🔹 Initialize Database & Tables
+// ========================================
+
+export const initDb = async () => {
+  try {
+    // call tables here
+
+    // await query(CREATE_USERS_TABLE);
+
+    console.log("✅ tables will be initialized here");
+  } catch (error) {
+    console.error("❌ Error initializing DB:", error);
+    throw error;
+  }
+};
 
 // ========================================
 // 🔹 Graceful Shutdown
@@ -56,5 +72,3 @@ process.on("SIGINT", async () => {
 });
 
 export default pool;
-
-
