@@ -1,14 +1,14 @@
 
 import "dotenv/config";
 import app from "./app.js";
-import { initDb, pool } from "./database/config/config.db.js";
+import { initDb } from "./database/init-db.js";
+import pool from "./database/config/config.db.js";
 
 const PORT = process.env.PORT || 5000;
 
 let server;
 let isShuttingDown = false;
 
-// Graceful shutdown
 const shutdown = async (signal) => {
   if (isShuttingDown) return;
   isShuttingDown = true;
@@ -16,7 +16,6 @@ const shutdown = async (signal) => {
   console.log(`\n🛑 Received ${signal}. Shutting down...`);
 
   try {
-    // Stop accepting new HTTP requests
     if (server) {
       await new Promise((resolve, reject) => {
         server.close((err) => {
@@ -26,18 +25,18 @@ const shutdown = async (signal) => {
       });
     }
 
-    // Close PostgreSQL connections
     await pool.end();
 
     console.log("✅ HTTP server and database pool closed.");
-    process.exitCode = 0;
   } catch (error) {
     console.error("❌ Error during shutdown:", error);
     process.exitCode = 1;
   }
 };
 
-// Initialize DB, then start Express
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+
 const startServer = async () => {
   try {
     await initDb();
@@ -57,8 +56,5 @@ const startServer = async () => {
     process.exitCode = 1;
   }
 };
-
-process.once("SIGINT", () => shutdown("SIGINT"));
-process.once("SIGTERM", () => shutdown("SIGTERM"));
 
 startServer();
