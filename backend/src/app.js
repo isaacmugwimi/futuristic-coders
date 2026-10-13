@@ -1,10 +1,17 @@
 import express from "express";
 import cors from "cors";
+
 import healthRoutes from "./routes/health.routes/health.route.js";
+import usersRoutes from "./routes/users/users.routes.js";
+
+import AppError from "./middleware/error/AppError.js";
 
 const app = express();
 
-// Allow requests from the public website and admin dashboard.
+// ============================================================================
+// CORS CONFIGURATION
+// ============================================================================
+
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
@@ -15,56 +22,94 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow requests without an Origin header, such as local tools.
+      // Allow requests without an Origin header, e.g. local tools.
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("Origin not allowed by CORS"));
+      return callback(
+        new AppError(
+          "This origin is not allowed to access the API.",
+          403,
+        ),
+      );
     },
     credentials: true,
-  })
+  }),
 );
 
-// Parse incoming JSON request bodies.
-app.use(express.json({ limit: "1mb" }));
+// ============================================================================
+// BODY PARSERS
+// ============================================================================
 
-// Parse URL-encoded form data.
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Basic route.
+// ============================================================================
+// ROOT ROUTE
+// ============================================================================
+
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: "Welcome to the Futuristic Coders API 🚀",
   });
 });
 
-// API routes.
-app.use("/api/health", healthRoutes);
+// ============================================================================
+// API ROUTES
+// ============================================================================
 
-// Handle unknown routes.
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "API endpoint not found",
-  });
+app.use("/api/health", healthRoutes);
+app.use("/api/users", usersRoutes);
+
+// ============================================================================
+// NOT FOUND HANDLER
+// ============================================================================
+
+app.use((req, res, next) => {
+  next(
+    new AppError(
+      `Cannot find ${req.method} ${req.originalUrl} on this server.`,
+      404,
+    ),
+  );
 });
 
-// Central error handler.
-app.use((err, req, res, next) => {
-  console.error(err);
+// ============================================================================
+// GLOBAL ERROR HANDLER
+// ============================================================================
 
+app.use((err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
 
-  res.status(err.status || 500).json({
+  // Log the full error internally.
+  console.error(err);
+
+  // Use AppError's statusCode, with status as a fallback.
+  const statusCode = err.statusCode || err.status || 500;
+
+  // Only expose expected operational errors.
+  const isOperational = err.isOperational === true;
+
+  const isClientError =
+    Number.isInteger(statusCode) &&
+    statusCode >= 400 &&
+    statusCode < 500;
+
+  const safeStatusCode =
+    isOperational && isClientError ? statusCode : 500;
+
+  const message =
+    isOperational && isClientError
+      ? err.message
+      : "Internal server error";
+
+  return res.status(safeStatusCode).json({
     success: false,
-    message:
-      err.message === "Origin not allowed by CORS"
-        ? "This origin is not allowed to access the API"
-        : "Internal server error",
+    message,
   });
 });
 
