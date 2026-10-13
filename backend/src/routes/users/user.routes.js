@@ -15,59 +15,75 @@ import {
   userIdSchema,
   userEmailSchema,
 } from "../../middleware/users/users.validation.js";
+
 import { validate } from "../../middleware/validate.middleware.js";
 
 const router = Router();
 
 // ============================================================================
-// GET ALL USERS
-// GET /api/users
-// ============================================================================
-
-router.get("/", getAllUsersController);
-
-// ============================================================================
-// CREATE USER
-// POST /api/users
-// ============================================================================
-
-router.post("/", validate(createUserSchema), createUserController);
-
-// ============================================================================
-// GET USER BY EMAIL
-// GET /api/users/email/:email
+// 1. GET ALL USERS
+// GET /api/users/get-users
 // ============================================================================
 
 router.get(
-  "/email/:email",
+  "/get-users",
+  getAllUsersController,
+);
+
+// ============================================================================
+// 2. CREATE USER / REGISTER STAFF
+// POST /api/users/create-user
+// ============================================================================
+
+router.post(
+  "/create-user",
+  validate(createUserSchema),
+  createUserController,
+);
+
+// ============================================================================
+// 3. GET USER BY EMAIL
+// GET /api/users/get-user-by-email/:email
+// ============================================================================
+
+router.get(
+  "/get-user-by-email/:email",
   validate(userEmailSchema, "params"),
   getUserByEmailController,
 );
 
 // ============================================================================
-// GET USER BY ID
-// GET /api/users/:id
+// 4. GET USER BY ID
+// GET /api/users/get-user-by-id/:id
 // ============================================================================
 
-router.get("/:id", validate(userIdSchema, "params"), getUserByIdController);
+router.get(
+  "/get-user-by-id/:id",
+  validate(userIdSchema, "params"),
+  getUserByIdController,
+);
 
 // ============================================================================
-// UPDATE USER
-// PATCH /api/users/:id
+// 5. UPDATE USER
+// PATCH /api/users/update-user/:id
 // ============================================================================
 
 router.patch(
-  "/:id",
+  "/update-user/:id",
   validate(userIdSchema, "params"),
   validate(updateUserSchema),
   updateUserController,
 );
 
 // ============================================================================
-// DELETE USER
-// DELETE /api/users/:id
+// 6. DELETE USER
+// DELETE /api/users/delete-user/:id
 // ============================================================================
 
-router.delete("/:id", validate(userIdSchema, "params"), deleteUserController);
+router.delete(
+  "/delete-user/:id",
+  validate(userIdSchema, "params"),
+  deleteUserController,
+);
 
 export default router;
