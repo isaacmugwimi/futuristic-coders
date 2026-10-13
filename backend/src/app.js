@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 
 import healthRoutes from "./routes/health.routes/health.route.js";
-import usersRoutes from "./routes/users/users.routes.js";
+import usersRoutes from "./routes/users/user.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
 

@@ -5,7 +5,7 @@ import {
   getUserByEmailService,
   updateUserService,
   deleteUserService,
-} from "../../services/users/user.service";
+} from "../../services/users/user.service.js";
 
 
 // ============================================================================
