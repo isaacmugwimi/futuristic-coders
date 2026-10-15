@@ -1,13 +1,9 @@
-import ModulePage from "@/src/components/ModulePage/ModulePage";
-import { Users } from "lucide-react";
+import StudentsPage from "@/src/components/StudentsPage/StudentsPage";
 
-export default function StudentsPage() {
-  return (
-    <ModulePage
-      icon={Users}
-      title="Students"
-      description="Track each learner's progress and performance across programs."
-      actionLabel="Add student"
-    />
-  );
+export const metadata = {
+  title: "Students | Futuristic Coders Admin Portal",
+};
+
+export default function Page() {
+  return <StudentsPage />;
 }
