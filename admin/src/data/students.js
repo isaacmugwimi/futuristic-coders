@@ -4,7 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 
-export const PUBLIC_SITE_URL = "https://futuristic-coders.co.ke"; // TODO: your public website
+export const PUBLIC_SITE_URL = "https://futuristiccoders.co.ke"; // TODO: your public website
 
 /* ============================== options ============================== */
 
