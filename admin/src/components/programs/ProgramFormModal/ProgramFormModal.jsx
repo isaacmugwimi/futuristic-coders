@@ -321,7 +321,7 @@ export default function ProgramFormModal({
 
     const isNewCategory = values.category === NEW_CATEGORY;
 
-    onSave({
+     const programData = {
       title: values.title.trim(),
       code: values.code.trim().toUpperCase(),
       slug: slugify(values.slug || values.title),
@@ -348,15 +348,10 @@ export default function ProgramFormModal({
       prerequisites: lines(values.prerequisites),
       requirements: lines(values.requirements),
       tools: list(values.tools),
-      // Exactly one of these describes the image:
-      //  - thumbnailFile: a new File to upload (thumbnail is null until you upload it)
-      //  - thumbnail:     an image URL, either a pasted link or the saved one to keep
-      //  - removeThumbnail: true when the admin cleared the image
       thumbnailFile: thumbFile,
       thumbnail: thumbFile
         ? null
-        : thumbLink.trim() ||
-          (removeThumb ? null : (program?.thumbnail ?? null)),
+        : thumbLink.trim() || (removeThumb ? null : (program?.thumbnail ?? null)),
       thumbnailSource: thumbFile
         ? "upload"
         : thumbLink.trim()
@@ -369,7 +364,11 @@ export default function ProgramFormModal({
       removeThumbnail: removeThumb && !thumbFile && !thumbLink.trim(),
       publish: values.publish,
       featured: values.featured,
-    });
+    };
+
+    console.log("Program form data:", programData);
+
+    onSave(programData);
   }
 
   const select = (name, options) => (
