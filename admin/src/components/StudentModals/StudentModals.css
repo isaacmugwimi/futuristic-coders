@@ -564,6 +564,15 @@
   color: #12a150;
 }
 
+.sm-cert.is-locked {
+  background: #f6f7fc;
+  border: 1px dashed #cfd5e8;
+}
+
+.is-locked .sm-cert__icon {
+  color: #8a93ad;
+}
+
 .sm-notes {
   margin: 0;
   padding: 12px 14px;

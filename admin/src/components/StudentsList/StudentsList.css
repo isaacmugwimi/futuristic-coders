@@ -370,6 +370,18 @@
   background: #fdecef !important;
 }
 
+/* ----- participation certificate flag (current students) ----- */
+.sl-cert-flag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #92600a;
+}
+
 /* ----- completed cards ----- */
 .sl-grads {
   display: grid;

@@ -17,6 +17,7 @@ import {
   AGE_GROUPS,
   PROGRAM_OPTIONS,
   addStudent,
+  certificateEligibility,
   completeStudents,
   deleteStudents,
   paymentInfo,
@@ -24,7 +25,7 @@ import {
   updateStudent,
   useStudents,
   formatKSh,
-} from "../../data/students";
+} from "@/src/data/students";
 import {
   CompletedStudentsGrid,
   CurrentStudentsTable,
@@ -130,6 +131,12 @@ function matches(student, f, tab) {
     if (f.ageGroup !== "all" && student.ageGroup !== f.ageGroup) return false;
     if (f.payment !== "all" && paymentInfo(student).status !== f.payment)
       return false;
+    if (f.certificate !== "all") {
+      const elig = certificateEligibility(student).type === "participation";
+      if (f.certificate === "pending" && !(elig && !student.certificate))
+        return false;
+      if (f.certificate === "issued" && !student.certificate) return false;
+    }
   } else {
     if (f.certificate === "issued" && !student.certificate) return false;
     if (f.certificate === "pending" && student.certificate) return false;
@@ -204,7 +211,8 @@ export default function StudentsPage() {
       ? filters.status !== "all" ||
         filters.program !== "all" ||
         filters.ageGroup !== "all" ||
-        filters.payment !== "all"
+        filters.payment !== "all" ||
+        filters.certificate !== "all"
       : filters.program !== "all" || filters.certificate !== "all");
 
   const avgScore = useMemo(() => {
@@ -546,6 +554,15 @@ export default function StudentsPage() {
                 <option value="partial">Part paid</option>
                 <option value="pending">Unpaid</option>
               </Select>
+              <Select
+                value={filters.certificate}
+                onChange={(v) => changeFilter("certificate", v)}
+                label="Filter by participation certificate"
+              >
+                <option value="all">All certificates</option>
+                <option value="pending">Participation: ready to issue</option>
+                <option value="issued">Participation: issued</option>
+              </Select>
             </>
           ) : (
             <>
@@ -710,7 +727,3 @@ export default function StudentsPage() {
     </div>
   );
 }
-
-
-
-

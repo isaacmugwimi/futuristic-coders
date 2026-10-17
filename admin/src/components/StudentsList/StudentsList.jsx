@@ -21,12 +21,13 @@ import {
 import {
   STATUS_META,
   avatarTone,
+  certificateEligibility,
   formatDate,
   formatKSh,
   honorsFor,
   initials,
   paymentInfo,
-} from "../../data/students";
+} from"@/src/data/students";
 
 /**
  * StudentsList.jsx
@@ -48,21 +49,12 @@ function Badge({ tone = "neutral", icon: Icon, children }) {
 }
 
 function Avatar({ name, size = "md" }) {
-  return (
-    <span
-      className={`sl-avatar sl-avatar--${size} sl-avatar--tone${avatarTone(name)}`}
-    >
-      {initials(name)}
-    </span>
-  );
+  return <span className={`sl-avatar sl-avatar--${size} sl-avatar--tone${avatarTone(name)}`}>{initials(name)}</span>;
 }
 
 function Meter({ value, tone }) {
   return (
-    <span
-      className={`sl-meter${tone ? ` sl-meter--${tone}` : ""}`}
-      aria-hidden="true"
-    >
+    <span className={`sl-meter${tone ? ` sl-meter--${tone}` : ""}`} aria-hidden="true">
       <span style={{ width: `${Math.min(100, value)}%` }} />
     </span>
   );
@@ -81,32 +73,18 @@ function pageWindow(current, total) {
   return out;
 }
 
-function Pagination({
-  total,
-  page,
-  pageSize,
-  sizes,
-  onPage,
-  onPageSize,
-  noun,
-}) {
+function Pagination({ total, page, pageSize, sizes, onPage, onPageSize, noun }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const start = (page - 1) * pageSize;
 
   return (
     <div className="sl-pager">
       <p className="sl-pager__count">
-        {total === 0
-          ? `No ${noun}`
-          : `Showing ${start + 1}–${Math.min(start + pageSize, total)} of ${total} ${noun}`}
+        {total === 0 ? `No ${noun}` : `Showing ${start + 1}–${Math.min(start + pageSize, total)} of ${total} ${noun}`}
       </p>
       <label className="sl-pager__size">
         Per page
-        <select
-          value={pageSize}
-          onChange={(e) => onPageSize(Number(e.target.value))}
-          aria-label="Items per page"
-        >
+        <select value={pageSize} onChange={(e) => onPageSize(Number(e.target.value))} aria-label="Items per page">
           {sizes.map((size) => (
             <option key={size} value={size}>
               {size}
@@ -115,12 +93,7 @@ function Pagination({
         </select>
       </label>
       <nav className="sl-pager__nav" aria-label="Pagination">
-        <button
-          type="button"
-          onClick={() => onPage(page - 1)}
-          disabled={page === 1}
-          aria-label="Previous page"
-        >
+        <button type="button" onClick={() => onPage(page - 1)} disabled={page === 1} aria-label="Previous page">
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
         {pageWindow(page, totalPages).map((n) =>
@@ -141,12 +114,7 @@ function Pagination({
             </button>
           ),
         )}
-        <button
-          type="button"
-          onClick={() => onPage(page + 1)}
-          disabled={page === totalPages}
-          aria-label="Next page"
-        >
+        <button type="button" onClick={() => onPage(page + 1)} disabled={page === totalPages} aria-label="Next page">
           <ChevronRight size={18} aria-hidden="true" />
         </button>
       </nav>
@@ -168,11 +136,7 @@ function EmptyState({ title, text, hasFilters, onClear, onAdd }) {
         </button>
       ) : (
         onAdd && (
-          <button
-            type="button"
-            className="sl-btn sl-btn--primary"
-            onClick={onAdd}
-          >
+          <button type="button" className="sl-btn sl-btn--primary" onClick={onAdd}>
             <UserPlus size={16} aria-hidden="true" />
             Add student
           </button>
@@ -184,14 +148,7 @@ function EmptyState({ title, text, hasFilters, onClear, onAdd }) {
 
 /* ============================== bulk bar ============================== */
 
-export function BulkBar({
-  count,
-  totalMatching,
-  onSelectAll,
-  onComplete,
-  onDelete,
-  onClear,
-}) {
+export function BulkBar({ count, totalMatching, onSelectAll, onComplete, onDelete, onClear }) {
   return (
     <div className="sl-bulk" role="region" aria-label="Bulk actions">
       <strong>{count} selected</strong>
@@ -205,11 +162,7 @@ export function BulkBar({
         <GraduationCap size={16} aria-hidden="true" />
         Mark as completed
       </button>
-      <button
-        type="button"
-        className="sl-btn sl-btn--danger"
-        onClick={onDelete}
-      >
+      <button type="button" className="sl-btn sl-btn--danger" onClick={onDelete}>
         <Trash2 size={16} aria-hidden="true" />
         Delete
       </button>
@@ -243,8 +196,7 @@ export function CurrentStudentsTable({
 }) {
   const selectAllRef = useRef(null);
   useEffect(() => {
-    if (selectAllRef.current)
-      selectAllRef.current.indeterminate = someSelected && !allSelected;
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected && !allSelected;
   }, [someSelected, allSelected]);
 
   function onRowClick(event, student) {
@@ -283,14 +235,11 @@ export function CurrentStudentsTable({
             {rows.map((s) => {
               const meta = STATUS_META[s.status];
               const pay = paymentInfo(s);
+              const elig = certificateEligibility(s);
               const isSelected = selected.has(s.id);
 
               return (
-                <tr
-                  key={s.id}
-                  className={`sl-row${isSelected ? " is-selected" : ""}`}
-                  onClick={(e) => onRowClick(e, s)}
-                >
+                <tr key={s.id} className={`sl-row${isSelected ? " is-selected" : ""}`} onClick={(e) => onRowClick(e, s)}>
                   <td className="sl-col-check">
                     <input
                       type="checkbox"
@@ -303,11 +252,7 @@ export function CurrentStudentsTable({
                     <div className="sl-person">
                       <Avatar name={s.fullName} />
                       <div>
-                        <button
-                          type="button"
-                          className="sl-person__name"
-                          onClick={() => actions.onView(s)}
-                        >
+                        <button type="button" className="sl-person__name" onClick={() => actions.onView(s)}>
                           {s.fullName}
                         </button>
                         <span className="sl-sub">
@@ -319,8 +264,7 @@ export function CurrentStudentsTable({
                   <td>
                     {s.program}
                     <span className="sl-sub sl-sub--block">
-                      <CalendarDays size={12} aria-hidden="true" /> Since{" "}
-                      {formatDate(s.enrolledOn)}
+                      <CalendarDays size={12} aria-hidden="true" /> Since {formatDate(s.enrolledOn)}
                     </span>
                   </td>
                   <td>
@@ -330,53 +274,33 @@ export function CurrentStudentsTable({
                     </div>
                   </td>
                   <td>
-                    <span className={s.attendance < 75 ? "sl-low" : ""}>
-                      {s.attendance}%
-                    </span>
+                    <span className={s.attendance < 75 ? "sl-low" : ""}>{s.attendance}%</span>
                   </td>
                   <td>
                     <div className="sl-fees">
                       <span>
-                        {formatKSh(s.amountPaid)}{" "}
-                        <small>/ {formatKSh(s.fee)}</small>
+                        {formatKSh(s.amountPaid)} <small>/ {formatKSh(s.fee)}</small>
                       </span>
-                      <Badge
-                        tone={
-                          pay.status === "paid"
-                            ? "success"
-                            : pay.status === "partial"
-                              ? "warning"
-                              : "danger"
-                        }
-                        icon={Wallet}
-                      >
-                        {pay.status === "paid"
-                          ? "Paid"
-                          : pay.status === "partial"
-                            ? `Owes ${formatKSh(pay.balance)}`
-                            : "Unpaid"}
+                      <Badge tone={pay.status === "paid" ? "success" : pay.status === "partial" ? "warning" : "danger"} icon={Wallet}>
+                        {pay.status === "paid" ? "Paid" : pay.status === "partial" ? `Owes ${formatKSh(pay.balance)}` : "Unpaid"}
                       </Badge>
                     </div>
                   </td>
                   <td>
                     <Badge tone={meta.tone}>{meta.label}</Badge>
+                    {elig.type === "participation" && (
+                      <span className="sl-cert-flag" title={elig.reason}>
+                        <Award size={12} aria-hidden="true" />
+                        {s.certificate ? "Participation certificate issued" : "Eligible for participation certificate"}
+                      </span>
+                    )}
                   </td>
                   <td className="sl-col-actions">
                     <div className="sl-actions">
-                      <button
-                        type="button"
-                        onClick={() => actions.onView(s)}
-                        aria-label={`View ${s.fullName}`}
-                        title="View profile"
-                      >
+                      <button type="button" onClick={() => actions.onView(s)} aria-label={`View ${s.fullName}`} title="View profile">
                         <Eye size={17} aria-hidden="true" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => actions.onEdit(s)}
-                        aria-label={`Edit ${s.fullName}`}
-                        title="Edit"
-                      >
+                      <button type="button" onClick={() => actions.onEdit(s)} aria-label={`Edit ${s.fullName}`} title="Edit">
                         <Pencil size={17} aria-hidden="true" />
                       </button>
                       <button
@@ -408,11 +332,7 @@ export function CurrentStudentsTable({
                 <td colSpan={8}>
                   <EmptyState
                     title="No students found"
-                    text={
-                      hasFilters
-                        ? "Try a different search or clear your filters."
-                        : "Add your first student to get started."
-                    }
+                    text={hasFilters ? "Try a different search or clear your filters." : "Add your first student to get started."}
                     hasFilters={hasFilters}
                     onClear={onClearFilters}
                     onAdd={onAdd}
@@ -424,15 +344,7 @@ export function CurrentStudentsTable({
         </table>
       </div>
 
-      <Pagination
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        sizes={[5, 8, 15, 25]}
-        onPage={onPage}
-        onPageSize={onPageSize}
-        noun="students"
-      />
+      <Pagination total={total} page={page} pageSize={pageSize} sizes={[5, 8, 15, 25]} onPage={onPage} onPageSize={onPageSize} noun="students" />
     </>
   );
 }
@@ -440,27 +352,13 @@ export function CurrentStudentsTable({
 /* ============================== completed students (cards) ============================== */
 
 /** actions: { onView, onReopen, onDelete } each receive the student */
-export function CompletedStudentsGrid({
-  rows,
-  total,
-  page,
-  pageSize,
-  onPage,
-  onPageSize,
-  actions,
-  hasFilters,
-  onClearFilters,
-}) {
+export function CompletedStudentsGrid({ rows, total, page, pageSize, onPage, onPageSize, actions, hasFilters, onClearFilters }) {
   return (
     <>
       {rows.length === 0 ? (
         <EmptyState
           title="No completed students"
-          text={
-            hasFilters
-              ? "Try a different search or clear your filters."
-              : "Students appear here once you mark them as completed."
-          }
+          text={hasFilters ? "Try a different search or clear your filters." : "Students appear here once you mark them as completed."}
           hasFilters={hasFilters}
           onClear={onClearFilters}
         />
@@ -473,11 +371,7 @@ export function CompletedStudentsGrid({
                 <div className="sl-grad__top">
                   <Avatar name={s.fullName} size="lg" />
                   <div>
-                    <button
-                      type="button"
-                      className="sl-person__name"
-                      onClick={() => actions.onView(s)}
-                    >
+                    <button type="button" className="sl-person__name" onClick={() => actions.onView(s)}>
                       {s.fullName}
                     </button>
                     <span className="sl-sub">{s.program}</span>
@@ -504,50 +398,23 @@ export function CompletedStudentsGrid({
                   </div>
                 </dl>
 
-                <div
-                  className={`sl-grad__cert${s.certificate ? " is-issued" : ""}`}
-                >
+                <div className={`sl-grad__cert${s.certificate ? " is-issued" : ""}`}>
                   <Award size={18} aria-hidden="true" />
-                  <span>
-                    {s.certificate
-                      ? `${s.certificate.number}`
-                      : "Certificate not issued yet"}
-                  </span>
+                  <span>{s.certificate ? `${s.certificate.number}` : "Certificate not issued yet"}</span>
                 </div>
 
                 <div className="sl-grad__actions">
-                  <Link
-                    href={`/dashboard/certificates?student=${s.id}`}
-                    className="sl-btn sl-btn--primary"
-                  >
+                  <Link href={`/dashboard/certificates?student=${s.id}`} className="sl-btn sl-btn--primary">
                     <Award size={16} aria-hidden="true" />
                     {s.certificate ? "View certificate" : "Issue certificate"}
                   </Link>
-                  <button
-                    type="button"
-                    className="sl-icon"
-                    onClick={() => actions.onView(s)}
-                    aria-label={`View ${s.fullName}`}
-                    title="View profile"
-                  >
+                  <button type="button" className="sl-icon" onClick={() => actions.onView(s)} aria-label={`View ${s.fullName}`} title="View profile">
                     <Eye size={17} aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    className="sl-icon"
-                    onClick={() => actions.onReopen(s)}
-                    aria-label={`Move ${s.fullName} back to active`}
-                    title="Move back to active"
-                  >
+                  <button type="button" className="sl-icon" onClick={() => actions.onReopen(s)} aria-label={`Move ${s.fullName} back to active`} title="Move back to active">
                     <RotateCcw size={17} aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    className="sl-icon sl-icon--danger"
-                    onClick={() => actions.onDelete(s)}
-                    aria-label={`Delete ${s.fullName}`}
-                    title="Delete"
-                  >
+                  <button type="button" className="sl-icon sl-icon--danger" onClick={() => actions.onDelete(s)} aria-label={`Delete ${s.fullName}`} title="Delete">
                     <Trash2 size={17} aria-hidden="true" />
                   </button>
                 </div>
@@ -557,15 +424,7 @@ export function CompletedStudentsGrid({
         </ul>
       )}
 
-      <Pagination
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        sizes={[6, 12, 24]}
-        onPage={onPage}
-        onPageSize={onPageSize}
-        noun="graduates"
-      />
+      <Pagination total={total} page={page} pageSize={pageSize} sizes={[6, 12, 24]} onPage={onPage} onPageSize={onPageSize} noun="graduates" />
     </>
   );
 }

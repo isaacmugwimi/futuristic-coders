@@ -25,9 +25,11 @@ import {
 } from "lucide-react";
 import {
   AGE_GROUPS,
+  CERTIFICATE_TYPES,
   PROGRAM_OPTIONS,
   STATUS_META,
   avatarTone,
+  certificateEligibility,
   formatDate,
   formatKSh,
   formatPhone,
@@ -37,7 +39,7 @@ import {
   paymentInfo,
   programWeeks,
   todayISO,
-} from "../../data/students";
+} from "@/src/data/students";
 
 /**
  * StudentModals.jsx
@@ -50,15 +52,7 @@ import {
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function Modal({
-  title,
-  subtitle,
-  size = "md",
-  onClose,
-  closeOnBackdrop = true,
-  footer,
-  children,
-}) {
+function Modal({ title, subtitle, size = "md", onClose, closeOnBackdrop = true, footer, children }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(onClose);
   const titleId = useId();
@@ -103,14 +97,7 @@ function Modal({
         if (closeOnBackdrop && e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        ref={dialogRef}
-        className={`sm-dialog sm-dialog--${size}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-      >
+      <div ref={dialogRef} className={`sm-dialog sm-dialog--${size}`} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <div className="sm-dialog__header">
           <div>
             <h2 id={titleId} className="sm-dialog__title">
@@ -118,12 +105,7 @@ function Modal({
             </h2>
             {subtitle && <p className="sm-dialog__subtitle">{subtitle}</p>}
           </div>
-          <button
-            type="button"
-            className="sm-dialog__close"
-            onClick={onClose}
-            aria-label="Close dialog"
-          >
+          <button type="button" className="sm-dialog__close" onClick={onClose} aria-label="Close dialog">
             <X size={20} aria-hidden="true" />
           </button>
         </div>
@@ -134,19 +116,9 @@ function Modal({
   );
 }
 
-function Btn({
-  variant = "primary",
-  icon: Icon,
-  children,
-  className = "",
-  ...props
-}) {
+function Btn({ variant = "primary", icon: Icon, children, className = "", ...props }) {
   return (
-    <button
-      type="button"
-      className={`sm-btn sm-btn--${variant} ${className}`.trim()}
-      {...props}
-    >
+    <button type="button" className={`sm-btn sm-btn--${variant} ${className}`.trim()} {...props}>
       {Icon && <Icon size={17} aria-hidden="true" />}
       {children}
     </button>
@@ -178,11 +150,7 @@ export function Toast({ toast, onDismiss }) {
   const Icon = TOAST_ICONS[toast.tone] ?? CircleCheck;
 
   return (
-    <div
-      className={`sm-toast sm-toast--${toast.tone}`}
-      role="status"
-      aria-live="polite"
-    >
+    <div className={`sm-toast sm-toast--${toast.tone}`} role="status" aria-live="polite">
       <Icon size={20} aria-hidden="true" />
       <span>{toast.message}</span>
       <button type="button" onClick={onDismiss} aria-label="Dismiss message">
@@ -195,15 +163,7 @@ export function Toast({ toast, onDismiss }) {
 /* ============================== confirm + complete dialogs ============================== */
 
 /** tone: primary | danger. items: names affected by a bulk action */
-export function ConfirmDialog({
-  title,
-  message,
-  items = [],
-  confirmLabel = "Confirm",
-  tone = "primary",
-  onConfirm,
-  onCancel,
-}) {
+export function ConfirmDialog({ title, message, items = [], confirmLabel = "Confirm", tone = "primary", onConfirm, onCancel }) {
   const Icon = tone === "danger" ? TriangleAlert : Info;
   const shown = items.slice(0, 5);
   const extra = items.length - shown.length;
@@ -218,10 +178,7 @@ export function ConfirmDialog({
           <Btn variant="secondary" onClick={onCancel}>
             Cancel
           </Btn>
-          <Btn
-            variant={tone === "danger" ? "danger" : "primary"}
-            onClick={onConfirm}
-          >
+          <Btn variant={tone === "danger" ? "danger" : "primary"} onClick={onConfirm}>
             {confirmLabel}
           </Btn>
         </>
@@ -238,9 +195,7 @@ export function ConfirmDialog({
               {shown.map((name) => (
                 <li key={name}>{name}</li>
               ))}
-              {extra > 0 && (
-                <li className="sm-confirm__more">and {extra} more</li>
-              )}
+              {extra > 0 && <li className="sm-confirm__more">and {extra} more</li>}
             </ul>
           )}
         </div>
@@ -252,9 +207,7 @@ export function ConfirmDialog({
 /** Marks one or many students as completed. For a single student a final score can be entered. */
 export function CompleteDialog({ students, onConfirm, onCancel }) {
   const single = students.length === 1 ? students[0] : null;
-  const [score, setScore] = useState(
-    single?.finalScore != null ? String(single.finalScore) : "",
-  );
+  const [score, setScore] = useState(single?.finalScore != null ? String(single.finalScore) : "");
   const [error, setError] = useState("");
 
   function submit() {
@@ -275,11 +228,7 @@ export function CompleteDialog({ students, onConfirm, onCancel }) {
   return (
     <Modal
       size="sm"
-      title={
-        single
-          ? "Mark as completed?"
-          : `Mark ${students.length} students as completed?`
-      }
+      title={single ? "Mark as completed?" : `Mark ${students.length} students as completed?`}
       onClose={onCancel}
       footer={
         <>
@@ -298,13 +247,8 @@ export function CompleteDialog({ students, onConfirm, onCancel }) {
         </span>
         <div>
           <p className="sm-confirm__message">
-            {single ? (
-              <strong>{single.fullName}</strong>
-            ) : (
-              `${students.length} students`
-            )}{" "}
-            will move to <strong>Completed students</strong>, their progress
-            becomes 100%, and they become eligible for a certificate.
+            {single ? <strong>{single.fullName}</strong> : `${students.length} students`} will move to{" "}
+            <strong>Completed students</strong>, their progress becomes 100%, and they become eligible for a certificate.
           </p>
           {lowAttendance.length > 0 && (
             <p className="sm-confirm__warning">
@@ -330,13 +274,7 @@ export function CompleteDialog({ students, onConfirm, onCancel }) {
                 placeholder="e.g. 85"
                 aria-invalid={error ? "true" : undefined}
               />
-              {error ? (
-                <small role="alert">{error}</small>
-              ) : (
-                <small>
-                  Used for Distinction / Merit / Pass on the certificate.
-                </small>
-              )}
+              {error ? <small role="alert">{error}</small> : <small>Used for Distinction / Merit / Pass on the certificate.</small>}
             </label>
           )}
         </div>
@@ -366,30 +304,21 @@ function Meter({ value, label }) {
         <span>{label}</span>
         <strong>{value}%</strong>
       </div>
-      <span
-        className="sm-meter__bar"
-        role="img"
-        aria-label={`${label}: ${value}%`}
-      >
+      <span className="sm-meter__bar" role="img" aria-label={`${label}: ${value}%`}>
         <span style={{ width: `${Math.min(100, value)}%` }} />
       </span>
     </div>
   );
 }
 
-export function StudentDetailsModal({
-  student: s,
-  onClose,
-  onEdit,
-  onDelete,
-  onComplete,
-  onReopen,
-}) {
+export function StudentDetailsModal({ student: s, onClose, onEdit, onDelete, onComplete, onReopen }) {
   const meta = STATUS_META[s.status];
   const completed = s.status === "completed";
   const pay = paymentInfo(s);
   const honors = honorsFor(s.finalScore);
   const weeks = programWeeks(s.program);
+  const elig = certificateEligibility(s);
+  const cert = s.certificate;
 
   return (
     <Modal
@@ -399,12 +328,7 @@ export function StudentDetailsModal({
       onClose={onClose}
       footer={
         <>
-          <Btn
-            variant="ghost-danger"
-            icon={Trash2}
-            onClick={onDelete}
-            className="sm-btn--left"
-          >
+          <Btn variant="ghost-danger" icon={Trash2} onClick={onDelete} className="sm-btn--left">
             Delete
           </Btn>
           {completed ? (
@@ -424,11 +348,7 @@ export function StudentDetailsModal({
     >
       <div className="sm-profile">
         <div className="sm-profile__head">
-          <span
-            className={`sm-avatar sm-avatar--lg sm-avatar--tone${avatarTone(s.fullName)}`}
-          >
-            {initials(s.fullName)}
-          </span>
+          <span className={`sm-avatar sm-avatar--lg sm-avatar--tone${avatarTone(s.fullName)}`}>{initials(s.fullName)}</span>
           <div>
             <h3>{s.fullName}</h3>
             <p>{s.program}</p>
@@ -455,22 +375,13 @@ export function StudentDetailsModal({
             {s.county || "—"}
           </Info2>
           <Info2 icon={User} label="Guardian">
-            {s.guardianName
-              ? `${s.guardianName} · ${formatPhone(s.guardianPhone)}`
-              : "—"}
+            {s.guardianName ? `${s.guardianName} · ${formatPhone(s.guardianPhone)}` : "—"}
           </Info2>
           <Info2 icon={CalendarDays} label="Enrolled">
             {formatDate(s.enrolledOn)}
           </Info2>
-          <Info2
-            icon={GraduationCap}
-            label={completed ? "Completed" : "Duration"}
-          >
-            {completed
-              ? formatDate(s.completedOn)
-              : weeks
-                ? `${weeks} weeks`
-                : "—"}
+          <Info2 icon={GraduationCap} label={completed ? "Completed" : "Duration"}>
+            {completed ? formatDate(s.completedOn) : weeks ? `${weeks} weeks` : "—"}
           </Info2>
         </dl>
 
@@ -498,54 +409,34 @@ export function StudentDetailsModal({
             </div>
             <div>
               <span>Balance</span>
-              <strong className={pay.balance ? "is-due" : "is-clear"}>
-                {formatKSh(pay.balance)}
-              </strong>
+              <strong className={pay.balance ? "is-due" : "is-clear"}>{formatKSh(pay.balance)}</strong>
             </div>
-            <Badge
-              tone={
-                pay.status === "paid"
-                  ? "success"
-                  : pay.status === "partial"
-                    ? "warning"
-                    : "danger"
-              }
-              icon={Wallet}
-            >
-              {pay.status === "paid"
-                ? "Fully paid"
-                : pay.status === "partial"
-                  ? "Part paid"
-                  : "Not paid"}
+            <Badge tone={pay.status === "paid" ? "success" : pay.status === "partial" ? "warning" : "danger"} icon={Wallet}>
+              {pay.status === "paid" ? "Fully paid" : pay.status === "partial" ? "Part paid" : "Not paid"}
             </Badge>
           </div>
         </section>
 
-        {completed && (
-          <section className={`sm-cert${s.certificate ? " is-issued" : ""}`}>
-            <span className="sm-cert__icon">
-              <Award size={22} aria-hidden="true" />
-            </span>
-            <div>
-              <strong>
-                {s.certificate
-                  ? `Certificate ${s.certificate.number}`
-                  : "Certificate not issued yet"}
-              </strong>
-              <span>
-                {s.certificate
-                  ? `Issued ${formatDate(s.certificate.issuedOn)}`
-                  : "This student is eligible. Issue it from the Certificates page."}
-              </span>
-            </div>
-            <Link
-              href={`/dashboard/certificates?student=${s.id}`}
-              className="sm-btn sm-btn--secondary"
-            >
-              {s.certificate ? "View certificate" : "Issue certificate"}
+        <section className={`sm-cert${cert ? " is-issued" : elig.type ? "" : " is-locked"}`}>
+          <span className="sm-cert__icon">
+            <Award size={22} aria-hidden="true" />
+          </span>
+          <div>
+            <strong>
+              {cert
+                ? `${CERTIFICATE_TYPES[cert.type ?? "completion"].label} · ${cert.number}`
+                : elig.type
+                  ? `Eligible for a ${CERTIFICATE_TYPES[elig.type].label}`
+                  : "No certificate yet"}
+            </strong>
+            <span>{cert ? `Issued ${formatDate(cert.issuedOn)}` : elig.reason}</span>
+          </div>
+          {(cert || elig.type) && (
+            <Link href={`/dashboard/certificates?student=${s.id}`} className="sm-btn sm-btn--secondary">
+              {cert ? "View certificate" : "Issue certificate"}
             </Link>
-          </section>
-        )}
+          )}
+        </section>
 
         {s.notes && (
           <section className="sm-section">
@@ -623,9 +514,7 @@ function Field({ id, label, required, error, hint, className = "", children }) {
 
 export function StudentFormModal({ student, onSave, onClose }) {
   const editing = Boolean(student);
-  const [values, setValues] = useState(() =>
-    student ? toValues(student) : NEW_VALUES,
-  );
+  const [values, setValues] = useState(() => (student ? toValues(student) : NEW_VALUES));
   const [errors, setErrors] = useState({});
   const [feeTouched, setFeeTouched] = useState(editing);
   const formRef = useRef(null);
@@ -644,11 +533,7 @@ export function StudentFormModal({ student, onSave, onClose }) {
 
   function onProgramChange(title) {
     const option = PROGRAM_OPTIONS.find((p) => p.title === title);
-    setValues((v) => ({
-      ...v,
-      program: title,
-      fee: !feeTouched && option ? String(option.fee) : v.fee,
-    }));
+    setValues((v) => ({ ...v, program: title, fee: !feeTouched && option ? String(option.fee) : v.fee }));
   }
 
   function validate(v) {
@@ -656,32 +541,22 @@ export function StudentFormModal({ student, onSave, onClose }) {
     const num = (x) => (x.trim() === "" ? NaN : Number(x));
     const kid = v.ageGroup === AGE_GROUPS[0];
 
-    if (!/^\S+\s+\S+/.test(v.fullName.trim()))
-      e.fullName = "Enter the student's first and last name.";
-    if (v.email.trim() && !EMAIL_PATTERN.test(v.email.trim()))
-      e.email = "Enter a valid email address.";
-    if (!normalizeKenyanPhone(v.phone))
-      e.phone = "Enter a valid Kenyan number, e.g. 0712 345 678.";
-    if (kid && !v.guardianName.trim())
-      e.guardianName = "Kids need a parent or guardian name.";
-    if (v.guardianPhone.trim() ? !normalizeKenyanPhone(v.guardianPhone) : kid)
-      e.guardianPhone = "Enter a valid guardian phone number.";
+    if (v.fullName.trim().length < 3) e.fullName = "Enter the student's name.";
+    if (v.email.trim() && !EMAIL_PATTERN.test(v.email.trim())) e.email = "Enter a valid email address.";
+    if (!normalizeKenyanPhone(v.phone)) e.phone = "Enter a valid Kenyan number, e.g. 0712 345 678.";
+    if (kid && !v.guardianName.trim()) e.guardianName = "Kids need a parent or guardian name.";
+    if (v.guardianPhone.trim() ? !normalizeKenyanPhone(v.guardianPhone) : kid) e.guardianPhone = "Enter a valid guardian phone number.";
     if (!v.enrolledOn) e.enrolledOn = "Pick the enrollment date.";
     for (const key of ["progress", "attendance"]) {
       const n = num(v[key]);
       if (!(n >= 0 && n <= 100)) e[key] = "Enter 0 to 100.";
     }
-    if (
-      v.finalScore.trim() !== "" &&
-      !(num(v.finalScore) >= 0 && num(v.finalScore) <= 100)
-    )
-      e.finalScore = "Enter 0 to 100.";
+    if (v.finalScore.trim() !== "" && !(num(v.finalScore) >= 0 && num(v.finalScore) <= 100)) e.finalScore = "Enter 0 to 100.";
     const fee = num(v.fee);
     const paid = num(v.amountPaid);
     if (!(fee >= 0)) e.fee = "Enter the fee in KSh.";
     if (!(paid >= 0)) e.amountPaid = "Enter the amount paid.";
-    else if (fee >= 0 && paid > fee)
-      e.amountPaid = "Paid amount can't be more than the fee.";
+    else if (fee >= 0 && paid > fee) e.amountPaid = "Paid amount can't be more than the fee.";
     return e;
   }
 
@@ -690,9 +565,7 @@ export function StudentFormModal({ student, onSave, onClose }) {
     const found = validate(values);
     setErrors(found);
     if (Object.keys(found).length) {
-      requestAnimationFrame(() =>
-        formRef.current?.querySelector('[aria-invalid="true"]')?.focus(),
-      );
+      requestAnimationFrame(() => formRef.current?.querySelector('[aria-invalid="true"]')?.focus());
       return;
     }
     onSave({
@@ -702,16 +575,13 @@ export function StudentFormModal({ student, onSave, onClose }) {
       ageGroup: values.ageGroup,
       county: values.county.trim(),
       guardianName: values.guardianName.trim(),
-      guardianPhone: values.guardianPhone.trim()
-        ? normalizeKenyanPhone(values.guardianPhone)
-        : "",
+      guardianPhone: values.guardianPhone.trim() ? normalizeKenyanPhone(values.guardianPhone) : "",
       program: values.program,
       enrolledOn: values.enrolledOn,
       status: values.status,
       progress: Number(values.progress),
       attendance: Number(values.attendance),
-      finalScore:
-        values.finalScore.trim() === "" ? null : Number(values.finalScore),
+      finalScore: values.finalScore.trim() === "" ? null : Number(values.finalScore),
       fee: Number(values.fee),
       amountPaid: Number(values.amountPaid),
       notes: values.notes.trim(),
@@ -730,12 +600,7 @@ export function StudentFormModal({ student, onSave, onClose }) {
   );
 
   const select = (name, options, onChange) => (
-    <select
-      id={id(name)}
-      className="sm-input"
-      value={values[name]}
-      onChange={(e) => (onChange ?? ((v) => set(name, v)))(e.target.value)}
-    >
+    <select id={id(name)} className="sm-input" value={values[name]} onChange={(e) => (onChange ?? ((v) => set(name, v)))(e.target.value)}>
       {options.map((option) => (
         <option key={option.value ?? option} value={option.value ?? option}>
           {option.label ?? option}
@@ -748,11 +613,7 @@ export function StudentFormModal({ student, onSave, onClose }) {
     <Modal
       size="lg"
       title={editing ? "Edit student" : "Add student"}
-      subtitle={
-        editing
-          ? `${student.studentNo} · ${student.fullName}`
-          : "Register a new learner."
-      }
+      subtitle={editing ? `${student.studentNo} · ${student.fullName}` : "Register a new learner."}
       onClose={onClose}
       closeOnBackdrop={false}
       footer={
@@ -766,27 +627,12 @@ export function StudentFormModal({ student, onSave, onClose }) {
         </>
       }
     >
-      <form
-        id={formId}
-        ref={formRef}
-        className="sm-form"
-        onSubmit={handleSubmit}
-        noValidate
-      >
+      <form id={formId} ref={formRef} className="sm-form" onSubmit={handleSubmit} noValidate>
         <section>
           <h3>Personal details</h3>
           <div className="sm-grid">
-            <Field
-              id={id("fullName")}
-              label="Full name"
-              required
-              error={errors.fullName}
-              className="sm-full"
-            >
-              {input("fullName", {
-                placeholder: "e.g. Amina Wanjiru",
-                autoFocus: true,
-              })}
+            <Field id={id("fullName")} label="Full name" required error={errors.fullName} hint="This name is printed on the certificate." className="sm-full">
+              {input("fullName", { placeholder: "e.g. Amina Wanjiru", autoFocus: true })}
             </Field>
             <Field id={id("ageGroup")} label="Age group">
               {select("ageGroup", AGE_GROUPS)}
@@ -794,24 +640,11 @@ export function StudentFormModal({ student, onSave, onClose }) {
             <Field id={id("county")} label="County / town">
               {input("county", { placeholder: "e.g. Kirinyaga" })}
             </Field>
-            <Field
-              id={id("phone")}
-              label="Phone number"
-              required
-              error={errors.phone}
-            >
+            <Field id={id("phone")} label="Phone number" required error={errors.phone}>
               {input("phone", { type: "tel", placeholder: "0712 345 678" })}
             </Field>
-            <Field
-              id={id("email")}
-              label="Email"
-              error={errors.email}
-              hint="Optional"
-            >
-              {input("email", {
-                type: "email",
-                placeholder: "name@example.com",
-              })}
+            <Field id={id("email")} label="Email" error={errors.email} hint="Optional">
+              {input("email", { type: "email", placeholder: "name@example.com" })}
             </Field>
           </div>
         </section>
@@ -819,24 +652,11 @@ export function StudentFormModal({ student, onSave, onClose }) {
         <section>
           <h3>Parent / guardian</h3>
           <div className="sm-grid">
-            <Field
-              id={id("guardianName")}
-              label="Guardian name"
-              required={values.ageGroup === AGE_GROUPS[0]}
-              error={errors.guardianName}
-            >
+            <Field id={id("guardianName")} label="Guardian name" required={values.ageGroup === AGE_GROUPS[0]} error={errors.guardianName}>
               {input("guardianName")}
             </Field>
-            <Field
-              id={id("guardianPhone")}
-              label="Guardian phone"
-              required={values.ageGroup === AGE_GROUPS[0]}
-              error={errors.guardianPhone}
-            >
-              {input("guardianPhone", {
-                type: "tel",
-                placeholder: "0722 000 000",
-              })}
+            <Field id={id("guardianPhone")} label="Guardian phone" required={values.ageGroup === AGE_GROUPS[0]} error={errors.guardianPhone}>
+              {input("guardianPhone", { type: "tel", placeholder: "0722 000 000" })}
             </Field>
           </div>
         </section>
@@ -845,73 +665,29 @@ export function StudentFormModal({ student, onSave, onClose }) {
           <h3>Program &amp; progress</h3>
           <div className="sm-grid">
             <Field id={id("program")} label="Program" className="sm-full">
-              {select(
-                "program",
-                PROGRAM_OPTIONS.map((p) => p.title),
-                onProgramChange,
-              )}
+              {select("program", PROGRAM_OPTIONS.map((p) => p.title), onProgramChange)}
             </Field>
-            <Field
-              id={id("enrolledOn")}
-              label="Enrolled on"
-              required
-              error={errors.enrolledOn}
-            >
+            <Field id={id("enrolledOn")} label="Enrolled on" required error={errors.enrolledOn}>
               {input("enrolledOn", { type: "date" })}
             </Field>
             <Field
               id={id("status")}
               label="Status"
-              hint={
-                values.status === "completed"
-                  ? "Completed sets progress to 100%."
-                  : undefined
-              }
+              hint={values.status === "completed" ? "Completed sets progress to 100%." : undefined}
             >
               {select(
                 "status",
-                Object.entries(STATUS_META).map(([value, meta]) => ({
-                  value,
-                  label: meta.label,
-                })),
+                Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.label })),
               )}
             </Field>
-            <Field
-              id={id("progress")}
-              label="Progress (%)"
-              error={errors.progress}
-            >
-              {input("progress", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
+            <Field id={id("progress")} label="Progress (%)" error={errors.progress}>
+              {input("progress", { type: "number", min: 0, max: 100, inputMode: "numeric" })}
             </Field>
-            <Field
-              id={id("attendance")}
-              label="Attendance (%)"
-              error={errors.attendance}
-            >
-              {input("attendance", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
+            <Field id={id("attendance")} label="Attendance (%)" error={errors.attendance}>
+              {input("attendance", { type: "number", min: 0, max: 100, inputMode: "numeric" })}
             </Field>
-            <Field
-              id={id("finalScore")}
-              label="Final score (%)"
-              error={errors.finalScore}
-              hint="Optional"
-            >
-              {input("finalScore", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
+            <Field id={id("finalScore")} label="Final score (%)" error={errors.finalScore} hint="Optional">
+              {input("finalScore", { type: "number", min: 0, max: 100, inputMode: "numeric" })}
             </Field>
           </div>
         </section>
@@ -930,17 +706,8 @@ export function StudentFormModal({ student, onSave, onClose }) {
                 },
               })}
             </Field>
-            <Field
-              id={id("amountPaid")}
-              label="Amount paid"
-              required
-              error={errors.amountPaid}
-            >
-              {input("amountPaid", {
-                type: "number",
-                min: 0,
-                inputMode: "numeric",
-              })}
+            <Field id={id("amountPaid")} label="Amount paid" required error={errors.amountPaid}>
+              {input("amountPaid", { type: "number", min: 0, inputMode: "numeric" })}
             </Field>
           </div>
         </section>

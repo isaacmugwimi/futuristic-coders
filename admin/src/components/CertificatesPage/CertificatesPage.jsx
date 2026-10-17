@@ -12,6 +12,7 @@ import {
   Copy,
   Eye,
   GraduationCap,
+  Handshake,
   Hourglass,
   Info,
   ScanSearch,
@@ -19,31 +20,35 @@ import {
   X,
 } from "lucide-react";
 import {
+  CERTIFICATE_TYPES,
   PROGRAM_OPTIONS,
   PUBLIC_SITE_URL,
+  STATUS_META,
+  certificateEligibility,
   findCertificate,
   formatDate,
   honorsFor,
   issueCertificates,
   useStudents,
-} from "../../data/students";
-import {
-  CertificateArtwork,
-  CertificateModal,
-  Dialog,
-} from "../CertificateView/CertificateView";
+} from "@/src/data/students";
+import { CertificateArtwork, CertificateModal, Dialog } from "../CertificateView/CertificateView";
 
 /**
  * CertificatesPage.jsx
- * Certificates exist only for COMPLETED students. This page lists them, issues
- * certificates, opens/prints them and verifies a certificate number.
- * Opening /dashboard/certificates?student=<id> jumps straight to that student.
+ * Two certificates:
+ *   - Completion: for students who finished the program
+ *   - Participation: for students who didn't finish but have paid in full and are no longer learning
+ * Lists who is eligible, issues certificates, opens/prints them and verifies a number.
+ * /dashboard/certificates?student=<id> jumps straight to that student.
  */
+
+const typeOf = (student) => student.certificate?.type ?? "completion";
 
 export default function CertificatesPage() {
   const students = useStudents();
   const paramId = useSearchParams().get("student");
 
+  const [tabChoice, setTabChoice] = useState(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [program, setProgram] = useState("all");
@@ -54,10 +59,7 @@ export default function CertificatesPage() {
   const [verifyResult, setVerifyResult] = useState(null); // { text, student }
   const [toast, setToast] = useState(null);
 
-  const showToast = useCallback(
-    (message, tone = "success") => setToast({ id: Date.now(), message, tone }),
-    [],
-  );
+  const showToast = useCallback((message, tone = "success") => setToast({ id: Date.now(), message, tone }), []);
 
   useEffect(() => {
     if (!toast) return;
@@ -65,61 +67,53 @@ export default function CertificatesPage() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  /* ---------------- derived ---------------- */
-  const completed = useMemo(
-    () => students.filter((s) => s.status === "completed"),
-    [students],
-  );
-  const issued = completed.filter((s) => s.certificate);
-  const pending = completed.filter((s) => !s.certificate);
+  /* ---------------- who gets which certificate ---------------- */
+  const eligibility = useMemo(() => new Map(students.map((s) => [s.id, certificateEligibility(s)])), [students]);
+
+  const lists = useMemo(() => {
+    const belongs = (s, type) => (s.certificate ? typeOf(s) === type : eligibility.get(s.id).type === type);
+    return {
+      completion: students.filter((s) => belongs(s, "completion")),
+      participation: students.filter((s) => belongs(s, "participation")),
+    };
+  }, [students, eligibility]);
+
+  const urlStudent = students.find((s) => s.id === paramId) ?? null;
+  const urlType = urlStudent ? (urlStudent.certificate ? typeOf(urlStudent) : eligibility.get(urlStudent.id).type) : null;
+  const tab = tabChoice ?? urlType ?? "completion";
+  const meta = CERTIFICATE_TYPES[tab];
+
+  const allIssued = students.filter((s) => s.certificate).length;
+  const allWaiting = lists.completion.filter((s) => !s.certificate).length + lists.participation.filter((s) => !s.certificate).length;
+  const pending = lists[tab].filter((s) => !s.certificate);
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return completed
+    return lists[tab]
       .filter((s) => {
         if (status === "issued" && !s.certificate) return false;
         if (status === "pending" && s.certificate) return false;
         if (program !== "all" && s.program !== program) return false;
         if (!q) return true;
-        return [
-          s.fullName,
-          s.program,
-          s.studentNo,
-          s.certificate?.number ?? "",
-        ].some((v) => v.toLowerCase().includes(q));
+        return [s.fullName, s.program, s.studentNo, s.certificate?.number ?? ""].some((v) => v.toLowerCase().includes(q));
       })
-      .sort((a, b) => (b.completedOn ?? "").localeCompare(a.completedOn ?? ""));
-  }, [completed, query, status, program]);
+      .sort((a, b) => (b.completedOn ?? b.updatedAt).localeCompare(a.completedOn ?? a.updatedAt));
+  }, [lists, tab, query, status, program]);
 
   const hasFilters = query !== "" || status !== "all" || program !== "all";
 
   // A student passed in the URL (from the Students page)
-  const paramStudent = !dismissed
-    ? students.find((s) => s.id === paramId)
-    : null;
-  const paramIsCompleted = paramStudent?.status === "completed";
-  const notEligible = paramStudent && !paramIsCompleted ? paramStudent : null;
-  const activeViewId =
-    viewId ??
-    (paramIsCompleted && paramStudent.certificate ? paramStudent.id : null);
-  const activeIssueIds =
-    issueIds ??
-    (paramIsCompleted && !paramStudent.certificate ? [paramStudent.id] : null);
+  const paramStudent = !dismissed ? urlStudent : null;
+  const paramElig = paramStudent ? eligibility.get(paramStudent.id) : null;
+  const notEligible = paramStudent && !paramStudent.certificate && !paramElig.type ? { student: paramStudent, reason: paramElig.reason } : null;
+  const activeViewId = viewId ?? (paramStudent?.certificate ? paramStudent.id : null);
+  const activeIssueIds = issueIds ?? (paramStudent && !paramStudent.certificate && paramElig.type ? [paramStudent.id] : null);
 
-  const viewStudent = activeViewId
-    ? students.find(
-        (s) =>
-          s.id === activeViewId && s.certificate && s.status === "completed",
-      )
-    : null;
+  const viewStudent = activeViewId ? students.find((s) => s.id === activeViewId && s.certificate) : null;
   const issueTargets = activeIssueIds
-    ? students.filter(
-        (s) =>
-          activeIssueIds.includes(s.id) &&
-          s.status === "completed" &&
-          !s.certificate,
-      )
+    ? students.filter((s) => activeIssueIds.includes(s.id) && !s.certificate && eligibility.get(s.id).type)
     : [];
+  const issueType = issueTargets[0] ? eligibility.get(issueTargets[0].id).type : tab;
 
   /* ---------------- actions ---------------- */
   function closeAll() {
@@ -134,9 +128,7 @@ export default function CertificatesPage() {
     setIssueIds(null);
     setDismissed(true);
     if (ids.length === 1) setViewId(ids[0]); // open the new certificate straight away
-    showToast(
-      count === 1 ? "Certificate issued" : `${count} certificates issued`,
-    );
+    showToast(count === 1 ? "Certificate issued" : `${count} certificates issued`);
   }
 
   async function copy(text, message) {
@@ -155,23 +147,35 @@ export default function CertificatesPage() {
     setVerifyResult({ text, student: findCertificate(students, text) });
   }
 
+  function changeTab(next) {
+    setTabChoice(next);
+    clearFilters();
+  }
+
   function clearFilters() {
     setQuery("");
     setStatus("all");
     setProgram("all");
   }
 
+  const TabIcon = tab === "completion" ? GraduationCap : Handshake;
+
   /* ---------------- render ---------------- */
   return (
     <div className="cp">
       <div className="cp-rule" role="note">
         <Info size={18} aria-hidden="true" />
-        <p>
-          Certificates are only available for{" "}
-          <strong>completed students</strong>. To make a student eligible, mark
-          them as completed on the{" "}
-          <Link href="/dashboard/students">Students page</Link>.
-        </p>
+        <div>
+          <p>
+            <strong>Certificate of Completion:</strong> for students who finished their program.
+          </p>
+          <p>
+            <strong>Certificate of Participation:</strong> for students who didn&apos;t finish but have paid in full and are no longer learning (on hold, dropped, or their program period has ended).
+          </p>
+          <p>
+            Mark students as completed on the <Link href="/dashboard/students">Students page</Link>.
+          </p>
+        </div>
       </div>
 
       <section className="cp-stats" aria-label="Certificates summary">
@@ -180,8 +184,17 @@ export default function CertificatesPage() {
             <GraduationCap size={22} aria-hidden="true" />
           </span>
           <div>
-            <p>{completed.length}</p>
-            <span>Eligible (completed)</span>
+            <p>{lists.completion.length}</p>
+            <span>Completion (eligible)</span>
+          </div>
+        </article>
+        <article className="cp-stat">
+          <span className="cp-stat__icon cp-stat__icon--blue">
+            <Handshake size={22} aria-hidden="true" />
+          </span>
+          <div>
+            <p>{lists.participation.length}</p>
+            <span>Participation (eligible)</span>
           </div>
         </article>
         <article className="cp-stat">
@@ -189,7 +202,7 @@ export default function CertificatesPage() {
             <BadgeCheck size={22} aria-hidden="true" />
           </span>
           <div>
-            <p>{issued.length}</p>
+            <p>{allIssued}</p>
             <span>Certificates issued</span>
           </div>
         </article>
@@ -198,7 +211,7 @@ export default function CertificatesPage() {
             <Hourglass size={22} aria-hidden="true" />
           </span>
           <div>
-            <p>{pending.length}</p>
+            <p>{allWaiting}</p>
             <span>Waiting to be issued</span>
           </div>
         </article>
@@ -211,7 +224,7 @@ export default function CertificatesPage() {
           </span>
           <div>
             <h2>Verify a certificate</h2>
-            <p>Enter the certificate number to confirm it is genuine.</p>
+            <p>Enter a certificate number (FC-CERT-… or FC-PART-…) to confirm it is genuine.</p>
           </div>
         </div>
         <form className="cp-verify__form" onSubmit={verify}>
@@ -221,7 +234,7 @@ export default function CertificatesPage() {
               setVerifyInput(e.target.value);
               setVerifyResult(null);
             }}
-            placeholder="e.g. FC-CERT-2026-0001"
+            placeholder="e.g. FC-CERT-2026-0001 or FC-PART-2026-0001"
             aria-label="Certificate number"
             autoComplete="off"
           />
@@ -234,19 +247,22 @@ export default function CertificatesPage() {
             <div className="cp-result cp-result--valid" role="status">
               <CircleCheck size={22} aria-hidden="true" />
               <div>
-                <strong>Valid certificate</strong>
+                <strong>Valid {CERTIFICATE_TYPES[typeOf(verifyResult.student)].label}</strong>
                 <span>
-                  {verifyResult.student.fullName} completed{" "}
-                  <b>{verifyResult.student.program}</b> on{" "}
-                  {formatDate(verifyResult.student.completedOn)}. Issued{" "}
-                  {formatDate(verifyResult.student.certificate.issuedOn)}.
+                  {verifyResult.student.fullName}{" "}
+                  {typeOf(verifyResult.student) === "completion" ? (
+                    <>
+                      completed <b>{verifyResult.student.program}</b> on {formatDate(verifyResult.student.completedOn)}.
+                    </>
+                  ) : (
+                    <>
+                      took part in <b>{verifyResult.student.program}</b>.
+                    </>
+                  )}{" "}
+                  Issued {formatDate(verifyResult.student.certificate.issuedOn)}.
                 </span>
               </div>
-              <button
-                type="button"
-                className="cp-btn"
-                onClick={() => setViewId(verifyResult.student.id)}
-              >
+              <button type="button" className="cp-btn" onClick={() => setViewId(verifyResult.student.id)}>
                 View
               </button>
             </div>
@@ -255,86 +271,76 @@ export default function CertificatesPage() {
               <CircleX size={22} aria-hidden="true" />
               <div>
                 <strong>No certificate found</strong>
-                <span>
-                  “{verifyResult.text}” doesn&apos;t match any issued
-                  certificate. Check the number and try again.
-                </span>
+                <span>“{verifyResult.text}” doesn&apos;t match any valid certificate. Check the number and try again.</span>
               </div>
             </div>
           ))}
       </section>
 
       <section className="cp-card">
+        <div className="cp-tabs" role="tablist" aria-label="Certificate types">
+          {Object.entries(CERTIFICATE_TYPES).map(([type, info]) => (
+            <button
+              key={type}
+              type="button"
+              role="tab"
+              aria-selected={tab === type}
+              className={`cp-tab cp-tab--${type}${tab === type ? " is-active" : ""}`}
+              onClick={() => changeTab(type)}
+            >
+              {type === "completion" ? <GraduationCap size={17} aria-hidden="true" /> : <Handshake size={17} aria-hidden="true" />}
+              {info.short}
+              <span>{lists[type].length}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="cp-toolbar">
           <label className="cp-search">
             <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, program, certificate number…"
-              aria-label="Search certificates"
-            />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, program, certificate number…" aria-label="Search certificates" />
             {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-              >
+              <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
                 <X size={16} aria-hidden="true" />
               </button>
             )}
           </label>
-          <select
-            className="cp-select"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            aria-label="Filter by certificate status"
-          >
+          <select className="cp-select" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by certificate status">
             <option value="all">All</option>
             <option value="issued">Issued</option>
             <option value="pending">Not issued yet</option>
           </select>
-          <select
-            className="cp-select"
-            value={program}
-            onChange={(e) => setProgram(e.target.value)}
-            aria-label="Filter by program"
-          >
+          <select className="cp-select" value={program} onChange={(e) => setProgram(e.target.value)} aria-label="Filter by program">
             <option value="all">All programs</option>
             {PROGRAM_OPTIONS.map((p) => (
               <option key={p.title}>{p.title}</option>
             ))}
           </select>
           {hasFilters && (
-            <button
-              type="button"
-              className="cp-btn cp-btn--ghost"
-              onClick={clearFilters}
-            >
+            <button type="button" className="cp-btn cp-btn--ghost" onClick={clearFilters}>
               <X size={15} aria-hidden="true" />
               Clear
             </button>
           )}
           {pending.length > 0 && (
-            <button
-              type="button"
-              className="cp-btn cp-btn--primary cp-toolbar__issue"
-              onClick={() => setIssueIds(pending.map((s) => s.id))}
-            >
+            <button type="button" className="cp-btn cp-btn--primary cp-toolbar__issue" onClick={() => setIssueIds(pending.map((s) => s.id))}>
               <Award size={17} aria-hidden="true" />
               Issue all pending ({pending.length})
             </button>
           )}
         </div>
 
-        {completed.length === 0 ? (
+        {lists[tab].length === 0 ? (
           <div className="cp-empty">
             <span>
-              <GraduationCap size={28} aria-hidden="true" />
+              <TabIcon size={28} aria-hidden="true" />
             </span>
-            <h3>No completed students yet</h3>
-            <p>Certificates appear here once students finish their program.</p>
+            <h3>No {meta.short.toLowerCase()} certificates yet</h3>
+            <p>
+              {tab === "completion"
+                ? "Certificates of Completion appear here once students finish their program."
+                : "Certificates of Participation appear here for students who paid in full but didn't finish."}
+            </p>
             <Link href="/dashboard/students" className="cp-btn cp-btn--primary">
               Go to Students
             </Link>
@@ -353,19 +359,11 @@ export default function CertificatesPage() {
         ) : (
           <ul className="cp-grid">
             {list.map((s) => {
-              const honors = honorsFor(s.finalScore);
+              const honors = tab === "completion" ? honorsFor(s.finalScore) : null;
               return (
-                <li
-                  key={s.id}
-                  className={`cp-item${s.certificate ? "" : " is-pending"}`}
-                >
+                <li key={s.id} className={`cp-item${s.certificate ? "" : " is-pending"}`}>
                   {s.certificate ? (
-                    <button
-                      type="button"
-                      className="cp-thumb"
-                      onClick={() => setViewId(s.id)}
-                      aria-label={`View certificate for ${s.fullName}`}
-                    >
+                    <button type="button" className="cp-thumb" onClick={() => setViewId(s.id)} aria-label={`View certificate for ${s.fullName}`}>
                       <CertificateArtwork student={s} />
                     </button>
                   ) : (
@@ -379,38 +377,25 @@ export default function CertificatesPage() {
                     <h3>{s.fullName}</h3>
                     <p>{s.program}</p>
                     <p className="cp-item__meta">
-                      Completed {formatDate(s.completedOn)}
-                      {honors ? ` · ${honors}` : ""}
+                      {tab === "completion"
+                        ? `Completed ${formatDate(s.completedOn)}${honors ? ` · ${honors}` : ""}`
+                        : `${STATUS_META[s.status].label} · ${s.progress}% progress · ${s.attendance}% attendance`}
                     </p>
-                    <p
-                      className={`cp-item__number${s.certificate ? " is-issued" : ""}`}
-                    >
-                      {s.certificate
-                        ? s.certificate.number
-                        : "No certificate number yet"}
-                    </p>
+                    {tab === "participation" && <p className="cp-item__meta">{eligibility.get(s.id).reason}</p>}
+                    <p className={`cp-item__number${s.certificate ? " is-issued" : ""}`}>{s.certificate ? s.certificate.number : "No certificate number yet"}</p>
                   </div>
 
                   <div className="cp-item__actions">
                     {s.certificate ? (
                       <>
-                        <button
-                          type="button"
-                          className="cp-btn cp-btn--primary"
-                          onClick={() => setViewId(s.id)}
-                        >
+                        <button type="button" className="cp-btn cp-btn--primary" onClick={() => setViewId(s.id)}>
                           <Eye size={16} aria-hidden="true" />
                           View / Print
                         </button>
                         <button
                           type="button"
                           className="cp-icon"
-                          onClick={() =>
-                            copy(
-                              s.certificate.number,
-                              "Certificate number copied",
-                            )
-                          }
+                          onClick={() => copy(s.certificate.number, "Certificate number copied")}
                           aria-label={`Copy certificate number for ${s.fullName}`}
                           title="Copy certificate number"
                         >
@@ -418,11 +403,7 @@ export default function CertificatesPage() {
                         </button>
                       </>
                     ) : (
-                      <button
-                        type="button"
-                        className="cp-btn cp-btn--primary"
-                        onClick={() => setIssueIds([s.id])}
-                      >
+                      <button type="button" className="cp-btn cp-btn--primary" onClick={() => setIssueIds([s.id])}>
                         <Award size={16} aria-hidden="true" />
                         Issue certificate
                       </button>
@@ -440,36 +421,22 @@ export default function CertificatesPage() {
         <CertificateModal
           student={viewStudent}
           onClose={closeAll}
-          onCopyLink={() =>
-            copy(
-              `${PUBLIC_SITE_URL}/verify/${viewStudent.certificate.number}`,
-              "Verification link copied",
-            )
-          }
+          onCopyLink={() => copy(`${PUBLIC_SITE_URL}/verify/${viewStudent.certificate.number}`, "Verification link copied")}
         />
       )}
 
       {issueTargets.length > 0 && (
         <Dialog
-          title={
-            issueTargets.length === 1
-              ? "Issue certificate?"
-              : `Issue ${issueTargets.length} certificates?`
-          }
+          title={issueTargets.length === 1 ? `Issue ${CERTIFICATE_TYPES[issueType].short.toLowerCase()} certificate?` : `Issue ${issueTargets.length} certificates?`}
           onClose={closeAll}
           footer={
             <>
               <button type="button" className="cp-btn" onClick={closeAll}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className="cp-btn cp-btn--primary"
-                onClick={confirmIssue}
-              >
+              <button type="button" className="cp-btn cp-btn--primary" onClick={confirmIssue}>
                 <Award size={16} aria-hidden="true" />
-                Issue{" "}
-                {issueTargets.length === 1 ? "certificate" : "certificates"}
+                Issue {issueTargets.length === 1 ? "certificate" : "certificates"}
               </button>
             </>
           }
@@ -477,12 +444,12 @@ export default function CertificatesPage() {
           <p className="cp-dialog-text">
             {issueTargets.length === 1 ? (
               <>
-                A certificate of completion will be issued to{" "}
-                <strong>{issueTargets[0].fullName}</strong> for{" "}
-                <strong>{issueTargets[0].program}</strong>.
+                A <strong>{CERTIFICATE_TYPES[issueType].label}</strong> will be issued to <strong>{issueTargets[0].fullName}</strong> for <strong>{issueTargets[0].program}</strong>.
               </>
             ) : (
-              "A certificate of completion will be issued to each of these students:"
+              <>
+                A <strong>{CERTIFICATE_TYPES[issueType].label}</strong> will be issued to each of these students:
+              </>
             )}{" "}
             Certificate numbers are assigned automatically.
           </p>
@@ -493,9 +460,7 @@ export default function CertificatesPage() {
                   {s.fullName} <span>{s.program}</span>
                 </li>
               ))}
-              {issueTargets.length > 6 && (
-                <li>and {issueTargets.length - 6} more</li>
-              )}
+              {issueTargets.length > 6 && <li>and {issueTargets.length - 6} more</li>}
             </ul>
           )}
         </Dialog>
@@ -503,47 +468,33 @@ export default function CertificatesPage() {
 
       {notEligible && (
         <Dialog
-          title="Not eligible for a certificate"
+          title="Not eligible for a certificate yet"
           onClose={closeAll}
           footer={
             <>
               <button type="button" className="cp-btn" onClick={closeAll}>
                 Close
               </button>
-              <Link
-                href="/dashboard/students"
-                className="cp-btn cp-btn--primary"
-              >
+              <Link href="/dashboard/students" className="cp-btn cp-btn--primary">
                 Go to Students
               </Link>
             </>
           }
         >
           <p className="cp-dialog-text">
-            <strong>{notEligible.fullName}</strong> hasn&apos;t completed their
-            program yet, and certificates are only available for completed
-            students. Mark them as completed on the Students page first.
+            <strong>{notEligible.student.fullName}</strong> can&apos;t receive a certificate yet. <strong>{notEligible.reason}.</strong>
+          </p>
+          <p className="cp-dialog-text cp-dialog-text--muted">
+            A Certificate of Completion needs the program to be completed. A Certificate of Participation needs fees paid in full and the student to no longer be learning.
           </p>
         </Dialog>
       )}
 
       {toast && (
-        <div
-          className={`cp-toast cp-toast--${toast.tone}`}
-          role="status"
-          aria-live="polite"
-        >
-          {toast.tone === "danger" ? (
-            <CircleX size={20} aria-hidden="true" />
-          ) : (
-            <CircleCheck size={20} aria-hidden="true" />
-          )}
+        <div className={`cp-toast cp-toast--${toast.tone}`} role="status" aria-live="polite">
+          {toast.tone === "danger" ? <CircleX size={20} aria-hidden="true" /> : <CircleCheck size={20} aria-hidden="true" />}
           <span>{toast.message}</span>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            aria-label="Dismiss message"
-          >
+          <button type="button" onClick={() => setToast(null)} aria-label="Dismiss message">
             <X size={16} aria-hidden="true" />
           </button>
         </div>
