@@ -50,7 +50,7 @@ router.post("/refresh-token", refreshToken);
 
 // Create user — owner only
 router.post(
-  "/users",
+  "/create-users",
   authenticateUser,
   authorizeRoles("owner"),
   validate(createUserSchema),
@@ -59,7 +59,7 @@ router.post(
 
 // Get all users — owner and admin
 router.get(
-  "/users",
+  "/get-all-users",
   authenticateUser,
   authorizeRoles("owner", "admin"),
   getAllUsers,

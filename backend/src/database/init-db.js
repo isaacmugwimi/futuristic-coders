@@ -5,7 +5,7 @@ import { createUsersTable } from "./models/users/user.model.js";
 
 export const initDb = async () => {
   try {
-    await createUsersTable
+    await createUsersTable()
     await createProgramTables();
     await createRefreshTokensTable();
     

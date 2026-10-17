@@ -1,13 +1,13 @@
-
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import healthRoutes from "./routes/health.routes/health.route.js";
-import usersRoutes from "./routes/auth/auth.routes.js";
+import authRoutes from "./routes/auth/auth.routes.js";
 import programRoutes from "./routes/programs/program.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
+import { resetDb } from "./database/config/resetUtilDb.js";
 
 const app = express();
 
@@ -31,10 +31,7 @@ app.use(
       }
 
       return callback(
-        new AppError(
-          "This origin is not allowed to access the API.",
-          403,
-        ),
+        new AppError("This origin is not allowed to access the API.", 403),
       );
     },
     credentials: true,
@@ -65,9 +62,9 @@ app.get("/", (req, res) => {
 // ============================================================================
 
 app.use("/api/health", healthRoutes);
-app.use("/api/auth", usersRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/programs", programRoutes);
-
+// resetDb();
 // ============================================================================
 // NOT FOUND HANDLER
 // ============================================================================
@@ -96,17 +93,12 @@ app.use((err, req, res, next) => {
   const isOperational = err.isOperational === true;
 
   const isClientError =
-    Number.isInteger(statusCode) &&
-    statusCode >= 400 &&
-    statusCode < 500;
+    Number.isInteger(statusCode) && statusCode >= 400 && statusCode < 500;
 
-  const safeStatusCode =
-    isOperational && isClientError ? statusCode : 500;
+  const safeStatusCode = isOperational && isClientError ? statusCode : 500;
 
   const message =
-    isOperational && isClientError
-      ? err.message
-      : "Internal server error";
+    isOperational && isClientError ? err.message : "Internal server error";
 
   return res.status(safeStatusCode).json({
     success: false,
