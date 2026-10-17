@@ -13,6 +13,8 @@ import {
   publishProgram,
   archiveProgram,
   deleteProgram,
+  getAllProgramCategories,
+  createProgramCategory,
 } from "../../controller/programs/program.controller.js";
 
 import {
@@ -72,6 +74,21 @@ router.get(
   "/get-programs-by-category/:categoryId",
   validate(programCategoryParamsSchema, "params"),
   getProgramsByCategory,
+);
+
+// ======================================
+// PROGRAM CATEGORY ROUTES
+// ======================================
+
+// Get all program categories
+router.get("/categories", getAllProgramCategories);
+
+// Create a program category — admin only
+router.post(
+  "/categories",
+  authenticateUser,
+  authorizeRoles("admin"),
+  createProgramCategory,
 );
 
 // ======================================

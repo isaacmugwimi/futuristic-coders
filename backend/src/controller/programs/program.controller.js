@@ -7,7 +7,21 @@ import * as programService from "../../services/programs/programs.service.js";
 // ============================================================
 
 export const createProgram = asyncHandler(async (req, res) => {
-  const program = await programService.createProgramService(req.body, req.user);
+  const user = {
+    ...req.user,
+    id: req.user?.id ?? req.user?.userId,
+  };
+
+  console.log("Authenticated user:", {
+    id: user.id,
+    userId: user.userId,
+    role: user.role,
+  });
+
+  const program = await programService.createProgramService(
+    req.body,
+    user
+  );
 
   return res.status(201).json({
     success: true,

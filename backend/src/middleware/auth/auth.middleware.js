@@ -7,9 +7,15 @@ import { verifyAccessToken } from "../../utils/jwt/jwt.utils.js";
 | Authenticate User
 |--------------------------------------------------------------------------
 */
-
 export const authenticateUser = (req, res, next) => {
   try {
+    console.log("Cookie header exists:", Boolean(req.headers.cookie));
+    console.log("Parsed cookie names:", Object.keys(req.cookies || {}));
+    console.log(
+      "Access token exists:",
+      Boolean(req.cookies?.accessToken)
+    );
+
     const token = req.cookies?.accessToken;
 
     if (!token) {
@@ -20,18 +26,18 @@ export const authenticateUser = (req, res, next) => {
     }
 
     const decoded = verifyAccessToken(token);
-
     req.user = decoded;
 
     return next();
   } catch (error) {
+    console.error("Authentication error:", error.message);
+
     return res.status(401).json({
       success: false,
       message: "Invalid or expired token!",
     });
   }
 };
-
 /*
 |--------------------------------------------------------------------------
 | Authorize Roles
