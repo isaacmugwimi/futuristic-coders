@@ -1,6 +1,6 @@
 
 
-import { verifyAccessToken } from "../../utils/jwt/jwt.utils";
+import { verifyAccessToken } from "../../utils/jwt/jwt.utils.js";
 
 /*
 |--------------------------------------------------------------------------

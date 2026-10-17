@@ -20,74 +20,107 @@ import {
   authorizeRoles,
 } from "../../middleware/auth/auth.middleware.js";
 
+import { validate } from "../../middleware/validate.middleware.js";
+
+import {
+  createProgramSchema,
+  updateProgramSchema,
+  programIdParamsSchema,
+  programSlugParamsSchema,
+  programCategoryParamsSchema,
+  searchProgramsQuerySchema,
+} from "../../middleware/validators/programs/programs.validation.js";
+
 const router = Router();
 
-// =====================================================
-// PUBLIC ROUTES
-// =====================================================
+// ======================================
+// PUBLIC PROGRAM ROUTES
+// ======================================
 
-// GET all programs
+// Get all programs
 router.get("/get-all-programs", getAllPrograms);
 
-// GET published programs
+// Get published programs
 router.get("/get-published-programs", getPublishedPrograms);
 
-// GET featured programs
+// Get featured programs
 router.get("/get-featured-programs", getFeaturedPrograms);
 
-// SEARCH programs
-router.get("/search-programs", searchPrograms);
+// Search programs
+router.get(
+  "/search-programs",
+  validate(searchProgramsQuerySchema, "query"),
+  searchPrograms,
+);
 
-// GET program by ID
-router.get("/get-program-by-id/:id", getProgramById);
+// Get program by ID
+router.get(
+  "/get-program-by-id/:id",
+  validate(programIdParamsSchema, "params"),
+  getProgramById,
+);
 
-// GET program by slug
-router.get("/get-program-by-slug/:slug", getProgramBySlug);
+// Get program by slug
+router.get(
+  "/get-program-by-slug/:slug",
+  validate(programSlugParamsSchema, "params"),
+  getProgramBySlug,
+);
 
-// GET programs by category
-router.get("/get-programs-by-category/:categoryId", getProgramsByCategory);
+// Get programs by category
+router.get(
+  "/get-programs-by-category/:categoryId",
+  validate(programCategoryParamsSchema, "params"),
+  getProgramsByCategory,
+);
 
-// =====================================================
-// PROTECTED ADMIN ROUTES
-// =====================================================
+// ======================================
+// PROGRAM MANAGEMENT
+// ======================================
 
-// CREATE program
+// Create program — admin only
 router.post(
   "/create-program",
   authenticateUser,
   authorizeRoles("admin"),
+  validate(createProgramSchema),
   createProgram,
 );
 
-// UPDATE program
+// Update program — admin only
 router.patch(
   "/update-program/:id",
   authenticateUser,
   authorizeRoles("admin"),
+  validate(programIdParamsSchema, "params"),
+  validate(updateProgramSchema),
   updateProgram,
 );
 
-// PUBLISH program
+// Publish program — admin only
 router.patch(
   "/publish-program/:id",
   authenticateUser,
   authorizeRoles("admin"),
+  validate(programIdParamsSchema, "params"),
   publishProgram,
 );
 
-// ARCHIVE program
+// Archive program — admin only
 router.patch(
   "/archive-program/:id",
   authenticateUser,
   authorizeRoles("admin"),
+  validate(programIdParamsSchema, "params"),
   archiveProgram,
 );
 
-// DELETE program
+// Delete program — admin only
 router.delete(
   "/delete-program/:id",
   authenticateUser,
   authorizeRoles("admin"),
+  validate(programIdParamsSchema, "params"),
   deleteProgram,
 );
 

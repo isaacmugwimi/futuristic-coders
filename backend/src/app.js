@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import healthRoutes from "./routes/health.routes/health.route.js";
-import usersRoutes from "./routes/users/user.routes.js";
+import usersRoutes from "./routes/auth/auth.routes.js";
 import programRoutes from "./routes/programs/program.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
 // ============================================================================
 
 app.use("/api/health", healthRoutes);
-app.use("/api/users", usersRoutes);
+app.use("/api/auth", usersRoutes);
 app.use("/api/programs", programRoutes);
 
 // ============================================================================
