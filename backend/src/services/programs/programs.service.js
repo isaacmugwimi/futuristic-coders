@@ -145,37 +145,38 @@ export const createProgramService = async (data, user) => {
     }
 
     // Generate a URL-friendly slug from the program title.
-const baseSlug = title
-  .trim()
-  .normalize("NFKD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-|-$/g, "") || "program";
+    const baseSlug =
+      title
+        .trim()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "program";
 
-// Prevent simultaneous requests from generating the same slug
-// through this service.
-await client.query("SELECT pg_advisory_xact_lock(42424242)");
+    // Prevent simultaneous requests from generating the same slug
+    // through this service.
+    await client.query("SELECT pg_advisory_xact_lock(42424242)");
 
-let slug = baseSlug;
-let suffix = 2;
+    let slug = baseSlug;
+    let suffix = 2;
 
-while (true) {
-  const existingSlug = await client.query(
-    `SELECT id
+    while (true) {
+      const existingSlug = await client.query(
+        `SELECT id
      FROM programs
      WHERE slug = $1
      LIMIT 1`,
-    [slug]
-  );
+        [slug],
+      );
 
-  if (existingSlug.rows.length === 0) {
-    break;
-  }
+      if (existingSlug.rows.length === 0) {
+        break;
+      }
 
-  slug = `${baseSlug}-${suffix}`;
-  suffix++;
-}
+      slug = `${baseSlug}-${suffix}`;
+      suffix++;
+    }
 
     // Explicitly map frontend fields to database column names.
     // Do not pass the entire frontend object directly to the model.
@@ -194,7 +195,7 @@ while (true) {
       instructor: data.instructor ?? null,
       start_date: data.startDate ?? data.start_date ?? null,
       schedule: data.schedule ?? null,
-      display_order: data.displayOrder ?? data.display_order ?? 0,
+      display_order: data.displayOrder ?? data.display_order ?? null,
       summary: data.summary ?? null,
       description: data.description ?? null,
       outcomes: data.outcomes ?? [],
@@ -385,7 +386,51 @@ export const updateProgramService = async (id, data, user) => {
       programData.title = data.title.trim();
     }
 
-    if (data.slug !== undefined) programData.slug = data.slug;
+    // Automatically generate or update the slug when the title changes.
+    // If the frontend explicitly supplies a slug, use that instead.
+    if (data.slug !== undefined || data.title !== undefined) {
+      const slugSource = data.slug !== undefined ? data.slug : data.title;
+
+      if (typeof slugSource !== "string" || !slugSource.trim()) {
+        throw new AppError("Program slug cannot be empty.", 400);
+      }
+
+      const baseSlug =
+        slugSource
+          .trim()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || "program";
+
+      // Use the same lock as program creation to reduce slug collisions.
+      await client.query("SELECT pg_advisory_xact_lock(42424242)");
+
+      let slug = baseSlug;
+      let suffix = 2;
+
+      while (true) {
+        const existingSlug = await client.query(
+          `SELECT id
+           FROM programs
+           WHERE slug = $1
+             AND id <> $2
+           LIMIT 1`,
+          [slug, id],
+        );
+
+        if (existingSlug.rows.length === 0) {
+          break;
+        }
+
+        slug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+
+      programData.slug = slug;
+    }
+
     if (data.level !== undefined) programData.level = data.level;
 
     if (data.ageGroup !== undefined || data.age_group !== undefined) {

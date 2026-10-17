@@ -17,6 +17,7 @@ import {
 } from "../../middleware/users/users.validation.js";
 
 import { validate } from "../../middleware/validate.middleware.js";
+// import { getAllUsersController } from "../../controller/users/user.controller.js";
 
 const router = Router();
 
