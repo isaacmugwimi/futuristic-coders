@@ -17,6 +17,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",
+  // "http://localhost:5000",
   "http://localhost:3001",
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL,
@@ -62,7 +63,7 @@ app.get("/", (req, res) => {
 // ============================================================================
 
 app.use("/api/health", healthRoutes);
-app.use("/api/auth", authRoutes);
+app.use("/api/users", authRoutes);
 app.use("/api/programs", programRoutes);
 // resetDb();
 // ============================================================================

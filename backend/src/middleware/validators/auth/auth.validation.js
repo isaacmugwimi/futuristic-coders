@@ -33,17 +33,28 @@ const userIdSchema = Joi.string()
     "any.required": "User ID is required.",
   });
 
-// ============================
-// LOGIN
-// ============================
+
+ // ============================
+ // LOGIN
+ // ============================
 
 export const loginSchema = Joi.object({
   email: emailSchema,
+
   password: Joi.string().required().messages({
     "any.required": "Password is required.",
     "string.empty": "Password is required.",
   }),
-}).required();
+
+  remember: Joi.boolean()
+    .default(false)
+    .messages({
+      "boolean.base": "Remember me must be true or false.",
+    }),
+})
+  .unknown(false)
+  .required();
+
 
 // ============================
 // CREATE USER
