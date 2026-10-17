@@ -1,8 +1,11 @@
+
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import healthRoutes from "./routes/health.routes/health.route.js";
 import usersRoutes from "./routes/users/user.routes.js";
+import programRoutes from "./routes/programs/program.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
 
@@ -39,11 +42,12 @@ app.use(
 );
 
 // ============================================================================
-// BODY PARSERS
+// BODY PARSERS & COOKIE PARSER
 // ============================================================================
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ============================================================================
 // ROOT ROUTE
@@ -62,6 +66,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/health", healthRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/programs", programRoutes);
 
 // ============================================================================
 // NOT FOUND HANDLER
@@ -85,13 +90,9 @@ app.use((err, req, res, next) => {
     return next(err);
   }
 
-  // Log the full error internally.
   console.error(err);
 
-  // Use AppError's statusCode, with status as a fallback.
   const statusCode = err.statusCode || err.status || 500;
-
-  // Only expose expected operational errors.
   const isOperational = err.isOperational === true;
 
   const isClientError =
