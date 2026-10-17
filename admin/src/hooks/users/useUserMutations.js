@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +7,8 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  activateUser,
+  deactivateUser,
 } from "@/src/services/users/user.service";
 
 // ============================================================================
@@ -43,6 +46,42 @@ export const useUpdateUser = () => {
 
       queryClient.invalidateQueries({
         queryKey: ["users", variables.id],
+      });
+    },
+  });
+};
+
+// ============================================================================
+// ACTIVATE USER
+// ============================================================================
+
+export const useActivateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: activateUser,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["users"],
+      });
+    },
+  });
+};
+
+// ============================================================================
+// DEACTIVATE USER
+// ============================================================================
+
+export const useDeactivateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deactivateUser,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["users"],
       });
     },
   });

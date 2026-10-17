@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -6,6 +7,8 @@ import {
   getAllUsers,
   getUserById,
   getUserByEmail,
+  getUserStatistics,
+  searchUsers,
 } from "@/src/services/users/user.service";
 
 // ============================================================================
@@ -42,6 +45,33 @@ export const useUserByEmail = (email) => {
     queryKey: ["users", "email", email],
     queryFn: () => getUserByEmail(email),
     enabled: !!email,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+// ============================================================================
+// GET USER STATISTICS
+// ============================================================================
+
+export const useUserStatistics = () => {
+  return useQuery({
+    queryKey: ["users", "statistics"],
+    queryFn: getUserStatistics,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+// ============================================================================
+// SEARCH USERS
+// ============================================================================
+
+export const useSearchUsers = (params = {}) => {
+  return useQuery({
+    queryKey: ["users", "search", params],
+    queryFn: () => searchUsers(params),
+    enabled: Object.values(params).some(
+      (value) => value !== "" && value != null,
+    ),
     staleTime: 1000 * 60 * 5,
   });
 };
