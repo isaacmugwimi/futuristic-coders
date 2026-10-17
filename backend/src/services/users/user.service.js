@@ -7,7 +7,7 @@ import {
   getUserByEmail,
   updateUser,
   deleteUser,
-} from "../../database/queries/users/user.queries.js";
+} from "../../database/models/users/user.model.js";
 import AppError from "../../middleware/error/AppError.js";
 
 // ============================================================================
