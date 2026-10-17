@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
+import { useLogin } from "@/src/hooks/auth/useAuthMutations";
 
 const FEATURES = [
   {
@@ -90,35 +91,33 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const loginMutation = useLogin();
+
+  const loading = loginMutation.isPending;
+  const error =
+    loginMutation.error?.response?.data?.message ||
+    loginMutation.error?.message ||
+    "";
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError("");
-    setLoading(true);
+
+    loginMutation.reset();
 
     try {
-      // TODO: point this at your real auth endpoint
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
+      await loginMutation.mutateAsync({
+        email: email.trim(),
+        password,
+        remember,
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(
-          data.message ||
-            "The email or password is incorrect. Check them and try again.",
-        );
-      }
 
       router.push("/dashboard");
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      // The mutation exposes the error to the form.
+      console.error(
+        "Login failed:",
+        err.response?.data?.message || err.message,
+      );
     }
   }
 
