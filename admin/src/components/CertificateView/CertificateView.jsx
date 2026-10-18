@@ -17,7 +17,7 @@ import {
   PUBLIC_SITE_URL,
   SIGNATORIES,
   formatLongDate,
-  honorsFor,
+
 } from "@/src/data/students";
 
 /**
@@ -84,7 +84,6 @@ export function CertificateArtwork({ student, className = "" }) {
   const type =
     certificate.type === "participation" ? "participation" : "completion";
   const copy = COPY[type];
-  const honors = type === "completion" ? honorsFor(student.finalScore) : null;
   const verifyUrl = `${PUBLIC_SITE_URL}/verify/${certificate.number}`;
   const host = PUBLIC_SITE_URL.replace(/^https?:\/\//, "");
   const [director, instructor] = SIGNATORIES;
@@ -108,9 +107,9 @@ export function CertificateArtwork({ student, className = "" }) {
       <Image
         src="/images/flogo.png"
         alt=""
-        width={400}
-        height={400}
-        style={{ width: "56cqw", height: "56cqw" }}
+        width={700}
+        height={700}
+        style={{ width: "66cqw", height: "60cqw" }}
         className="cv-cert__watermark"
       />
 
@@ -165,11 +164,7 @@ export function CertificateArtwork({ student, className = "" }) {
           {student.program}
         </p>
       </div>
-      {honors ? (
-        <p className="cv-cert__honors">With {honors}</p>
-      ) : (
-        <Ornament className="cv-orn--short" />
-      )}
+    
 
       {/* signatures, QR and badge */}
       <div className="cv-cert__sig cv-cert__sig--left">
