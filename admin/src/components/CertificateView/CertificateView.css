@@ -32,10 +32,10 @@
 }
 
 .cv-cert__watermark {
-  top: 0cqw;
+  /* top: 0cqw; */
   left: 19.7cqw;
   object-fit: contain;
-  opacity: 0.06;
+  opacity: 0.05;
   pointer-events: none;
 }
 
@@ -54,7 +54,7 @@
 
 /* header */
 .cv-cert__logo {
-  top: 3.7cqw;
+  top: 0.7cqw;
   left: 50%;
   transform: translateX(-50%);
   object-fit: contain;

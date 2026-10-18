@@ -127,9 +127,9 @@ export function CertificateArtwork({ student, className = "" }) {
       <Image
         src="/images/flogo.png"
         alt=""
-        width={80}
-        height={80}
-        style={{ width: "5.2cqw", height: "5.2cqw" }}
+        width={130}
+        height={130}
+        style={{ width: "11cqw", height: "11cqw" }}
         className="cv-cert__logo"
       />
       <p className="cv-cert__brand">

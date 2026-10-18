@@ -4,7 +4,7 @@
 
 import { useSyncExternalStore } from "react";
 
-export const PUBLIC_SITE_URL = "https://futuristic-coders.co.ke"; // TODO: your public website
+export const PUBLIC_SITE_URL = "https://futuristiccoders.co.ke"; // TODO: your public website
 
 /* ============================== options ============================== */
 
@@ -100,7 +100,7 @@ export const CERTIFICATE_TYPES = {
 
 /** Names printed under the signature lines. Edit these when the people change. */
 export const SIGNATORIES = [
-  { name: "Dr. Floyd Muchiri", title: "Program Director" },
+  { name: "Faith Lilian", title: "Program Director" },
   { name: "Isaac Mugwimi", title: "Lead Instructor" },
 ];
 
