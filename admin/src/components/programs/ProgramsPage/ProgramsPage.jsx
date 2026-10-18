@@ -27,11 +27,11 @@ import ProgramActionsMenu from "../ProgramActionsMenu/ProgramActionsMenu";
 import ProgramDetailsModal from "../ProgramDetailsModal/ProgramDetailsModal";
 import ProgramFormModal from "../ProgramFormModal/ProgramFormModal";
 import {
-  CATEGORY_DETAILS,
   CATEGORY_TONES,
   LEVELS,
   LEVEL_TONES,
   PUBLIC_SITE_URL,
+  normalizeProgram,
 } from "@/src/data/programs";
 import { formatKSh, initials } from "@/src/utils/format";
 
@@ -42,6 +42,9 @@ import {
 import {
   useCreateProgram,
   useCreateProgramCategory,
+  useDeleteProgram,
+  usePublishProgram,
+  useUpdateProgram,
 } from "@/src/hooks/programs/useProgramMutations";
 import QueryState, { isBlocked } from "../../QueryState/QueryState";
 
@@ -58,11 +61,11 @@ const SORT_OPTIONS = [
 ];
 
 const SORTERS = {
-  recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
-  title: (a, b) => a.title.localeCompare(b.title),
-  "price-desc": (a, b) => b.price - a.price,
-  "price-asc": (a, b) => a.price - b.price,
-  enrolled: (a, b) => b.enrolled - a.enrolled,
+  recent: (a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+  title: (a, b) => (a.title ?? "").localeCompare(b.title ?? ""),
+  "price-desc": (a, b) => (b.price ?? 0) - (a.price ?? 0),
+  "price-asc": (a, b) => (a.price ?? 0) - (b.price ?? 0),
+  enrolled: (a, b) => (b.enrolled ?? 0) - (a.enrolled ?? 0),
   start: (a, b) => (a.startDate || "9999").localeCompare(b.startDate || "9999"),
 };
 
@@ -85,8 +88,6 @@ function toneFor(category) {
   return FALLBACK_TONES[hash % FALLBACK_TONES.length];
 }
 
-const now = () => new Date().toISOString();
-
 // Everything the form sends that is not a plain program field.
 const CONTROL_KEYS = [
   "publish",
@@ -97,6 +98,20 @@ const CONTROL_KEYS = [
   "removeThumbnail",
   "isNewCategory",
   "categoryDescription",
+];
+
+// Fields the backend owns. Never sent when duplicating a program.
+const SERVER_KEYS = [
+  "id",
+  "code",
+  "slug",
+  "createdAt",
+  "updatedAt",
+  "publishedAt",
+  "enrolled",
+  "rating",
+  "completionRate",
+  "displayOrder",
 ];
 
 /**
@@ -187,21 +202,22 @@ function ProgramThumb({ program }) {
 
 export default function ProgramsPage() {
   const programsQuery = usePrograms();
+  const categoriesQuery = useProgramCategories();
+
   const createProgram = useCreateProgram();
   const updateProgramMutation = useUpdateProgram();
-
-  const categoriesQuery = useProgramCategories();
+  const publishMutation = usePublishProgram();
+  const deleteMutation = useDeleteProgram();
   const createCategory = useCreateProgramCategory();
 
   const programsResponse = programsQuery.data;
   const categoriesResponse = categoriesQuery.data;
 
-  const programs = useMemo(
-    () => programsResponse?.data ?? [],
-    [programsResponse],
-  );
+const programs = useMemo(
+  () => (programsResponse?.data ?? []).map(normalizeProgram),
+  [programsResponse],
+);
 
-  // Category headings. Persist this list alongside your programs.
   // Categories retrieved from the backend
   const categories = useMemo(() => {
     const response = categoriesResponse;
@@ -292,7 +308,7 @@ export default function ProgramsPage() {
       published: programs.filter((p) => p.status === "published").length,
       drafts: programs.filter((p) => p.status === "draft").length,
       featured: programs.filter((p) => p.featured).length,
-      learners: programs.reduce((sum, p) => sum + p.enrolled, 0),
+      learners: programs.reduce((sum, p) => sum + (p.enrolled ?? 0), 0),
     }),
     [programs],
   );
@@ -362,36 +378,21 @@ export default function ProgramsPage() {
     });
   }
 
-  /* ---------------- data actions ----------------
-     Create is wired to the API. The actions below still use local state
-     (setPrograms no longer exists) and are replaced one at a time. */
-  function patch(ids, fn) {
-    setPrograms((prev) => prev.map((p) => (ids.includes(p.id) ? fn(p) : p)));
+  /* ---------------- data actions (all API-backed) ---------------- */
+  async function publishPrograms(ids) {
+    await Promise.all(ids.map((id) => publishMutation.mutateAsync(id)));
   }
 
-  function publishPrograms(ids) {
-    const ts = now(); // TODO: POST /api/programs/publish
-    patch(ids, (p) => ({
-      ...p,
-      status: "published",
-      publishedAt: p.publishedAt ?? ts,
-      updatedAt: ts,
-    }));
+  async function pullPrograms(ids) {
+    await Promise.all(
+      ids.map((id) =>
+        updateProgramMutation.mutateAsync({ id, data: { status: "draft" } }),
+      ),
+    );
   }
 
-  function pullPrograms(ids) {
-    const ts = now(); // TODO: POST /api/programs/unpublish
-    patch(ids, (p) => ({
-      ...p,
-      status: "draft",
-      publishedAt: null,
-      updatedAt: ts,
-    }));
-  }
-
-  function deletePrograms(ids) {
-    // TODO: DELETE /api/programs
-    setPrograms((prev) => prev.filter((p) => !ids.includes(p.id)));
+  async function deletePrograms(ids) {
+    await Promise.all(ids.map((id) => deleteMutation.mutateAsync(id)));
     setSelected((prev) => {
       const next = new Set(prev);
       ids.forEach((id) => next.delete(id));
@@ -399,14 +400,22 @@ export default function ProgramsPage() {
     });
   }
 
-  function setFeatured(ids, value) {
-    const ts = now(); // TODO: PATCH /api/programs/featured
-    patch(ids, (p) => ({ ...p, featured: value, updatedAt: ts }));
+  async function setFeatured(ids, value) {
+    await Promise.all(
+      ids.map((id) =>
+        updateProgramMutation.mutateAsync({ id, data: { featured: value } }),
+      ),
+    );
   }
 
-  function toggleFeatured(p) {
+  async function toggleFeatured(p) {
     const next = !p.featured;
-    setFeatured([p.id], next);
+    try {
+      await setFeatured([p.id], next);
+    } catch (err) {
+      showToast(err?.message || "Couldn't update featured status.", "danger");
+      return;
+    }
     if (!next) showToast("Removed from featured courses", "info");
     else if (p.status === "published") showToast("Added to featured courses");
     else
@@ -416,10 +425,15 @@ export default function ProgramsPage() {
       );
   }
 
-  function bulkFeature() {
+  async function bulkFeature() {
     const ids = selectedPrograms.map((p) => p.id);
     const value = !selectedPrograms.every((p) => p.featured);
-    setFeatured(ids, value);
+    try {
+      await setFeatured(ids, value);
+    } catch (err) {
+      showToast(err?.message || "Couldn't update featured status.", "danger");
+      return;
+    }
     showToast(
       value
         ? `${ids.length} programs marked as featured`
@@ -428,26 +442,25 @@ export default function ProgramsPage() {
     );
   }
 
-  function duplicateProgram(p) {
-    const ts = now(); // TODO: POST /api/programs/:id/duplicate
-    const copy = {
-      ...p,
-      id: `prg_${Date.now()}`,
-      title: `${p.title} (Copy)`,
-      slug: `${p.slug}-copy`,
-      code: `${p.code}-COPY`,
-      status: "draft",
-      featured: false,
-      displayOrder: null,
-      enrolled: 0,
-      rating: null,
-      completionRate: null,
-      createdAt: ts,
-      updatedAt: ts,
-      publishedAt: null,
-    };
-    setPrograms((prev) => [copy, ...prev]);
-    showToast("Duplicated as a draft");
+  async function duplicateProgram(p) {
+    if (createProgram.isPending) return;
+
+    // Strip server-generated fields; the backend makes a new id, code and slug.
+    const rest = Object.fromEntries(
+      Object.entries(p).filter(([key]) => !SERVER_KEYS.includes(key)),
+    );
+
+    try {
+      await createProgram.mutateAsync({
+        ...rest,
+        title: `${p.title} (Copy)`,
+        status: "draft",
+        featured: false,
+      });
+      showToast("Duplicated as a draft");
+    } catch (err) {
+      showToast(err?.message || "Couldn't duplicate the program.", "danger");
+    }
   }
 
   async function copyLink(p) {
@@ -462,7 +475,6 @@ export default function ProgramsPage() {
   }
 
   async function saveProgram(data, existing) {
-    const ts = now();
     const { publish, featured } = data;
     // The form never sends the program code or slug; the backend generates both.
     const fields = Object.fromEntries(
@@ -495,6 +507,7 @@ export default function ProgramsPage() {
         return;
       }
     }
+
     if (existing) {
       if (updateProgramMutation.isPending) return;
 
@@ -554,8 +567,10 @@ export default function ProgramsPage() {
   // Errors are left to throw so the editor can show them.
   async function changeThumbnail(p, payload) {
     const thumbnail = await resolveThumbnail(payload);
-    const ts = now(); // TODO: PATCH /api/programs/:id/thumbnail
-    patch([p.id], (prog) => ({ ...prog, thumbnail, updatedAt: ts }));
+    await updateProgramMutation.mutateAsync({
+      id: p.id,
+      data: { thumbnail },
+    });
     showToast(thumbnail ? "Thumbnail updated" : "Thumbnail removed", "info");
   }
 
@@ -564,33 +579,37 @@ export default function ProgramsPage() {
     setModal({ type: "confirm", action, ids });
   }
 
-  function runConfirmed() {
+  async function runConfirmed() {
     const { action, ids } = modal;
     const many = ids.length > 1;
 
-    if (action === "delete") {
-      deletePrograms(ids);
-      showToast(
-        many ? `${ids.length} programs deleted` : "Program deleted",
-        "danger",
-      );
-    } else if (action === "publish") {
-      publishPrograms(ids);
-      showToast(
-        many
-          ? `${ids.length} programs published to the website`
-          : "Published to the public website",
-      );
-    } else if (action === "pull") {
-      pullPrograms(ids);
-      showToast(
-        many
-          ? `${ids.length} programs pulled from the website`
-          : "Pulled from the website and saved as a draft",
-        "info",
-      );
+    try {
+      if (action === "delete") {
+        await deletePrograms(ids);
+        showToast(
+          many ? `${ids.length} programs deleted` : "Program deleted",
+          "danger",
+        );
+      } else if (action === "publish") {
+        await publishPrograms(ids);
+        showToast(
+          many
+            ? `${ids.length} programs published to the website`
+            : "Published to the public website",
+        );
+      } else if (action === "pull") {
+        await pullPrograms(ids);
+        showToast(
+          many
+            ? `${ids.length} programs pulled from the website`
+            : "Pulled from the website and saved as a draft",
+          "info",
+        );
+      }
+      closeModal();
+    } catch (err) {
+      showToast(err?.message || "Something went wrong. Try again.", "danger");
     }
-    closeModal();
   }
 
   function onRowClick(event, p) {
@@ -885,7 +904,10 @@ export default function ProgramsPage() {
                 const isSelected = selected.has(p.id);
                 const published = p.status === "published";
                 const fill = p.capacity
-                  ? Math.min(100, Math.round((p.enrolled / p.capacity) * 100))
+                  ? Math.min(
+                      100,
+                      Math.round(((p.enrolled ?? 0) / p.capacity) * 100),
+                    )
                   : 0;
 
                 return (
@@ -947,7 +969,7 @@ export default function ProgramsPage() {
                     <td>
                       <div className="fc-prog__enroll">
                         <span>
-                          {p.enrolled}/{p.capacity}
+                          {p.enrolled ?? 0}/{p.capacity}
                         </span>
                         <span className="fc-prog__meter" aria-hidden="true">
                           <span

@@ -17,9 +17,9 @@ export const API_PATHS = {
   // ==========================================================================
 
   AUTH: {
-    LOGIN: "/api/users/login",
-    LOGOUT: "/api/users/logout",
-    REFRESH_TOKEN: "/api/users/refresh-token",
+    LOGIN: "/api/auth/login",
+    LOGOUT: "/api/auth/logout",
+    REFRESH_TOKEN: "/api/auth/refresh-token",
   },
 
   // ==========================================================================

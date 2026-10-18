@@ -60,21 +60,15 @@ export const useUpdateProgram = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, programData }) => updateProgram(id, programData),
-
+    mutationFn: ({ id, data }) => updateProgram(id, data),
     onSuccess: async (_, { id }) => {
       await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["programs"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["programs", id],
-        }),
+        queryClient.invalidateQueries({ queryKey: ["programs"] }),
+        queryClient.invalidateQueries({ queryKey: ["programs", id] }),
       ]);
     },
   });
 };
-
 // ============================================================================
 // PUBLISH PROGRAM
 // ============================================================================

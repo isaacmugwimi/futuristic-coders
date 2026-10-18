@@ -84,6 +84,35 @@
   background: #fdecef;
 }
 
+
+
+/* Loading state */
+.fc-btn.is-loading {
+  opacity: 1;            /* keep the colour; the spinner already shows it's busy */
+  cursor: progress;
+}
+
+.fc-btn__spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: fc-btn-spin 0.7s linear infinite;
+}
+
+.fc-btn--md .fc-btn__spinner {
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes fc-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fc-btn {
     transition: none;

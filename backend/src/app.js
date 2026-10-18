@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 
 import healthRoutes from "./routes/health.routes/health.route.js";
 import authRoutes from "./routes/auth/auth.routes.js";
+import userRoutes from "./routes/users/user.routes.js";
 import programRoutes from "./routes/programs/program.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
@@ -63,7 +64,8 @@ app.get("/", (req, res) => {
 // ============================================================================
 
 app.use("/api/health", healthRoutes);
-app.use("/api/users", authRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/programs", programRoutes);
 // resetDb();
 // ============================================================================

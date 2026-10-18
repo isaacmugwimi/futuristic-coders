@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ImagePlus, Link2, Plus, Save, Trash2, Upload } from "lucide-react";
 import Modal from "../Modal/Modal";
 import Button from "../Button/Button";
-import { AGE_GROUPS,  LEVELS, MODES } from "@/src/data/programs";
+import { AGE_GROUPS, LEVELS, MODES } from "@/src/data/programs";
 
 const NEW_CATEGORY = "__new__";
 const THUMB_TYPES = ["image/png", "image/jpeg", "image/webp"];
@@ -40,24 +40,28 @@ const EMPTY = {
   featured: false,
 };
 
+// String(null) would give "null", so empty values become "".
+const str = (value, fallback = "") =>
+  value === null || value === undefined ? fallback : String(value);
+
 function toValues(p) {
   return {
-    title: p.title,
-    category: p.category,
+    title: p.title ?? "",
+    category: p.category ?? "",
     newCategory: "",
     newCategoryDescription: "",
-    level: p.level,
-    ageGroup: p.ageGroup,
-    mode: p.mode,
-    durationWeeks: String(p.durationWeeks),
-    sessionsPerWeek: String(p.sessionsPerWeek),
-    sessionMinutes: String(p.sessionMinutes ?? 90),
-    capacity: String(p.capacity),
-    price: String(p.price),
-    instructor: p.instructor,
-    startDate: p.startDate ?? "",
+    level: p.level ?? LEVELS[0],
+    ageGroup: p.ageGroup || AGE_GROUPS[1],
+    mode: p.mode ?? MODES[0],
+    durationWeeks: str(p.durationWeeks),
+    sessionsPerWeek: str(p.sessionsPerWeek),
+    sessionMinutes: str(p.sessionMinutes, "90"),
+    capacity: str(p.capacity),
+    price: str(p.price),
+    instructor: p.instructor ?? "",
+    startDate: p.startDate ? String(p.startDate).slice(0, 10) : "",
     schedule: p.schedule ?? "",
-    displayOrder: p.displayOrder != null ? String(p.displayOrder) : "",
+    displayOrder: str(p.displayOrder),
     summary: p.summary ?? "",
     description: p.description ?? "",
     outcomes: (p.outcomes ?? []).join("\n"),
@@ -117,9 +121,10 @@ function Field({ id, label, required, error, hint, className = "", children }) {
  * Props
  *  - program:    existing program when editing (omit when creating)
  *  - categories: string[] of categories already used on the site
- *                (falls back to CATEGORIES from data/programs)
- *  - onSave(data): receives the cleaned payload. It never includes the program
- *    code or slug, because the backend generates both. For the thumbnail it passes:
+ *  - onSave(data): may return a promise. While it runs, the submit button
+ *    shows a spinner and further submits are ignored. It receives the cleaned
+ *    payload, which never includes the program code or slug (the backend
+ *    generates both). For the thumbnail it passes:
  *        thumbnailFile    File | null   -> a NEW image to upload
  *        thumbnail        string | null -> the existing image URL to keep
  *        removeThumbnail  boolean       -> true if the admin removed the image
@@ -134,15 +139,15 @@ export default function ProgramFormModal({
 }) {
   const editing = Boolean(program);
 
-const categoryOptions = (() => {
-  const base = [...(categories ?? [])];
+  const categoryOptions = (() => {
+    const base = [...(categories ?? [])];
 
-  if (program?.category && !base.includes(program.category)) {
-    base.push(program.category);
-  }
+    if (program?.category && !base.includes(program.category)) {
+      base.push(program.category);
+    }
 
-  return base;
-})();
+    return base;
+  })();
 
   const [values, setValues] = useState(() =>
     program
@@ -150,6 +155,10 @@ const categoryOptions = (() => {
       : { ...EMPTY, category: categoryOptions[0] ?? NEW_CATEGORY },
   );
   const [errors, setErrors] = useState({});
+
+  // Saving state. The ref blocks a second submit instantly; state drives the spinner.
+  const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
 
   // Thumbnail state
   const [thumbFile, setThumbFile] = useState(null);
@@ -278,7 +287,7 @@ const categoryOptions = (() => {
       e.sessionsPerWeek = "Whole number, 1 or more.";
     if (!whole(v.sessionMinutes, 15)) e.sessionMinutes = "Minutes, 15 or more.";
     if (!whole(v.capacity, 1)) e.capacity = "Whole number, 1 or more.";
-    else if (editing && Number(v.capacity) < program.enrolled)
+    else if (editing && Number(v.capacity) < (program.enrolled ?? 0))
       e.capacity = `${program.enrolled} learners are already enrolled.`;
     if (v.displayOrder !== "" && !whole(v.displayOrder, 1))
       e.displayOrder = "Whole number, 1 or more.";
@@ -288,8 +297,10 @@ const categoryOptions = (() => {
     return e;
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (submittingRef.current) return; // blocks double clicks and Enter spam
+
     const found = validate(values);
     setErrors(found);
 
@@ -346,7 +357,14 @@ const categoryOptions = (() => {
       featured: values.featured,
     };
 
-    onSave(programData);
+    submittingRef.current = true;
+    setSaving(true);
+    try {
+      await onSave(programData);
+    } finally {
+      submittingRef.current = false;
+      setSaving(false);
+    }
   }
 
   const select = (name, options) => (
@@ -385,11 +403,16 @@ const categoryOptions = (() => {
       closeOnBackdrop={false}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
-          <Button type="submit" form={formId} icon={editing ? Save : Plus}>
-            {editing ? "Save changes" : "Create program"}
+          <Button
+            type="submit"
+            form={formId}
+            icon={editing ? Save : Plus}
+            loading={saving}
+          >
+            {saving ? "Saving…" : editing ? "Save changes" : "Create program"}
           </Button>
         </>
       }

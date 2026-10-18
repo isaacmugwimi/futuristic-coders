@@ -3,6 +3,7 @@ import * as authService from "../../services/auth/auth.service.js";
 
 import {
   ACCESS_COOKIE_OPTIONS,
+  CLEAR_COOKIE_OPTIONS,
   REFRESH_COOKIE_OPTIONS,
 } from "../../utils/cookies/authCookies.js";
 
@@ -36,8 +37,8 @@ export const logout = asyncHandler(async (req, res) => {
 
   const result = await authService.logoutService(refreshToken);
 
-  res.clearCookie("accessToken", ACCESS_COOKIE_OPTIONS);
-  res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
+res.clearCookie("accessToken", CLEAR_COOKIE_OPTIONS);
+res.clearCookie("refreshToken", CLEAR_COOKIE_OPTIONS);
 
   return res.status(200).json({
     success: true,

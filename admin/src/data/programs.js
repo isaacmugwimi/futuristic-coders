@@ -694,3 +694,48 @@ export const INITIAL_PROGRAMS = [
     publishedAt: null,
   },
 ];
+
+
+/** Converts a program row from the API (snake_case) into the shape the UI uses. */
+export function normalizeProgram(row) {
+  const {
+    category_id,
+    category_code,
+    age_group,
+    duration_weeks,
+    sessions_per_week,
+    session_minutes,
+    start_date,
+    display_order,
+    completion_rate,
+    published_at,
+    created_at,
+    updated_at,
+    created_by,
+    ...rest
+  } = row;
+
+  return {
+    ...rest,
+    categoryId: category_id ?? row.categoryId ?? null,
+    categoryCode: category_code ?? row.categoryCode ?? null,
+    ageGroup: age_group ?? row.ageGroup ?? "",
+    durationWeeks: duration_weeks ?? row.durationWeeks ?? null,
+    sessionsPerWeek: sessions_per_week ?? row.sessionsPerWeek ?? null,
+    sessionMinutes: session_minutes ?? row.sessionMinutes ?? null,
+    startDate: start_date ?? row.startDate ?? null,
+    displayOrder: display_order ?? row.displayOrder ?? null,
+    completionRate: completion_rate ?? row.completionRate ?? null,
+    publishedAt: published_at ?? row.publishedAt ?? null,
+    createdAt: created_at ?? row.createdAt ?? null,
+    updatedAt: updated_at ?? row.updatedAt ?? null,
+    createdBy: created_by ?? row.createdBy ?? null,
+    price: Number(row.price ?? 0), // Postgres sends NUMERIC as the string "5000.00"
+    enrolled: row.enrolled ?? 0,
+    rating: row.rating ?? null,
+    outcomes: row.outcomes ?? [],
+    prerequisites: row.prerequisites ?? [],
+    requirements: row.requirements ?? [],
+    tools: row.tools ?? [],
+  };
+}
