@@ -1,4 +1,8 @@
-/* CertificateView.css: the two certificate designs (sizes use container units, 1cqw = 1% of the width, so they scale), the dialog and the print rules. Prefix: cv- */
+/* CertificateView.css: the certificate design (sizes use container units, 1cqw = 1% of the width, so they scale), the dialog and the print rules. Prefix: cv-
+
+   Coordinate system: the certificate is a 3:2 box matching the 1536x1024 background.
+   1cqw = 15.36px of the reference image. Vertical positions are also in cqw
+   (relative to WIDTH), so the full height is 66.67cqw. */
 
 /* ----- certificate ----- */
 .cv-cert {
@@ -10,10 +14,7 @@
   aspect-ratio: 3 / 2;
   overflow: hidden;
   color: var(--navy);
-  background:
-    radial-gradient(55cqw 38cqw at 105% -5%, rgba(139, 92, 246, 0.07), transparent 70%),
-    radial-gradient(55cqw 38cqw at -5% 105%, rgba(20, 192, 255, 0.07), transparent 70%),
-    #fffefb;
+  background: #fffefb;
   border-radius: 0.6cqw;
   box-shadow: 0 10px 40px rgba(8, 10, 40, 0.18);
   font-family: "Montserrat", system-ui, sans-serif;
@@ -21,151 +22,60 @@
 
 .cv-cert > * {
   position: absolute;
+  margin: 0;
+}
+
+.cv-cert__bg {
+  object-fit: fill; /* the image is exactly 3:2, so nothing is distorted */
+  pointer-events: none;
+  user-select: none;
 }
 
 .cv-cert__watermark {
-  top: 7.5cqw;
-  left: 20.8cqw;
+  top: 6.8cqw;
+  left: 21.7cqw;
   object-fit: contain;
   opacity: 0.05;
   pointer-events: none;
 }
 
-/* gold frame with notched corners */
-.cv-cert__frame {
-  inset: 1cqw 1.4cqw;
-  border: 0.3cqw solid var(--gold);
-  background:
-    radial-gradient(circle at 0 0, transparent 1.85cqw, var(--gold) 1.87cqw, var(--gold) 2cqw, transparent 2.02cqw) left top / 4cqw 4cqw no-repeat,
-    radial-gradient(circle at 100% 0, transparent 1.85cqw, var(--gold) 1.87cqw, var(--gold) 2cqw, transparent 2.02cqw) right top / 4cqw 4cqw no-repeat,
-    radial-gradient(circle at 0 100%, transparent 1.85cqw, var(--gold) 1.87cqw, var(--gold) 2cqw, transparent 2.02cqw) left bottom / 4cqw 4cqw no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 1.85cqw, var(--gold) 1.87cqw, var(--gold) 2cqw, transparent 2.02cqw) right bottom / 4cqw 4cqw no-repeat;
-  -webkit-mask:
-    radial-gradient(circle at 0 0, transparent 1.5cqw, #000 1.56cqw) left top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 0, transparent 1.5cqw, #000 1.56cqw) right top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 0 100%, transparent 1.5cqw, #000 1.56cqw) left bottom / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 1.5cqw, #000 1.56cqw) right bottom / 50.1% 50.1% no-repeat;
-  mask:
-    radial-gradient(circle at 0 0, transparent 1.5cqw, #000 1.56cqw) left top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 0, transparent 1.5cqw, #000 1.56cqw) right top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 0 100%, transparent 1.5cqw, #000 1.56cqw) left bottom / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 1.5cqw, #000 1.56cqw) right bottom / 50.1% 50.1% no-repeat;
-}
-
-.cv-cert__frame::before {
-  content: "";
-  position: absolute;
-  inset: 0.55cqw;
-  border: 0.07cqw solid var(--gold);
-  opacity: 0.8;
-  -webkit-mask:
-    radial-gradient(circle at 0 0, transparent 2.6cqw, #000 2.66cqw) left top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 0, transparent 2.6cqw, #000 2.66cqw) right top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 0 100%, transparent 2.6cqw, #000 2.66cqw) left bottom / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 2.6cqw, #000 2.66cqw) right bottom / 50.1% 50.1% no-repeat;
-  mask:
-    radial-gradient(circle at 0 0, transparent 2.6cqw, #000 2.66cqw) left top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 0, transparent 2.6cqw, #000 2.66cqw) right top / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 0 100%, transparent 2.6cqw, #000 2.66cqw) left bottom / 50.1% 50.1% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 2.6cqw, #000 2.66cqw) right bottom / 50.1% 50.1% no-repeat;
-}
-
-/* corner ribbons */
-.cv-cert__ribbon {
-  width: 62cqw;
-  height: 8.6cqw;
-  background: linear-gradient(
-    180deg,
-    #f3d98a 0 1.5%,
-    #b88a2c 1.5% 4%,
-    #0a1260 4% 10%,
-    #121b86 10% 34%,
-    #3a24c4 34% 46%,
-    #6a35e6 46% 54%,
-    #2a1fa6 54% 66%,
-    #0e1678 66% 84%,
-    #0a1260 84% 86%,
-    #f6e3a3 86% 89%,
-    #c99a35 89% 94%,
-    #f6e3a3 94% 97%,
-    #b88a2c 97%
-  );
-  box-shadow: 0 0.3cqw 1cqw rgba(0, 0, 0, 0.25);
-  transform: translate(-50%, -50%) rotate(-41.4deg);
-}
-
-.cv-cert__ribbon--tl {
-  top: 8.5cqw;
-  left: 9.6cqw;
-}
-
-.cv-cert__swoosh {
-  right: 0;
-  bottom: 0;
-  width: 21.5cqw;
-  height: 17.3cqw;
-  filter: drop-shadow(0 -0.2cqw 0.6cqw rgba(0, 0, 0, 0.25));
-}
-
-.cv-cert__badge {
-  top: 4.5cqw;
-  left: 4.4cqw;
-  width: 9.8cqw;
-  height: 12.8cqw;
-  filter: drop-shadow(0 0.3cqw 0.5cqw rgba(0, 0, 0, 0.3));
-}
-
-.cv-cert__rosette {
-  width: 100%;
-  height: 100%;
-}
-
-.cv-cert__badge-logo {
-  position: absolute;
-  top: 2.4cqw;
-  left: 2.4cqw;
-  object-fit: contain;
-}
-
 .cv-cert__side {
-  top: 4.1cqw;
-  left: 82.4cqw;
-  margin: 0;
-  padding-left: 1.5cqw;
+  top: 5.2cqw;
+  left: 83cqw;
+  padding-left: 1.6cqw;
   border-left: 0.13cqw solid var(--gold);
   font-size: 1cqw;
   font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.23em;
+  line-height: 1.45;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: #1b2358;
 }
 
-/* centre column */
-.cv-cert__content {
-  top: 3cqw;
-  right: 0;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.cv-cert__content p,
-.cv-cert__content h2 {
-  margin: 0;
-}
-
+/* header */
 .cv-cert__logo {
+  top: 3.7cqw;
+  left: 50%;
+  transform: translateX(-50%);
   object-fit: contain;
 }
 
+.cv-cert__brand,
+.cv-cert__tagline,
+.cv-cert__title,
+.cv-cert__presented,
+.cv-cert__lead,
+.cv-cert__honors {
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
 .cv-cert__brand {
-  margin-top: 0.3cqw !important;
+  top: 9.2cqw;
   font-size: 2.7cqw;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: -0.01em;
   color: #0d1a5e;
 }
@@ -175,7 +85,7 @@
 }
 
 .cv-cert__tagline {
-  margin-top: 0.5cqw !important;
+  top: 12.6cqw;
   font-size: 1.1cqw;
   font-weight: 500;
   line-height: 1.2;
@@ -184,37 +94,31 @@
   color: #2c3566;
 }
 
-.cv-cert__kicker {
-  margin-top: 0.7cqw !important;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 2.5cqw;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: #8a5a14;
-}
-
 .cv-cert__title {
-  margin-top: -2cqw !important;
+  top: 16.4cqw;
+  padding-inline: 4cqw;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 9.1cqw;
+  font-size: 5.6cqw;
   font-weight: 800;
-  font-variant-caps: small-caps;
-  line-height: 1.05;
-  letter-spacing: 0.005em;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--navy);
 }
 
 .cv-cert--participation .cv-cert__title {
-  font-size: 8.5cqw;
+  font-size: 5.1cqw;
 }
 
+/* ornaments: centred, width set by the modifier */
 .cv-orn {
+  left: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5cqw;
+  transform: translateX(-50%);
 }
 
 .cv-orn span {
@@ -228,108 +132,145 @@
 }
 
 .cv-orn i {
-  width: 0.9cqw;
-  height: 0.9cqw;
+  width: 0.8cqw;
+  height: 0.8cqw;
   background: var(--gold);
   transform: rotate(45deg);
 }
 
-.cv-orn--wide {
-  width: 31cqw;
-  margin-top: -0.6cqw;
+.cv-orn--tag {
+  top: 15.1cqw;
+  width: 11.7cqw;
+}
+
+/* plain gold rules under the title and the name */
+.cv-orn--title,
+.cv-orn--name {
+  gap: 0;
+}
+
+.cv-orn--title span,
+.cv-orn--name span {
+  background: var(--gold);
+}
+
+.cv-orn--title i,
+.cv-orn--name i {
+  display: none;
+}
+
+.cv-orn--title {
+  top: 23.3cqw;
+  width: 32.5cqw;
 }
 
 .cv-orn--name {
-  width: 32.5cqw;
-  margin-top: -1.4cqw;
+  top: 35.2cqw;
+  width: 36cqw;
 }
 
 .cv-orn--short {
-  width: 14cqw;
-  margin-top: 0.4cqw;
+  top: 43.5cqw;
+  width: 22cqw;
 }
 
 .cv-cert__presented {
-  margin-top: 1cqw !important;
-  font-size: 1.28cqw;
+  top: 24.8cqw;
+  font-size: 1.25cqw;
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: 0.27em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   color: #1b2358;
 }
 
+/* name: fixed box, text sits on the baseline just above the gold line */
+.cv-cert__namebox {
+  top: 26.6cqw;
+  left: 10cqw;
+  right: 10cqw;
+  height: 8.9cqw;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
 .cv-cert__name {
-  margin-top: 0.4cqw !important;
+  margin: 0;
   font-family: "Great Vibes", "Brush Script MT", cursive;
   font-weight: 400;
-  line-height: 1;
+  line-height: 1.15;
   white-space: nowrap;
   color: var(--navy);
 }
 
 .cv-cert__lead {
-  margin-top: 0.7cqw !important;
+  top: 37.2cqw;
   font-family: "Playfair Display", Georgia, serif;
-  font-size: 1.75cqw;
+  font-size: 1.6cqw;
   font-style: italic;
   font-weight: 500;
   line-height: 1.25;
   color: #1b2358;
 }
 
+.cv-cert__programbox {
+  top: 39.3cqw;
+  left: 14cqw;
+  right: 14cqw;
+  height: 4cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .cv-cert__program {
-  margin-top: 0.1cqw !important;
-  font-size: 3.1cqw;
+  margin: 0;
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.01em;
+  text-align: center;
   color: #5b21d6;
 }
 
+/* the honours pill takes the place of the short ornament */
 .cv-cert__honors {
-  margin-top: 0.7cqw !important;
-  padding: 0.3cqw 1.6cqw;
-  font-size: 1.15cqw;
+  top: 43.4cqw;
+  left: 50%;
+  right: auto;
+  width: max-content;
+  padding: 0.35cqw 1.6cqw;
+  font-size: 1.1cqw;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #7a5412;
   background: #fbefc6;
   border-radius: 999px;
+  transform: translateX(-50%);
 }
 
-.cv-cert__quote {
-  margin-top: 0.5cqw !important;
-  font-family: "Playfair Display", Georgia, serif;
-  font-size: 1.55cqw;
-  font-style: italic;
-  font-weight: 500;
-  line-height: 1.3;
-  color: #1b2358;
-}
-
-/* signatures + emblem */
+/* signatures */
 .cv-cert__sig {
-  bottom: 9.7cqw;
+  bottom: 10.3cqw;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 19.5cqw;
+  width: 21cqw;
   text-align: center;
 }
 
 .cv-cert__sig--left {
-  left: 11.2cqw;
+  left: 8.8cqw;
 }
 
 .cv-cert__sig--right {
-  left: 61.3cqw;
+  left: 69.7cqw;
 }
 
 .cv-cert__script {
   font-family: "Mrs Saint Delafield", "Brush Script MT", cursive;
-  font-size: 4cqw;
+  font-size: 4.2cqw;
   line-height: 1;
   white-space: nowrap;
   color: var(--navy);
@@ -339,12 +280,12 @@
   display: block;
   width: 100%;
   height: 0.14cqw;
-  margin-top: 0.3cqw;
+  margin-top: 0.4cqw;
   background: var(--gold);
 }
 
 .cv-cert__sig small {
-  margin-top: 0.7cqw;
+  margin-top: 0.8cqw;
   font-size: 1.05cqw;
   font-weight: 500;
   letter-spacing: 0.27em;
@@ -352,86 +293,64 @@
   color: #2c3566;
 }
 
-.cv-cert__emblem {
-  top: 46cqw;
-  left: 43.4cqw;
-  width: 12.8cqw;
-  height: 12.8cqw;
-}
-
-.cv-cert__laurel {
-  width: 100%;
-  height: 100%;
-}
-
-.cv-cert__emblem-logo {
-  position: absolute;
-  top: 4.7cqw;
-  left: 4.1cqw;
-  object-fit: contain;
-}
-
-/* QR code */
+/* QR code (left of the badge) */
 .cv-cert__qr {
-  top: 47.3cqw;
-  left: 83.1cqw;
+  top: 46cqw;
+  left: 38.4cqw;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 9cqw;
-  height: 10.2cqw;
-  padding: 0.9cqw 0.9cqw 0.55cqw;
-  background: #fff;
-  border: 0.12cqw solid var(--gold);
-  border-radius: 0.7cqw;
+  width: 9.6cqw;
 }
 
 .cv-cert__qr svg {
-  flex: 1;
-  min-height: 0;
+  display: block;
+  width: 7.6cqw;
+  height: 7.6cqw;
 }
 
 .cv-cert__qr small {
-  margin-top: 0.4cqw;
-  font-size: 0.78cqw;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  margin-top: 0.9cqw;
+  font-size: 0.8cqw;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--navy);
 }
 
+/* separate transparent badge, bottom-centre (height follows its 1207x1303 ratio) */
+.cv-cert__badge {
+  top: 44.8cqw;
+  left: 50.3cqw;
+  width: 11.2cqw !important;
+  height: auto !important;
+  pointer-events: none;
+  filter: drop-shadow(0 0.25cqw 0.4cqw rgba(0, 0, 0, 0.25));
+}
+
 /* footer row */
 .cv-cert__foot {
-  bottom: 4.2cqw;
-  left: 6.5cqw;
+  bottom: 4.9cqw;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
-  gap: 2.3cqw;
-  font-size: 1.13cqw;
+  justify-content: center;
+  gap: 3cqw;
+  font-size: 1.2cqw;
   white-space: nowrap;
   color: #2c3566;
 }
 
-.cv-cert__foot span {
-  display: flex;
-  align-items: center;
-  gap: 0.7cqw;
-}
-
-.cv-cert__foot svg {
-  width: 1.85cqw;
-  height: 1.85cqw;
-  color: var(--navy);
-}
-
 .cv-cert__foot strong {
+  margin-left: 0.4cqw;
   color: var(--navy);
 }
 
 .cv-cert__foot b {
   width: 0.13cqw;
-  height: 2.3cqw;
+  height: 1.7cqw;
   background: var(--gold);
 }
 
@@ -616,11 +535,19 @@
   }
 }
 
-/* ----- print: only the certificate, A4 landscape ----- */
+/* ----- print: only the certificate, A4 landscape -----
+   The artwork is 3:2 (1.5) and A4 landscape is 297x210 (1.414). Rather than stretch
+   or crop, the certificate is printed full-width (297mm) at its true 3:2 height
+   (198mm) and centred vertically, leaving 6mm of blank paper above and below. */
 @media print {
   @page {
     size: A4 landscape;
     margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
   }
 
   body * {
@@ -636,12 +563,19 @@
 
   .cv-print {
     position: fixed !important;
-    top: 0;
+    top: 6mm;
     left: 0;
     width: 297mm !important;
-    height: 210mm !important;
+    height: 198mm !important;
     max-width: none !important;
+    aspect-ratio: auto;
     border-radius: 0 !important;
     box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv-cert__badge {
+    filter: none;
   }
 }
