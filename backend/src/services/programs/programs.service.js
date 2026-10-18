@@ -41,11 +41,10 @@ export const createProgramService = async (data, user) => {
     throw new AppError("Program title is required.", 400);
   }
 
-  if (!user?.id) {
+  if (!user?.userId) {
     throw new AppError("Authentication is required to create a program.", 401);
   }
 
-  // Only authorized users can create a published program.
   const role =
     typeof user.role === "string"
       ? user.role.toLowerCase()
@@ -59,7 +58,6 @@ export const createProgramService = async (data, user) => {
     throw new AppError("You do not have permission to publish programs.", 403);
   }
 
-  // Validate status instead of accepting arbitrary values.
   const requestedStatus =
     data.status || (publish === true ? "published" : "draft");
 
@@ -89,7 +87,6 @@ export const createProgramService = async (data, user) => {
 
     let category_id = categoryId || data.category_id || null;
 
-    // Resolve or create the category inside this transaction.
     if (isNewCategory) {
       const name = newCategoryName || categoryName || category;
 
@@ -144,7 +141,6 @@ export const createProgramService = async (data, user) => {
       throw new AppError("A program category is required.", 400);
     }
 
-    // Generate a URL-friendly slug from the program title.
     const baseSlug =
       title
         .trim()
@@ -154,8 +150,6 @@ export const createProgramService = async (data, user) => {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "") || "program";
 
-    // Prevent simultaneous requests from generating the same slug
-    // through this service.
     await client.query("SELECT pg_advisory_xact_lock(42424242)");
 
     let slug = baseSlug;
@@ -164,9 +158,9 @@ export const createProgramService = async (data, user) => {
     while (true) {
       const existingSlug = await client.query(
         `SELECT id
-     FROM programs
-     WHERE slug = $1
-     LIMIT 1`,
+         FROM programs
+         WHERE slug = $1
+         LIMIT 1`,
         [slug],
       );
 
@@ -178,8 +172,6 @@ export const createProgramService = async (data, user) => {
       suffix++;
     }
 
-    // Explicitly map frontend fields to database column names.
-    // Do not pass the entire frontend object directly to the model.
     const programData = {
       title: title.trim(),
       slug,
@@ -205,11 +197,9 @@ export const createProgramService = async (data, user) => {
       thumbnail: data.thumbnail ?? null,
       status: requestedStatus,
       featured: canPublish ? data.featured === true : false,
-      created_by: user.id,
+      created_by: user.userId,
     };
 
-    // The model generates the program code.
-    // Never trust a code supplied by the frontend.
     delete programData.code;
 
     const program = await createProgram(client, programData);
@@ -322,7 +312,7 @@ export const updateProgramService = async (id, data, user) => {
     throw new AppError("Program not found.", 404);
   }
 
-  if (!user?.id) {
+  if (!user?.userId) {
     throw new AppError("Authentication is required.", 401);
   }
 
@@ -335,8 +325,6 @@ export const updateProgramService = async (id, data, user) => {
     ["admin", "owner", "super_admin"].includes(role) ||
     user.permissions?.includes("programs:publish");
 
-  // Do not allow unauthorized users to change publication status
-  // or featured status through an update request.
   if (
     data.status !== undefined &&
     !["draft", "published", "archived"].includes(data.status)
@@ -377,7 +365,6 @@ export const updateProgramService = async (id, data, user) => {
 
     const programData = {};
 
-    // Map only the fields the frontend actually supplied.
     if (data.title !== undefined) {
       if (typeof data.title !== "string" || !data.title.trim()) {
         throw new AppError("Program title cannot be empty.", 400);
@@ -386,8 +373,6 @@ export const updateProgramService = async (id, data, user) => {
       programData.title = data.title.trim();
     }
 
-    // Automatically generate or update the slug when the title changes.
-    // If the frontend explicitly supplies a slug, use that instead.
     if (data.slug !== undefined || data.title !== undefined) {
       const slugSource = data.slug !== undefined ? data.slug : data.title;
 
@@ -404,7 +389,6 @@ export const updateProgramService = async (id, data, user) => {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "") || "program";
 
-      // Use the same lock as program creation to reduce slug collisions.
       await client.query("SELECT pg_advisory_xact_lock(42424242)");
 
       let slug = baseSlug;
@@ -463,6 +447,7 @@ export const updateProgramService = async (id, data, user) => {
     }
 
     if (data.price !== undefined) programData.price = data.price;
+
     if (data.instructor !== undefined) {
       programData.instructor = data.instructor;
     }
@@ -515,7 +500,6 @@ export const updateProgramService = async (id, data, user) => {
       programData.featured = data.featured;
     }
 
-    // Resolve the category only if category information was supplied.
     const hasCategoryInput =
       data.categoryId !== undefined ||
       data.category_id !== undefined ||
@@ -589,7 +573,6 @@ export const updateProgramService = async (id, data, user) => {
       programData.category_id = category_id;
     }
 
-    // The generated code and creator cannot be changed via this request.
     delete programData.code;
     delete programData.created_by;
     delete programData.category_code;
@@ -624,7 +607,7 @@ export const updateProgramService = async (id, data, user) => {
 // ============================================================
 
 export const publishProgramService = async (id, user) => {
-  if (!user?.id) {
+  if (!user?.userId) {
     throw new AppError("Authentication is required.", 401);
   }
 
@@ -672,7 +655,7 @@ export const publishProgramService = async (id, user) => {
 // ============================================================
 
 export const archiveProgramService = async (id, user) => {
-  if (!user?.id) {
+  if (!user?.userId) {
     throw new AppError("Authentication is required.", 401);
   }
 
@@ -705,7 +688,7 @@ export const archiveProgramService = async (id, user) => {
 // ============================================================
 
 export const deleteProgramService = async (id, user) => {
-  if (!user?.id) {
+  if (!user?.userId) {
     throw new AppError("Authentication is required.", 401);
   }
 
@@ -828,7 +811,6 @@ export const updateProgramCategoryService = async (id, data) => {
     categoryData.description = data.description;
   }
 
-  // Category codes are generated once and remain unchanged.
   delete categoryData.category_code;
   delete categoryData.categoryCode;
 

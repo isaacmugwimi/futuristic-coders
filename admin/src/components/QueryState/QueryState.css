@@ -1,0 +1,331 @@
+/* ==========================================================================
+   QueryState: shared loading skeletons and error card.
+   ========================================================================== */
+
+.fc-qs {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fc-qs__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Shared card ---------- */
+.fc-qs__card {
+  overflow: hidden;
+  background: var(--dash-surface, #fff);
+  border: 1px solid var(--dash-line, #e4e8f3);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(11, 15, 36, 0.04);
+}
+
+/* ---------- Skeleton building blocks ---------- */
+.fc-qs__skel {
+  display: block;
+  background: linear-gradient(90deg, #eceff7 25%, #f6f7fc 50%, #eceff7 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: fc-qs-shimmer 1.4s ease-in-out infinite;
+}
+
+.fc-qs__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-qs__stack--grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.fc-qs__skel--icon {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+}
+
+.fc-qs__skel--value {
+  width: 48px;
+  height: 22px;
+}
+
+.fc-qs__skel--label {
+  width: 90px;
+  height: 12px;
+}
+
+.fc-qs__skel--search {
+  flex: 1 1 240px;
+  max-width: 360px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+.fc-qs__skel--select {
+  width: 120px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.fc-qs__skel--thumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.fc-qs__skel--title {
+  width: min(260px, 70%);
+  height: 14px;
+}
+
+.fc-qs__skel--sub {
+  width: min(160px, 60%);
+  height: 11px;
+}
+
+.fc-qs__skel--short {
+  width: min(110px, 40%);
+}
+
+.fc-qs__skel--pill {
+  flex: none;
+  width: 80px;
+  height: 24px;
+  border-radius: 999px;
+}
+
+.fc-qs__skel--cell {
+  flex: none;
+  width: 70px;
+  height: 14px;
+}
+
+.fc-qs__skel--banner {
+  width: 100%;
+  height: 120px;
+  margin-bottom: 4px;
+  border-radius: 12px;
+}
+
+/* ---------- Table variant ---------- */
+.fc-qs__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.fc-qs__stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--dash-surface, #fff);
+  border: 1px solid var(--dash-line, #e4e8f3);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(11, 15, 36, 0.04);
+}
+
+.fc-qs__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--dash-line, #e4e8f3);
+}
+
+.fc-qs__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef0f7;
+}
+
+.fc-qs__row:last-child {
+  border-bottom: 0;
+}
+
+/* ---------- Cards variant ---------- */
+.fc-qs__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.fc-qs__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--dash-surface, #fff);
+  border: 1px solid var(--dash-line, #e4e8f3);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(11, 15, 36, 0.04);
+}
+
+/* ---------- Page variant (spinner) ---------- */
+.fc-qs__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 40vh;
+}
+
+.fc-qs__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e1e6f4;
+  border-top-color: var(--dash-blue, #2f5bff);
+  border-radius: 50%;
+  animation: fc-qs-spin 0.8s linear infinite;
+}
+
+.fc-qs__center-text {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--dash-muted, #667192);
+}
+
+/* ---------- Error state ---------- */
+.fc-qs__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 64px 16px;
+  text-align: center;
+}
+
+.fc-qs__card--compact .fc-qs__state {
+  padding: 32px 16px;
+}
+
+.fc-qs__state-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 4px;
+  color: #dc2626;
+  background: #fdecec;
+  border-radius: 16px;
+}
+
+.fc-qs__card--compact .fc-qs__state-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+}
+
+.fc-qs__state h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.fc-qs__state p {
+  max-width: 46ch;
+  margin: 0;
+  line-height: 1.55;
+  color: var(--dash-muted, #667192);
+}
+
+.fc-qs__state .fc-qs__detail {
+  margin-top: 2px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  color: #b42318;
+  background: #fff5f5;
+  border: 1px solid #fbd5d5;
+  border-radius: 8px;
+}
+
+.fc-qs__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin-top: 12px;
+  padding: 0 18px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--dash-grad, linear-gradient(90deg, #14c0ff, #8b5cf6));
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.fc-qs__retry:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.fc-qs__retry:focus-visible {
+  outline: 2px solid var(--dash-blue, #2f5bff);
+  outline-offset: 2px;
+}
+
+.fc-qs__retry:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.fc-qs__retry .is-spinning {
+  animation: fc-qs-spin 0.8s linear infinite;
+}
+
+/* ---------- Motion ---------- */
+@keyframes fc-qs-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes fc-qs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-qs__skel {
+    animation: none;
+  }
+
+  /* Keep a slow spinner so people still see that something is happening */
+  .fc-qs__spinner,
+  .fc-qs__retry .is-spinning {
+    animation-duration: 2.4s;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .fc-qs__skel--pill,
+  .fc-qs__skel--cell {
+    display: none;
+  }
+
+  .fc-qs__skel--search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}

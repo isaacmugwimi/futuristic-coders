@@ -35,6 +35,8 @@ import {
   PUBLIC_SITE_URL,
 } from "@/src/data/programs";
 import { formatKSh, initials } from "@/src/utils/format";
+import { usePrograms } from "@/src/hooks/programs/useProgramQueries";
+import QueryState, { isBlocked } from "../../QueryState/QueryState";
 
 const PAGE_SIZES = [5, 8, 15, 25];
 
@@ -178,9 +180,15 @@ function ProgramThumb({ program }) {
 }
 
 export default function ProgramsPage() {
-  const [programs, setPrograms] = useState(INITIAL_PROGRAMS);
-  // Categories shown on the website. `description` is the tagline under the
-  // category heading. Persist this list alongside your programs.
+  const programsQuery = usePrograms();
+  const programsResponse = programsQuery.data;
+
+  const programs = useMemo(
+    () => programsResponse?.data ?? [],
+    [programsResponse],
+  );
+
+  // category heading. Persist this list alongside your progrjams.
   const [categories, setCategories] = useState(() =>
     CATEGORY_DETAILS.map(({ name, description }) => ({ name, description })),
   );
@@ -559,6 +567,12 @@ export default function ProgramsPage() {
     : null;
   const allSelectedFeatured =
     selectedPrograms.length > 0 && selectedPrograms.every((p) => p.featured);
+
+  if (isBlocked(programsQuery)) {
+    return (
+      <QueryState query={programsQuery} resource="programs" variant="table" />
+    );
+  }
 
   return (
     <div className="fc-prog">
