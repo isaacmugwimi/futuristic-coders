@@ -81,11 +81,11 @@ router.get(
 // ======================================
 
 // Get all program categories
-router.get("/categories", getAllProgramCategories);
+router.get("/get-all-categories", getAllProgramCategories);
 
 // Create a program category — admin only
 router.post(
-  "/categories",
+  "/create-categories",
   authenticateUser,
   authorizeRoles("admin"),
   createProgramCategory,

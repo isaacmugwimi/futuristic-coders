@@ -29,13 +29,20 @@ import ProgramFormModal from "../ProgramFormModal/ProgramFormModal";
 import {
   CATEGORY_DETAILS,
   CATEGORY_TONES,
-  INITIAL_PROGRAMS,
   LEVELS,
   LEVEL_TONES,
   PUBLIC_SITE_URL,
 } from "@/src/data/programs";
 import { formatKSh, initials } from "@/src/utils/format";
-import { usePrograms } from "@/src/hooks/programs/useProgramQueries";
+
+import {
+  useProgramCategories,
+  usePrograms,
+} from "@/src/hooks/programs/useProgramQueries";
+import {
+  useCreateProgram,
+  useCreateProgramCategory,
+} from "@/src/hooks/programs/useProgramMutations";
 import QueryState, { isBlocked } from "../../QueryState/QueryState";
 
 const PAGE_SIZES = [5, 8, 15, 25];
@@ -84,7 +91,6 @@ const now = () => new Date().toISOString();
 const CONTROL_KEYS = [
   "publish",
   "featured",
-  "code",
   "thumbnailFile",
   "thumbnail",
   "thumbnailSource",
@@ -181,17 +187,33 @@ function ProgramThumb({ program }) {
 
 export default function ProgramsPage() {
   const programsQuery = usePrograms();
+  const createProgram = useCreateProgram();
+  const updateProgramMutation = useUpdateProgram();
+
+  const categoriesQuery = useProgramCategories();
+  const createCategory = useCreateProgramCategory();
+
   const programsResponse = programsQuery.data;
+  const categoriesResponse = categoriesQuery.data;
 
   const programs = useMemo(
     () => programsResponse?.data ?? [],
     [programsResponse],
   );
 
-  // category heading. Persist this list alongside your progrjams.
-  const [categories, setCategories] = useState(() =>
-    CATEGORY_DETAILS.map(({ name, description }) => ({ name, description })),
-  );
+  // Category headings. Persist this list alongside your programs.
+  // Categories retrieved from the backend
+  const categories = useMemo(() => {
+    const response = categoriesResponse;
+
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.categories)) {
+      return response.data.categories;
+    }
+    if (Array.isArray(response)) return response;
+
+    return [];
+  }, [categoriesResponse]);
 
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -217,10 +239,14 @@ export default function ProgramsPage() {
   /* ---------------- derived data ---------------- */
   // Saved categories first, then any category a program uses that isn't saved yet.
   const categoryNames = useMemo(() => {
-    const names = categories.map((c) => c.name);
-    programs.forEach((p) => {
-      if (p.category && !names.includes(p.category)) names.push(p.category);
+    const names = categories.map((category) => category.name).filter(Boolean);
+
+    programs.forEach((program) => {
+      if (program.category && !names.includes(program.category)) {
+        names.push(program.category);
+      }
     });
+
     return names;
   }, [categories, programs]);
 
@@ -246,7 +272,7 @@ export default function ProgramsPage() {
           p.instructor,
           p.ageGroup,
           p.mode,
-        ].some((v) => v.toLowerCase().includes(q));
+        ].some((v) => (v ?? "").toLowerCase().includes(q));
       })
       .sort(comparator);
   }, [
@@ -336,7 +362,9 @@ export default function ProgramsPage() {
     });
   }
 
-  /* ---------------- data actions (swap these for API calls) ---------------- */
+  /* ---------------- data actions ----------------
+     Create is wired to the API. The actions below still use local state
+     (setPrograms no longer exists) and are replaced one at a time. */
   function patch(ids, fn) {
     setPrograms((prev) => prev.map((p) => (ids.includes(p.id) ? fn(p) : p)));
   }
@@ -401,7 +429,7 @@ export default function ProgramsPage() {
   }
 
   function duplicateProgram(p) {
-    const ts = now();
+    const ts = now(); // TODO: POST /api/programs/:id/duplicate
     const copy = {
       ...p,
       id: `prg_${Date.now()}`,
@@ -433,17 +461,10 @@ export default function ProgramsPage() {
     }
   }
 
-  function addCategory(name, description) {
-    setCategories((prev) =>
-      prev.some((c) => c.name.toLowerCase() === name.toLowerCase())
-        ? prev
-        : [...prev, { name, description: description ?? "" }],
-    ); // TODO: POST /api/categories
-  }
-
   async function saveProgram(data, existing) {
     const ts = now();
-    const { publish, featured, code } = data;
+    const { publish, featured } = data;
+    // The form never sends the program code or slug; the backend generates both.
     const fields = Object.fromEntries(
       Object.entries(data).filter(([key]) => !CONTROL_KEYS.includes(key)),
     );
@@ -457,43 +478,67 @@ export default function ProgramsPage() {
       return; // keep the form open
     }
 
-    if (data.isNewCategory)
-      addCategory(data.category, data.categoryDescription);
+    // Create the category through the backend first.
+    if (data.isNewCategory) {
+      if (createCategory.isPending) return;
 
+      try {
+        await createCategory.mutateAsync({
+          name: data.category,
+          description: data.categoryDescription ?? "",
+        });
+      } catch (err) {
+        showToast(
+          err?.message || "Couldn't create the category. Try again.",
+          "danger",
+        );
+        return;
+      }
+    }
     if (existing) {
-      setPrograms((prev) =>
-        prev.map((p) =>
-          p.id === existing.id
-            ? {
-                ...p,
-                ...fields,
-                thumbnail,
-                code: code || p.code,
-                status,
-                featured,
-                publishedAt: publish ? (p.publishedAt ?? ts) : null,
-                updatedAt: ts,
-              }
-            : p,
-        ),
-      );
-      showToast("Changes saved");
+      if (updateProgramMutation.isPending) return;
+
+      try {
+        await updateProgramMutation.mutateAsync({
+          id: existing.id,
+          data: {
+            ...fields,
+            thumbnail:
+              data.thumbnailSource === "upload"
+                ? (existing.thumbnail ?? null)
+                : thumbnail,
+            status,
+            featured,
+          },
+        });
+
+        showToast("Changes saved successfully");
+      } catch (err) {
+        showToast(
+          err?.message || "Couldn't update the program. Try again.",
+          "danger",
+        );
+        return; // Keep the form open if the update fails
+      }
     } else {
-      const created = {
-        ...fields,
-        thumbnail,
-        id: `prg_${Date.now()}`,
-        code: code || `FC-NEW-${String(programs.length + 1).padStart(3, "0")}`,
-        status,
-        featured,
-        enrolled: 0,
-        rating: null,
-        completionRate: null,
-        createdAt: ts,
-        updatedAt: ts,
-        publishedAt: publish ? ts : null,
-      };
-      setPrograms((prev) => [created, ...prev]);
+      if (createProgram.isPending) return; // ignore double clicks
+
+      try {
+        await createProgram.mutateAsync({
+          ...fields,
+          // Thumbnail file uploads come in a later step. For now only send a URL.
+          thumbnail: data.thumbnailSource === "upload" ? null : thumbnail,
+          status,
+          featured,
+        });
+      } catch (err) {
+        showToast(
+          err?.message || "Couldn't create the program. Try again.",
+          "danger",
+        );
+        return; // keep the form open so nothing typed is lost
+      }
+
       setSort("recent");
       setPage(1);
       showToast(
@@ -568,6 +613,7 @@ export default function ProgramsPage() {
   const allSelectedFeatured =
     selectedPrograms.length > 0 && selectedPrograms.every((p) => p.featured);
 
+  // Every hook above runs before this early return.
   if (isBlocked(programsQuery)) {
     return (
       <QueryState query={programsQuery} resource="programs" variant="table" />

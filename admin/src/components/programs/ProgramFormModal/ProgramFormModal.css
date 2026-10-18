@@ -17,6 +17,7 @@
   border-bottom: 1px solid var(--dash-line, #e4e8f3);
 }
 
+/* ---------- Layout ---------- */
 .fc-pform__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -35,6 +36,7 @@
   grid-column: 1 / -1;
 }
 
+/* ---------- Fields ---------- */
 .fc-pform__field {
   display: flex;
   flex-direction: column;
@@ -61,7 +63,9 @@
   background: #fff;
   border: 1px solid var(--dash-line, #dde1ee);
   border-radius: 11px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .fc-pform__input::placeholder {
@@ -132,7 +136,7 @@ select.fc-pform__input {
   border-radius: 12px;
 }
 
-/* ---------- Thumbnail upload ---------- */
+/* ---------- Thumbnail ---------- */
 /* Visually hidden but still focusable/clickable via the buttons. */
 .fc-pform__file {
   position: absolute;
@@ -146,6 +150,44 @@ select.fc-pform__input {
   border: 0;
 }
 
+/* Upload / link switch */
+.fc-pform__seg {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  background: #eef1fa;
+  border-radius: 11px;
+}
+
+.fc-pform__seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #667192;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+}
+
+.fc-pform__seg button[aria-pressed="true"] {
+  color: var(--dash-ink, #0b0f24);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(11, 15, 36, 0.12);
+}
+
+.fc-pform__seg button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 91, 255, 0.35);
+}
+
+/* Drop zone */
 .fc-pform__drop {
   display: flex;
   flex-direction: column;
@@ -162,7 +204,10 @@ select.fc-pform__input {
   background: #f6f7fc;
   border: 2px dashed #c5cce4;
   border-radius: 14px;
-  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    color 0.15s;
 }
 
 .fc-pform__drop strong {
@@ -187,6 +232,13 @@ select.fc-pform__input {
   box-shadow: 0 0 0 4px rgba(47, 91, 255, 0.14);
 }
 
+.fc-pform__drop.is-compact {
+  aspect-ratio: auto;
+  min-height: 0;
+  padding: 14px;
+}
+
+/* Preview */
 .fc-pform__thumb {
   position: relative;
   overflow: hidden;
@@ -282,6 +334,7 @@ select.fc-pform__input {
   color: #667192;
 }
 
+/* ---------- Responsive ---------- */
 @media (max-width: 760px) {
   .fc-pform__grid--4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -307,47 +360,4 @@ select.fc-pform__input {
   .fc-pform__drop {
     transition: none;
   }
-}
-
-/* ---------- Thumbnail source switch (upload / link) ---------- */
-.fc-pform__seg {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 3px;
-  gap: 2px;
-  background: #eef1fa;
-  border-radius: 11px;
-}
-
-.fc-pform__seg button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #667192;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  border-radius: 9px;
-}
-
-.fc-pform__seg button[aria-pressed="true"] {
-  color: var(--dash-ink, #0b0f24);
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(11, 15, 36, 0.12);
-}
-
-.fc-pform__seg button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 91, 255, 0.35);
-}
-
-.fc-pform__drop.is-compact {
-  aspect-ratio: auto;
-  min-height: 0;
-  padding: 14px;
 }

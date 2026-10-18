@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import {
   publishProgram,
   archiveProgram,
   deleteProgram,
+  createProgramCategory,
 } from "@/src/services/programs/program.service";
 
 // ============================================================================
@@ -21,8 +21,31 @@ export const useCreateProgram = () => {
   return useMutation({
     mutationFn: createProgram,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["programs"],
+      });
+    },
+  });
+};
+
+// ============================================================================
+// CREATE PROGRAM CATEGORY
+// ============================================================================
+
+export const useCreateProgramCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProgramCategory,
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["programCategories"],
+      });
+
+      // Refresh program lists in case categories affect their display.
+      await queryClient.invalidateQueries({
         queryKey: ["programs"],
       });
     },
@@ -39,14 +62,15 @@ export const useUpdateProgram = () => {
   return useMutation({
     mutationFn: ({ id, programData }) => updateProgram(id, programData),
 
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["programs"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["programs", variables.id],
-      });
+    onSuccess: async (_, { id }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["programs"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["programs", id],
+        }),
+      ]);
     },
   });
 };
@@ -61,10 +85,15 @@ export const usePublishProgram = () => {
   return useMutation({
     mutationFn: publishProgram,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["programs"],
-      });
+    onSuccess: async (_, id) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["programs"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["programs", id],
+        }),
+      ]);
     },
   });
 };
@@ -79,10 +108,15 @@ export const useArchiveProgram = () => {
   return useMutation({
     mutationFn: archiveProgram,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["programs"],
-      });
+    onSuccess: async (_, id) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["programs"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["programs", id],
+        }),
+      ]);
     },
   });
 };
@@ -97,10 +131,15 @@ export const useDeleteProgram = () => {
   return useMutation({
     mutationFn: deleteProgram,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["programs"],
-      });
+    onSuccess: async (_, id) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["programs"],
+        }),
+        queryClient.removeQueries({
+          queryKey: ["programs", id],
+        }),
+      ]);
     },
   });
 };

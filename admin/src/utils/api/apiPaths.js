@@ -1,10 +1,11 @@
+// ============================================================================
+// BASE URL
+// ============================================================================
 
- // ============================================================================
- // BASE URL
- // ============================================================================
-
+// Next.js exposes env vars through process.env (import.meta.env is Vite only).
+// If this app is Vite, use import.meta.env.VITE_API_URL instead.
 export const BASE_URL =
-  import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ============================================================================
 // API PATHS
@@ -34,25 +35,20 @@ export const API_PATHS = {
     GET_STATISTICS: "/api/users/users/statistics",
     SEARCH: "/api/users/users/search",
 
-    GET_BY_ID: (userId) =>
-      `/api/users/users/${userId}`,
+    GET_BY_ID: (userId) => `/api/users/users/${userId}`,
 
     GET_BY_EMAIL: (email) =>
       `/api/users/users/email/${encodeURIComponent(email)}`,
 
     // Update
-    UPDATE: (userId) =>
-      `/api/users/users/${userId}`,
+    UPDATE: (userId) => `/api/users/users/${userId}`,
 
-    ACTIVATE: (userId) =>
-      `/api/users/users/${userId}/activate`,
+    ACTIVATE: (userId) => `/api/users/users/${userId}/activate`,
 
-    DEACTIVATE: (userId) =>
-      `/api/users/users/${userId}/deactivate`,
+    DEACTIVATE: (userId) => `/api/users/users/${userId}/deactivate`,
 
     // Delete
-    DELETE: (userId) =>
-      `/api/users/users/${userId}`,
+    DELETE: (userId) => `/api/users/users/${userId}`,
   },
 
   // ==========================================================================
@@ -65,8 +61,7 @@ export const API_PATHS = {
     GET_PUBLISHED: "/api/programs/get-published-programs",
     GET_FEATURED: "/api/programs/get-featured-programs",
 
-    GET_BY_ID: (id) =>
-      `/api/programs/get-program-by-id/${id}`,
+    GET_BY_ID: (id) => `/api/programs/get-program-by-id/${id}`,
 
     GET_BY_SLUG: (slug) =>
       `/api/programs/get-program-by-slug/${encodeURIComponent(slug)}`,
@@ -80,18 +75,22 @@ export const API_PATHS = {
     CREATE: "/api/programs/create-program",
 
     // Update
-    UPDATE: (id) =>
-      `/api/programs/update-program/${id}`,
+    UPDATE: (id) => `/api/programs/update-program/${id}`,
 
     // Status management
-    PUBLISH: (id) =>
-      `/api/programs/publish-program/${id}`,
+    PUBLISH: (id) => `/api/programs/publish-program/${id}`,
 
-    ARCHIVE: (id) =>
-      `/api/programs/archive-program/${id}`,
+    ARCHIVE: (id) => `/api/programs/archive-program/${id}`,
 
     // Delete
-    DELETE: (id) =>
-      `/api/programs/delete-program/${id}`,
+    DELETE: (id) => `/api/programs/delete-program/${id}`,
+
+    // ------------------------------------------------------------------------
+    // Program categories
+    // ------------------------------------------------------------------------
+    CATEGORIES: {
+      GET_ALL: "/api/programs/get-all-categories",
+      CREATE: "/api/programs/create-categories",
+    },
   },
 };
