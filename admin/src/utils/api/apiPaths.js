@@ -5,7 +5,7 @@
 // Next.js exposes env vars through process.env (import.meta.env is Vite only).
 // If this app is Vite, use import.meta.env.VITE_API_URL instead.
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // ============================================================================
 // API PATHS
