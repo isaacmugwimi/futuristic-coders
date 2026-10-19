@@ -133,7 +133,7 @@ function Summary({ stats, active, onPick }) {
       <div className="tm-score">
         <strong>{stats.average.toFixed(1)}</strong>
         <div>
-          <Stars value={stats.average} size={22} />
+          <Stars value={stats.average} size={20} />
           <span>
             {stats.count} {stats.count === 1 ? "review" : "reviews"}, {fivePct}%
             five-star
@@ -261,8 +261,8 @@ function RatingPicker({ value, onChange, error }) {
               onMouseEnter={() => setHover(n)}
             >
               <svg
-                width="30"
-                height="30"
+                width="26"
+                height="26"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
               >

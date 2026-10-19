@@ -10,7 +10,7 @@ import * as testimonialService from "../../services/testimonials/testimonial.ser
 export const createTestimonial = asyncHandler(async (req, res) => {
   // The service returns null when the honeypot caught a bot.
   // We send the same success response either way so bots can't tell.
-  await createTestimonialService.createTestimonialService(req.body);
+  await testimonialService.createTestimonialService(req.body);
 
   return res.status(201).json({
     success: true,
