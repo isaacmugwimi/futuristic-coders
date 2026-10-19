@@ -36,17 +36,28 @@ export const CURRENT_STATUSES = ["active", "on_hold", "dropped"];
 
 export const todayISO = () => new Date().toISOString().slice(0, 10);
 
-export const formatKSh = (amount) => `KSh ${Number(amount || 0).toLocaleString("en-US")}`;
+export const formatKSh = (amount) =>
+  `KSh ${Number(amount || 0).toLocaleString("en-US")}`;
 
 export const formatDate = (iso) =>
   iso
-    ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
+    ? new Date(iso).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      })
     : "—";
 
 /** 16 October 2026 (used on certificates) */
 export const formatLongDate = (iso) =>
   iso
-    ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+    ? new Date(iso).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      })
     : "—";
 
 export const initials = (name) =>
@@ -59,7 +70,8 @@ export const initials = (name) =>
     .toUpperCase();
 
 /** 0-5, a stable colour per person for avatars */
-export const avatarTone = (name) => [...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 6;
+export const avatarTone = (name) =>
+  [...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 6;
 
 /** 0712 345 678 / +254712345678 / 254112345678 -> "+254712345678", else null */
 export function normalizeKenyanPhone(input) {
@@ -70,13 +82,16 @@ export function normalizeKenyanPhone(input) {
 
 export function formatPhone(value) {
   const n = normalizeKenyanPhone(value);
-  return n ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)} ${n.slice(10)}` : value || "—";
+  return n
+    ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)} ${n.slice(10)}`
+    : value || "—";
 }
 
 /** { balance, status: "paid" | "partial" | "pending" } */
 export function paymentInfo(student) {
   const balance = Math.max(0, student.fee - student.amountPaid);
-  const status = balance === 0 ? "paid" : student.amountPaid > 0 ? "partial" : "pending";
+  const status =
+    balance === 0 ? "paid" : student.amountPaid > 0 ? "partial" : "pending";
   return { balance, status };
 }
 
@@ -88,14 +103,23 @@ export function honorsFor(score) {
   return null;
 }
 
-export const programWeeks = (title) => PROGRAM_OPTIONS.find((p) => p.title === title)?.weeks ?? null;
+export const programWeeks = (title) =>
+  PROGRAM_OPTIONS.find((p) => p.title === title)?.weeks ?? null;
 
 /* ============================== certificates ============================== */
 
 /** Two kinds of certificate. Completion: finished the program. Participation: did not finish but paid in full. */
 export const CERTIFICATE_TYPES = {
-  completion: { label: "Certificate of Completion", short: "Completion", prefix: "FC-CERT" },
-  participation: { label: "Certificate of Participation", short: "Participation", prefix: "FC-PART" },
+  completion: {
+    label: "Certificate of Completion",
+    short: "Completion",
+    prefix: "FC-CERT",
+  },
+  participation: {
+    label: "Certificate of Participation",
+    short: "Participation",
+    prefix: "FC-PART",
+  },
 };
 
 /** Names printed under the signature lines. Edit these when the people change. */
@@ -127,16 +151,29 @@ export const isFullyPaid = (student) => student.amountPaid >= student.fee;
  *   anything else                               -> null, with the reason
  */
 export function certificateEligibility(student, today = todayISO()) {
-  if (student.status === "completed") return { type: "completion", reason: "Completed the program" };
+  if (student.status === "completed")
+    return { type: "completion", reason: "Completed the program" };
 
   const owes = Math.max(0, student.fee - student.amountPaid);
-  if (owes > 0) return { type: null, reason: `Fees not fully paid (owes ${formatKSh(owes)})` };
+  if (owes > 0)
+    return {
+      type: null,
+      reason: `Fees not fully paid (owes ${formatKSh(owes)})`,
+    };
   if (student.attendance < PARTICIPATION_MIN_ATTENDANCE)
-    return { type: null, reason: `Attendance is below ${PARTICIPATION_MIN_ATTENDANCE}%` };
+    return {
+      type: null,
+      reason: `Attendance is below ${PARTICIPATION_MIN_ATTENDANCE}%`,
+    };
 
   const end = programEndDate(student);
   if (student.status === "active" && (!end || end >= today))
-    return { type: null, reason: end ? `Still learning. Program ends ${formatDate(end)}` : "Still learning" };
+    return {
+      type: null,
+      reason: end
+        ? `Still learning. Program ends ${formatDate(end)}`
+        : "Still learning",
+    };
 
   const reason =
     student.status === "dropped"
@@ -149,12 +186,16 @@ export function certificateEligibility(student, today = todayISO()) {
 
 /** Looks a certificate number up. A completion certificate is valid only while the student is completed; a participation certificate only while they are not. */
 export function findCertificate(students, number) {
-  const wanted = String(number ?? "").trim().toUpperCase();
+  const wanted = String(number ?? "")
+    .trim()
+    .toUpperCase();
   if (!wanted) return null;
   return (
     students.find((s) => {
       if (s.certificate?.number !== wanted) return false;
-      return s.certificate.type === "participation" ? s.status !== "completed" : s.status === "completed";
+      return s.certificate.type === "participation"
+        ? s.status !== "completed"
+        : s.status === "completed";
     }) ?? null
   );
 }
@@ -191,25 +232,318 @@ const make = (o) => {
 };
 
 export const INITIAL_STUDENTS = [
-  make({ fullName: "Amina Wanjiru", email: "amina.w@example.com", phone: "+254712345001", ageGroup: "Teens (13–17)", guardianName: "Grace Wanjiru", guardianPhone: "+254722111001", county: "Nairobi", program: "Web Development Foundations", enrolledOn: "2026-09-01", status: "active", progress: 72, attendance: 94, fee: 9500, amountPaid: 9500, notes: "Great with layout and CSS." }),
-  make({ fullName: "Brian Otieno", email: "brian.o@example.com", phone: "+254712345002", ageGroup: "Teens (13–17)", guardianName: "Rose Otieno", guardianPhone: "+254722111002", county: "Kisumu", program: "Python Basics", enrolledOn: "2026-09-05", status: "active", progress: 55, attendance: 88, fee: 9500, amountPaid: 5000 }),
-  make({ fullName: "Cynthia Mwende", email: "cynthia.m@example.com", phone: "+254712345003", ageGroup: "Adults (18+)", county: "Machakos", program: "React for Builders", enrolledOn: "2026-08-24", status: "active", progress: 40, attendance: 91, fee: 15000, amountPaid: 15000 }),
-  make({ fullName: "David Kiprop", email: "david.k@example.com", phone: "+254712345004", ageGroup: "Teens (13–17)", guardianName: "Alice Kiprop", guardianPhone: "+254722111004", county: "Eldoret", program: "JavaScript Essentials", enrolledOn: "2026-08-17", status: "on_hold", progress: 35, attendance: 70, fee: 11000, amountPaid: 5500, notes: "Paused for exams. Resumes in November." }),
-  make({ fullName: "Esther Njeri", phone: "+254712345005", ageGroup: "Kids (7–12)", guardianName: "Joseph Njeri", guardianPhone: "+254722111005", county: "Kirinyaga", program: "Scratch Juniors", enrolledOn: "2026-09-12", status: "active", progress: 83, attendance: 97, fee: 6000, amountPaid: 6000 }),
-  make({ fullName: "Felix Mutua", email: "felix.m@example.com", phone: "+254712345006", ageGroup: "Adults (18+)", county: "Nairobi", program: "Full-Stack Bootcamp", enrolledOn: "2026-07-20", status: "active", progress: 22, attendance: 85, fee: 45000, amountPaid: 15000 }),
-  make({ fullName: "Gladys Achieng", phone: "+254712345007", ageGroup: "Kids (7–12)", guardianName: "Peter Achieng", guardianPhone: "+254722111007", county: "Kiambu", program: "Game Design with Scratch", enrolledOn: "2026-09-19", status: "active", progress: 60, attendance: 92, fee: 7500, amountPaid: 7500 }),
-  make({ fullName: "Hassan Abdi", email: "hassan.a@example.com", phone: "+254712345008", ageGroup: "Adults (18+)", county: "Mombasa", program: "SQL & PostgreSQL Fundamentals", enrolledOn: "2026-08-03", status: "dropped", progress: 18, attendance: 40, fee: 8000, amountPaid: 8000, notes: "Relocated for work. Fees were paid in full." }),
-  make({ fullName: "Irene Chebet", email: "irene.c@example.com", phone: "+254712345009", ageGroup: "Adults (18+)", county: "Nakuru", program: "Python for Data & Automation", enrolledOn: "2026-08-31", status: "active", progress: 48, attendance: 89, fee: 14000, amountPaid: 7000 }),
-  make({ fullName: "Joel Kamau", email: "joel.k@example.com", phone: "+254712345010", ageGroup: "Teens (13–17)", guardianName: "Susan Kamau", guardianPhone: "+254722111010", county: "Nyeri", program: "Web Development Foundations", enrolledOn: "2026-08-10", status: "active", progress: 94, attendance: 96, fee: 9500, amountPaid: 9500, notes: "Almost done. Ready to complete." }),
-  make({ fullName: "Kevin Ouma", email: "kevin.o@example.com", phone: "+254712345011", ageGroup: "Adults (18+)", county: "Nairobi", program: "JavaScript Essentials", enrolledOn: "2026-10-05", status: "active", progress: 12, attendance: 100, fee: 11000, amountPaid: 0 }),
+  make({
+    fullName: "Amina Wanjiru",
+    email: "amina.w@example.com",
+    phone: "+254712345001",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Grace Wanjiru",
+    guardianPhone: "+254722111001",
+    county: "Nairobi",
+    program: "Web Development Foundations",
+    enrolledOn: "2026-09-01",
+    status: "active",
+    progress: 72,
+    attendance: 94,
+    fee: 9500,
+    amountPaid: 9500,
+    notes: "Great with layout and CSS.",
+  }),
+  make({
+    fullName: "Brian Otieno",
+    email: "brian.o@example.com",
+    phone: "+254712345002",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Rose Otieno",
+    guardianPhone: "+254722111002",
+    county: "Kisumu",
+    program: "Python Basics",
+    enrolledOn: "2026-09-05",
+    status: "active",
+    progress: 55,
+    attendance: 88,
+    fee: 9500,
+    amountPaid: 5000,
+  }),
+  make({
+    fullName: "Cynthia Mwende",
+    email: "cynthia.m@example.com",
+    phone: "+254712345003",
+    ageGroup: "Adults (18+)",
+    county: "Machakos",
+    program: "React for Builders",
+    enrolledOn: "2026-08-24",
+    status: "active",
+    progress: 40,
+    attendance: 91,
+    fee: 15000,
+    amountPaid: 15000,
+  }),
+  make({
+    fullName: "David Kiprop",
+    email: "david.k@example.com",
+    phone: "+254712345004",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Alice Kiprop",
+    guardianPhone: "+254722111004",
+    county: "Eldoret",
+    program: "JavaScript Essentials",
+    enrolledOn: "2026-08-17",
+    status: "on_hold",
+    progress: 35,
+    attendance: 70,
+    fee: 11000,
+    amountPaid: 5500,
+    notes: "Paused for exams. Resumes in November.",
+  }),
+  make({
+    fullName: "Esther Njeri",
+    phone: "+254712345005",
+    ageGroup: "Kids (7–12)",
+    guardianName: "Joseph Njeri",
+    guardianPhone: "+254722111005",
+    county: "Kirinyaga",
+    program: "Scratch Juniors",
+    enrolledOn: "2026-09-12",
+    status: "active",
+    progress: 83,
+    attendance: 97,
+    fee: 6000,
+    amountPaid: 6000,
+  }),
+  make({
+    fullName: "Felix Mutua",
+    email: "felix.m@example.com",
+    phone: "+254712345006",
+    ageGroup: "Adults (18+)",
+    county: "Nairobi",
+    program: "Full-Stack Bootcamp",
+    enrolledOn: "2026-07-20",
+    status: "active",
+    progress: 22,
+    attendance: 85,
+    fee: 45000,
+    amountPaid: 15000,
+  }),
+  make({
+    fullName: "Gladys Achieng",
+    phone: "+254712345007",
+    ageGroup: "Kids (7–12)",
+    guardianName: "Peter Achieng",
+    guardianPhone: "+254722111007",
+    county: "Kiambu",
+    program: "Game Design with Scratch",
+    enrolledOn: "2026-09-19",
+    status: "active",
+    progress: 60,
+    attendance: 92,
+    fee: 7500,
+    amountPaid: 7500,
+  }),
+  make({
+    fullName: "Hassan Abdi",
+    email: "hassan.a@example.com",
+    phone: "+254712345008",
+    ageGroup: "Adults (18+)",
+    county: "Mombasa",
+    program: "SQL & PostgreSQL Fundamentals",
+    enrolledOn: "2026-08-03",
+    status: "dropped",
+    progress: 18,
+    attendance: 40,
+    fee: 8000,
+    amountPaid: 8000,
+    notes: "Relocated for work. Fees were paid in full.",
+  }),
+  make({
+    fullName: "Irene Chebet",
+    email: "irene.c@example.com",
+    phone: "+254712345009",
+    ageGroup: "Adults (18+)",
+    county: "Nakuru",
+    program: "Python for Data & Automation",
+    enrolledOn: "2026-08-31",
+    status: "active",
+    progress: 48,
+    attendance: 89,
+    fee: 14000,
+    amountPaid: 7000,
+  }),
+  make({
+    fullName: "Joel Kamau",
+    email: "joel.k@example.com",
+    phone: "+254712345010",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Susan Kamau",
+    guardianPhone: "+254722111010",
+    county: "Nyeri",
+    program: "Web Development Foundations",
+    enrolledOn: "2026-08-10",
+    status: "active",
+    progress: 94,
+    attendance: 96,
+    fee: 9500,
+    amountPaid: 9500,
+    notes: "Almost done. Ready to complete.",
+  }),
+  make({
+    fullName: "Kevin Ouma",
+    email: "kevin.o@example.com",
+    phone: "+254712345011",
+    ageGroup: "Adults (18+)",
+    county: "Nairobi",
+    program: "JavaScript Essentials",
+    enrolledOn: "2026-10-05",
+    status: "active",
+    progress: 12,
+    attendance: 100,
+    fee: 11000,
+    amountPaid: 0,
+  }),
 
-  make({ fullName: "Lucy Nyambura", email: "lucy.n@example.com", phone: "+254712345012", ageGroup: "Teens (13–17)", guardianName: "Mary Nyambura", guardianPhone: "+254722111012", county: "Kirinyaga", program: "Python Basics", enrolledOn: "2026-07-11", status: "completed", progress: 100, attendance: 98, finalScore: 91, fee: 9500, amountPaid: 9500, completedOn: "2026-09-12", certificate: { type: "completion", number: "FC-CERT-2026-0001", issuedOn: "2026-09-14" } }),
-  make({ fullName: "Martin Karanja", email: "martin.k@example.com", phone: "+254712345013", ageGroup: "Teens (13–17)", guardianName: "John Karanja", guardianPhone: "+254722111013", county: "Nairobi", program: "Web Development Foundations", enrolledOn: "2026-07-01", status: "completed", progress: 100, attendance: 90, finalScore: 78, fee: 9500, amountPaid: 9500, completedOn: "2026-08-29", certificate: { type: "completion", number: "FC-CERT-2026-0002", issuedOn: "2026-09-01" } }),
-  make({ fullName: "Naomi Wairimu", phone: "+254712345014", ageGroup: "Kids (7–12)", guardianName: "Esther Wairimu", guardianPhone: "+254722111014", county: "Kiambu", program: "Scratch Juniors", enrolledOn: "2026-08-08", status: "completed", progress: 100, attendance: 100, finalScore: 96, fee: 6000, amountPaid: 6000, completedOn: "2026-09-20", certificate: { type: "completion", number: "FC-CERT-2026-0003", issuedOn: "2026-09-22" } }),
-  make({ fullName: "Oscar Mugambi", email: "oscar.m@example.com", phone: "+254712345015", ageGroup: "Teens (13–17)", guardianName: "Beth Mugambi", guardianPhone: "+254722111015", county: "Meru", program: "JavaScript Essentials", enrolledOn: "2026-07-27", status: "completed", progress: 100, attendance: 86, finalScore: 66, fee: 11000, amountPaid: 11000, completedOn: "2026-10-03" }),
-  make({ fullName: "Purity Wangui", email: "purity.w@example.com", phone: "+254712345016", ageGroup: "Adults (18+)", county: "Nyeri", program: "SQL & PostgreSQL Fundamentals", enrolledOn: "2026-08-31", status: "completed", progress: 100, attendance: 95, finalScore: 82, fee: 8000, amountPaid: 8000, completedOn: "2026-10-08" }),
-  make({ fullName: "Quincy Mwangi", email: "quincy.m@example.com", phone: "+254712345017", ageGroup: "Adults (18+)", county: "Nairobi", program: "React for Builders", enrolledOn: "2026-05-18", status: "completed", progress: 100, attendance: 93, finalScore: 88, fee: 15000, amountPaid: 15000, completedOn: "2026-07-30", certificate: { type: "completion", number: "FC-CERT-2026-0004", issuedOn: "2026-08-02" } }),
-  make({ fullName: "Rita Cherono", email: "rita.c@example.com", phone: "+254712345018", ageGroup: "Adults (18+)", county: "Nakuru", program: "Python Basics", enrolledOn: "2026-06-15", status: "active", progress: 70, attendance: 82, fee: 9500, amountPaid: 9500, certificate: { type: "participation", number: "FC-PART-2026-0001", issuedOn: "2026-09-02" }, notes: "Program period ended before she could finish." }),
+  make({
+    fullName: "Lucy Nyambura",
+    email: "lucy.n@example.com",
+    phone: "+254712345012",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Mary Nyambura",
+    guardianPhone: "+254722111012",
+    county: "Kirinyaga",
+    program: "Python Basics",
+    enrolledOn: "2026-07-11",
+    status: "completed",
+    progress: 100,
+    attendance: 98,
+    finalScore: 91,
+    fee: 9500,
+    amountPaid: 9500,
+    completedOn: "2026-09-12",
+    certificate: {
+      type: "completion",
+      number: "FC-CERT-2026-0001",
+      issuedOn: "2026-09-14",
+    },
+  }),
+  make({
+    fullName: "Martin Karanja",
+    email: "martin.k@example.com",
+    phone: "+254712345013",
+    ageGroup: "Teens (13–17)",
+    guardianName: "John Karanja",
+    guardianPhone: "+254722111013",
+    county: "Nairobi",
+    program: "Web Development Foundations",
+    enrolledOn: "2026-07-01",
+    status: "completed",
+    progress: 100,
+    attendance: 90,
+    finalScore: 78,
+    fee: 9500,
+    amountPaid: 9500,
+    completedOn: "2026-08-29",
+    certificate: {
+      type: "completion",
+      number: "FC-CERT-2026-0002",
+      issuedOn: "2026-09-01",
+    },
+  }),
+  make({
+    fullName: "Naomi Wairimu",
+    phone: "+254712345014",
+    ageGroup: "Kids (7–12)",
+    guardianName: "Esther Wairimu",
+    guardianPhone: "+254722111014",
+    county: "Kiambu",
+    program: "Scratch Juniors",
+    enrolledOn: "2026-08-08",
+    status: "completed",
+    progress: 100,
+    attendance: 100,
+    finalScore: 96,
+    fee: 6000,
+    amountPaid: 6000,
+    completedOn: "2026-09-20",
+    certificate: {
+      type: "completion",
+      number: "FC-CERT-2026-0003",
+      issuedOn: "2026-09-22",
+    },
+  }),
+  make({
+    fullName: "Oscar Mugambi",
+    email: "oscar.m@example.com",
+    phone: "+254712345015",
+    ageGroup: "Teens (13–17)",
+    guardianName: "Beth Mugambi",
+    guardianPhone: "+254722111015",
+    county: "Meru",
+    program: "JavaScript Essentials",
+    enrolledOn: "2026-07-27",
+    status: "completed",
+    progress: 100,
+    attendance: 86,
+    finalScore: 66,
+    fee: 11000,
+    amountPaid: 11000,
+    completedOn: "2026-10-03",
+  }),
+  make({
+    fullName: "Purity Wangui",
+    email: "purity.w@example.com",
+    phone: "+254712345016",
+    ageGroup: "Adults (18+)",
+    county: "Nyeri",
+    program: "SQL & PostgreSQL Fundamentals",
+    enrolledOn: "2026-08-31",
+    status: "completed",
+    progress: 100,
+    attendance: 95,
+    finalScore: 82,
+    fee: 8000,
+    amountPaid: 8000,
+    completedOn: "2026-10-08",
+  }),
+  make({
+    fullName: "Quincy Mwangi",
+    email: "quincy.m@example.com",
+    phone: "+254712345017",
+    ageGroup: "Adults (18+)",
+    county: "Nairobi",
+    program: "React for Builders",
+    enrolledOn: "2026-05-18",
+    status: "completed",
+    progress: 100,
+    attendance: 93,
+    finalScore: 88,
+    fee: 15000,
+    amountPaid: 15000,
+    completedOn: "2026-07-30",
+    certificate: {
+      type: "completion",
+      number: "FC-CERT-2026-0004",
+      issuedOn: "2026-08-02",
+    },
+  }),
+  make({
+    fullName: "Rita Cherono",
+    email: "rita.c@example.com",
+    phone: "+254712345018",
+    ageGroup: "Adults (18+)",
+    county: "Nakuru",
+    program: "Python Basics",
+    enrolledOn: "2026-06-15",
+    status: "active",
+    progress: 70,
+    attendance: 82,
+    fee: 9500,
+    amountPaid: 9500,
+    certificate: {
+      type: "participation",
+      number: "FC-PART-2026-0001",
+      issuedOn: "2026-09-02",
+    },
+    notes: "Program period ended before she could finish.",
+  }),
 ];
 
 /* ============================== store ============================== */
@@ -269,9 +603,16 @@ const stamp = () => new Date().toISOString();
 
 export function addStudent(data) {
   const ts = stamp();
-  const next = Math.max(0, ...state.map((s) => Number(s.studentNo.slice(4)) || 0)) + 1;
+  const next =
+    Math.max(0, ...state.map((s) => Number(s.studentNo.slice(4)) || 0)) + 1;
   const student = {
-    email: "", guardianName: "", guardianPhone: "", notes: "", finalScore: null, completedOn: null, certificate: null,
+    email: "",
+    guardianName: "",
+    guardianPhone: "",
+    notes: "",
+    finalScore: null,
+    completedOn: null,
+    certificate: null,
     ...data,
     id: `stu_${Date.now()}`,
     studentNo: `FCS-${String(next).padStart(4, "0")}`,
@@ -299,7 +640,8 @@ export function updateStudent(id, patch) {
         if (certType === "participation") merged.certificate = null; // replaced by a completion certificate
       } else {
         merged.completedOn = null;
-        if (certType === "completion") merged.certificate = null; // completion certificates need a completed student
+        if (certType === "completion")
+          merged.certificate = null; // completion certificates need a completed student
         else if (!isFullyPaid(merged)) merged.certificate = null; // participation certificates need fees paid in full
       }
       return merged;
@@ -323,7 +665,8 @@ export function completeStudents(ids, { finalScore } = {}) {
             progress: 100,
             completedOn: s.completedOn ?? todayISO(),
             finalScore: finalScore ?? s.finalScore,
-            certificate: s.certificate?.type === "participation" ? null : s.certificate, // they now qualify for a completion certificate
+            certificate:
+              s.certificate?.type === "participation" ? null : s.certificate, // they now qualify for a completion certificate
             updatedAt: ts,
           }
         : s,
@@ -336,7 +679,15 @@ export function reopenStudent(id) {
   const ts = stamp();
   commit(
     state.map((s) =>
-      s.id === id ? { ...s, status: "active", completedOn: null, certificate: null, updatedAt: ts } : s,
+      s.id === id
+        ? {
+            ...s,
+            status: "active",
+            completedOn: null,
+            certificate: null,
+            updatedAt: ts,
+          }
+        : s,
     ),
   );
 }
@@ -356,7 +707,11 @@ export function issueCertificates(ids) {
     const { type } = certificateEligibility(target, issuedOn);
     if (!type) continue;
     const number = nextCertificateNumber(working, year, type);
-    working = working.map((s) => (s.id === id ? { ...s, certificate: { type, number, issuedOn }, updatedAt: stamp() } : s));
+    working = working.map((s) =>
+      s.id === id
+        ? { ...s, certificate: { type, number, issuedOn }, updatedAt: stamp() }
+        : s,
+    );
     count += 1;
   }
   if (count) commit(working);
