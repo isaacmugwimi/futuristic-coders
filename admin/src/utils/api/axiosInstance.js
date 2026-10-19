@@ -61,7 +61,7 @@ api.interceptors.response.use(
 
       // Refresh failed, so the session is over.
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
 
