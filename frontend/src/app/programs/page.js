@@ -1,6 +1,6 @@
 // src/app/programs/page.js
 import Programs from "../../components/ProgramsPage/Programs";
-import { API_PATHS, BASE_URL } from "@/src/utils/api/apiPaths";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 
 const SITE_URL = "https://www.futuristiccoders.co.ke";
 const PAGE_URL = `${SITE_URL}/programs`;

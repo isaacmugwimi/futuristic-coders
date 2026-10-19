@@ -1,4 +1,10 @@
-import { getAllCategories, getPublishedPrograms } from "../../services/programs/program.service";
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import {
+  getAllCategories,
+  getPublishedPrograms,
+} from "../../services/programs/program.service";
 
 export const usePublishedPrograms = () => {
   return useQuery({
@@ -6,10 +12,8 @@ export const usePublishedPrograms = () => {
     queryFn: getPublishedPrograms,
     staleTime: 1000 * 60 * 5,
   });
-
 };
 
- 
 export const useCategories = () => {
   return useQuery({
     queryKey: ["categories"],
