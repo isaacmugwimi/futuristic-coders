@@ -627,7 +627,13 @@ function Field({ id, label, required, error, hint, className = "", children }) {
   );
 }
 
-export function StudentFormModal({ student, onSave, onClose }) {
+function StudentFormModal({
+  student,
+  programs = [],
+  programsLoading = false,
+  onSave,
+  onClose,
+}) {
   const editing = Boolean(student);
   const [values, setValues] = useState(() =>
     student ? toValues(student) : NEW_VALUES,

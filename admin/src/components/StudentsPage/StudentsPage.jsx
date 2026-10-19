@@ -3,7 +3,6 @@
 import "./StudentsPage.css";
 import { useCallback, useMemo, useState } from "react";
 import {
-  Award,
   GraduationCap,
   Plus,
   Search,
@@ -15,17 +14,11 @@ import {
 } from "lucide-react";
 import {
   AGE_GROUPS,
-  PROGRAM_OPTIONS,
-  addStudent,
   certificateEligibility,
-  completeStudents,
-  deleteStudents,
   paymentInfo,
-  reopenStudent,
-  updateStudent,
-  useStudents,
   formatKSh,
 } from "@/src/data/students";
+
 import {
   CompletedStudentsGrid,
   CurrentStudentsTable,
@@ -39,10 +32,30 @@ import {
   Toast,
 } from "../StudentModals/StudentModals";
 
+import {
+  useStudents,
+  useStudentStats,
+} from "@/src/hooks/students/useStudentQueries";
+
+// Adjust this path/name to wherever your existing programs hook lives.
+import { usePrograms } from "@/src/hooks/programs/useProgramQueries";
+
+// Used once, imperatively, to find which certificates to revoke.
+import { getEnrollmentCertificates } from "@/src/services/students/student.service";
+
+import {
+  useCreateStudent,
+  useUpdateStudent,
+  useDeleteStudent,
+  useUpdateEnrollment,
+  useUpdateEnrollmentStatus,
+  useRevokeCertificate,
+} from "@/src/hooks/students/useStudentMutation";
+
 /**
  * StudentsPage.jsx
  * Stats, the Current / Completed tabs, search + filters, and all the actions.
- * Completed students live in their own area (tab) with their own layout.
+ * Data now comes from the backend through the React Query hooks.
  */
 
 const DEFAULT_FILTERS = {
@@ -54,6 +67,104 @@ const DEFAULT_FILTERS = {
   certificate: "all",
   sort: "recent",
 };
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+// Backend accepts camelCase or snake_case; rows come back as either.
+const pick = (obj, ...keys) => {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null) return v;
+  }
+  return undefined;
+};
+
+// Responses may be wrapped as { data: ... }.
+const unwrap = (res) => res?.data ?? res;
+
+const toList = (res, ...extraKeys) => {
+  const payload = unwrap(res);
+  if (Array.isArray(payload)) return payload;
+  for (const k of ["data", ...extraKeys]) {
+    if (Array.isArray(payload?.[k])) return payload[k];
+  }
+  return [];
+};
+
+// Drops undefined / null / "" so we never send empty strings to the API.
+const compact = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined && v !== null && v !== ""),
+  );
+
+const errorStatus = (err) =>
+  err?.response?.status ?? err?.status ?? err?.statusCode;
+const errorMessage = (err, fallback) =>
+  err?.response?.data?.message ?? err?.message ?? fallback;
+
+// The backend's payment-history safeguard answers 409 with this wording.
+const isPaymentHistoryError = (err) =>
+  errorStatus(err) === 409 && /payment history/i.test(errorMessage(err, ""));
+
+const OPEN_STATUSES = ["active", "on_hold"];
+
+/* ------------------------------------------------------------------ */
+/* Backend -> UI mapping                                               */
+/*                                                                     */
+/* The backend keeps the student and their enrollment(s) separately    */
+/* (full_name, agreed_fee, amount_paid, attendance_percentage,         */
+/* certificate_status, ...). The UI works with one flat object, so      */
+/* this is the one place that merges them. Handles both a nested       */
+/* `enrollments` array and a row that is already flattened.            */
+/* ------------------------------------------------------------------ */
+function toUiStudent(raw) {
+  const list = raw.enrollments ?? (raw.enrollment ? [raw.enrollment] : []);
+  const nested = list.length > 0;
+  // Prefer the enrollment that still holds a seat, otherwise the first one.
+  const e = nested
+    ? (list.find((x) => OPEN_STATUSES.includes(x.status)) ?? list[0])
+    : raw;
+
+  const finalScore = pick(e, "finalScore", "final_score");
+  const attendance = pick(e, "attendancePercentage", "attendance_percentage");
+  const issued = pick(e, "certificateStatus", "certificate_status") === "issued";
+
+  return {
+    ...raw,
+    id: raw.id,
+    studentNo: pick(raw, "studentNo", "student_no"),
+    fullName: pick(raw, "fullName", "full_name") ?? "",
+    guardianName: pick(raw, "guardianName", "guardian_name"),
+    guardianPhone: pick(raw, "guardianPhone", "guardian_phone"),
+    ageGroup: pick(raw, "ageGroup", "age_group"),
+    createdAt: String(pick(raw, "createdAt", "created_at") ?? ""),
+
+    enrollmentId: nested ? e.id : (pick(raw, "enrollmentId", "enrollment_id") ?? null),
+    program:
+      pick(e, "programTitle", "program_title") ??
+      e.program?.title ??
+      (typeof raw.program === "string" ? raw.program : ""),
+    programId: pick(e, "programId", "program_id") ?? null,
+    status: e.status ?? "active",
+    enrolledOn: pick(e, "enrolledOn", "enrolled_on") ?? null,
+    progress: Number(e.progress ?? 0),
+    fee: Number(pick(e, "agreedFee", "agreed_fee") ?? 0),
+    amountPaid: Number(pick(e, "amountPaid", "amount_paid") ?? 0),
+    // Read-only: derived by the backend from per-session attendance records.
+    attendance: attendance == null ? null : Number(attendance),
+    finalScore: finalScore == null ? null : Number(finalScore),
+    completedOn:
+      pick(e, "completedOn", "completed_on", "completedAt", "completed_at") ?? null,
+    certificate: issued
+      ? {
+          type: pick(e, "certificateType", "certificate_type") ?? null,
+          no: pick(e, "certificateNo", "certificate_no") ?? null,
+        }
+      : null,
+  };
+}
 
 const SORTS = {
   current: [
@@ -82,7 +193,8 @@ const SORTS = {
     {
       value: "recent",
       label: "Recently completed",
-      fn: (a, b) => (b.completedOn ?? "").localeCompare(a.completedOn ?? ""),
+      fn: (a, b) =>
+        String(b.completedOn ?? "").localeCompare(String(a.completedOn ?? "")),
     },
     {
       value: "name",
@@ -145,7 +257,44 @@ function matches(student, f, tab) {
 }
 
 export default function StudentsPage() {
-  const students = useStudents();
+  // Fetch everything once; search, filters, sorting and paging stay on the
+  // client. For very large lists, pass these as params instead (see notes).
+  const {
+    data: studentsResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useStudents({ limit: 1000 });
+  const { data: statsResponse } = useStudentStats();
+  const { data: programsResponse, isLoading: programsLoading } = usePrograms();
+
+  const createStudentMutation = useCreateStudent();
+  const updateStudentMutation = useUpdateStudent();
+  const deleteStudentMutation = useDeleteStudent();
+  const updateEnrollmentMutation = useUpdateEnrollment();
+  const updateEnrollmentStatusMutation = useUpdateEnrollmentStatus();
+  const revokeCertificateMutation = useRevokeCertificate();
+
+  const students = useMemo(
+    () => toList(studentsResponse, "students").map(toUiStudent),
+    [studentsResponse],
+  );
+
+  // Real programs from the backend. Filters list every program; the form only
+  // offers published ones because the backend rejects enrolment in any other.
+  const programs = useMemo(
+    () =>
+      toList(programsResponse, "programs").map((p) => ({
+        ...p,
+        title: p.title ?? p.name ?? "",
+      })),
+    [programsResponse],
+  );
+  const enrollablePrograms = useMemo(
+    () => programs.filter((p) => (p.status ?? "published") === "published"),
+    [programs],
+  );
 
   const [tab, setTab] = useState("current");
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -172,18 +321,28 @@ export default function StudentsPage() {
     [students],
   );
 
-  const stats = useMemo(
-    () => ({
-      total: students.length,
-      active: students.filter((s) => s.status === "active").length,
-      completed: completedAll.length,
-      collected: students.reduce((sum, s) => sum + s.amountPaid, 0),
-      outstanding: currentAll
-        .filter((s) => s.status !== "dropped")
-        .reduce((sum, s) => sum + paymentInfo(s).balance, 0),
-    }),
-    [students, currentAll, completedAll],
-  );
+  // Prefer the backend's numbers; fall back to computing from the list for
+  // any value the stats endpoint doesn't return.
+  const stats = useMemo(() => {
+    const api = unwrap(statsResponse) ?? {};
+    return {
+      total: pick(api, "total", "totalStudents", "total_students") ?? students.length,
+      active:
+        pick(api, "active", "activeStudents", "active_students") ??
+        students.filter((s) => s.status === "active").length,
+      completed:
+        pick(api, "completed", "completedStudents", "completed_students") ??
+        completedAll.length,
+      collected:
+        pick(api, "collected", "totalCollected", "total_collected") ??
+        students.reduce((sum, s) => sum + s.amountPaid, 0),
+      outstanding:
+        pick(api, "outstanding", "totalOutstanding", "total_outstanding") ??
+        currentAll
+          .filter((s) => s.status !== "dropped")
+          .reduce((sum, s) => sum + paymentInfo(s).balance, 0),
+    };
+  }, [statsResponse, students, currentAll, completedAll]);
 
   const sortFn =
     SORTS[tab].find((s) => s.value === filters.sort)?.fn ?? SORTS[tab][0].fn;
@@ -265,17 +424,181 @@ export default function StudentsPage() {
     });
   }
 
-  /* ---------------- actions ---------------- */
-  function saveStudent(data, existing) {
+  /* ---------------- backend actions ---------------- */
+
+  // Runs an async task, shows a toast with the server's message on failure.
+  // Returns true when it succeeded so callers know whether to close the modal.
+  async function run(task, fallbackMessage = "Something went wrong") {
+    try {
+      await task();
+      return true;
+    } catch (err) {
+      showToast(errorMessage(err, fallbackMessage), "danger");
+      return false;
+    }
+  }
+
+  /* ----- create ----- */
+
+  // Form -> POST /students payload. The backend wants a programId (not a
+  // title) and takes the first deposit as `initialPayment`. An initial payment
+  // needs a program, M-Pesa needs a transaction code, and the deposit can't
+  // exceed the agreed fee; the backend validates all of that and its message
+  // is shown as a toast.
+  function buildCreatePayload(data) {
+    const programId =
+      data.programId ?? programs.find((p) => p.title === data.program)?.id;
+
+    if (data.program && !programId) {
+      throw new Error("Choose a program from the list.");
+    }
+
+    const depositAmount = Number(
+      data.initialDeposit ?? data.deposit ?? data.amountPaid ?? 0,
+    );
+    const initialPayment =
+      data.initialPayment ??
+      (depositAmount > 0
+        ? compact({
+            amount: depositAmount,
+            paymentMethod: data.paymentMethod,
+            reference: data.reference ?? data.mpesaCode,
+            paidAt: data.paidAt,
+          })
+        : undefined);
+
+    const fee = data.fee ?? data.agreedFee;
+
+    return compact({
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      guardianName: data.guardianName,
+      guardianPhone: data.guardianPhone,
+      ageGroup: data.ageGroup,
+      county: data.county,
+      notes: data.notes,
+      programId,
+      // Omitted => backend uses the program's current price.
+      agreedFee: fee === undefined || fee === "" ? undefined : Number(fee),
+      enrolledOn: data.enrolledOn,
+      initialPayment,
+    });
+  }
+
+  async function createFromForm(data) {
+    const created = unwrap(
+      await createStudentMutation.mutateAsync(buildCreatePayload(data)),
+    );
+
+    // New enrollments start as "active". Anything else is a follow-up call.
+    const enrollment = created?.enrollments?.[0] ?? created?.enrollment;
+    const wantsStatus = data.status && data.status !== "active";
+    if (!enrollment?.id || !wantsStatus) return;
+
+    try {
+      await updateEnrollmentStatusMutation.mutateAsync({
+        id: enrollment.id,
+        status: data.status,
+      });
+      if (data.status === "completed" && data.finalScore !== "" && data.finalScore != null) {
+        await updateEnrollmentMutation.mutateAsync({
+          id: enrollment.id,
+          data: { finalScore: Number(data.finalScore) },
+        });
+      }
+    } catch (err) {
+      // The student exists already, so don't report the whole save as failed.
+      showToast(
+        `Student added, but the status could not be set: ${errorMessage(err, "unknown error")}`,
+        "info",
+      );
+    }
+  }
+
+  /* ----- edit ----- */
+
+  async function updateFromForm(data, existing) {
+    // Student-level fields. The student number is generated, never editable.
+    await updateStudentMutation.mutateAsync({
+      id: existing.id,
+      data: compact({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        guardianName: data.guardianName,
+        guardianPhone: data.guardianPhone,
+        ageGroup: data.ageGroup,
+        county: data.county,
+        notes: data.notes,
+      }),
+    });
+
+    if (!existing.enrollmentId) return;
+
+    // Status first: completing sets progress to 100 on the backend, and
+    // reopening a completed enrollment is what allows progress to drop again.
+    const statusChanged = data.status && data.status !== existing.status;
+    if (statusChanged) {
+      await updateEnrollmentStatusMutation.mutateAsync({
+        id: existing.enrollmentId,
+        status: data.status,
+      });
+    }
+
+    // Enrollment-level fields: send only what actually changed.
+    const changes = {};
+    const fee = data.fee ?? data.agreedFee;
+    if (fee !== undefined && fee !== "" && Number(fee) !== existing.fee) {
+      changes.agreedFee = Number(fee); // backend: cannot be below amount paid
+    }
+    if (
+      data.progress !== undefined &&
+      data.progress !== "" &&
+      Number(data.progress) !== existing.progress &&
+      !(statusChanged && data.status === "completed") // backend forces 100
+    ) {
+      changes.progress = Number(data.progress); // whole number, 0-100
+    }
+    if (
+      data.finalScore !== undefined &&
+      data.finalScore !== null &&
+      data.finalScore !== "" &&
+      Number(data.finalScore) !== existing.finalScore
+    ) {
+      changes.finalScore = Number(data.finalScore); // 0-100, null not accepted
+    }
+    if (data.enrolledOn && data.enrolledOn !== existing.enrolledOn) {
+      changes.enrolledOn = data.enrolledOn;
+    }
+
+    // `data.attendance` is deliberately not sent. The backend has no
+    // attendance field: the percentage is calculated from per-session records
+    // (POST /enrollments/:id/attendance). Record sessions with
+    // useRecordAttendance / useRecordClassAttendance instead.
+
+    if (Object.keys(changes).length) {
+      await updateEnrollmentMutation.mutateAsync({
+        id: existing.enrollmentId,
+        data: changes,
+      });
+    }
+  }
+
+  async function saveStudent(data, existing) {
+    const ok = await run(
+      () => (existing ? updateFromForm(data, existing) : createFromForm(data)),
+      "Could not save the student",
+    );
+    if (!ok) return;
+
     if (existing) {
-      updateStudent(existing.id, data);
       showToast(
         data.status === "completed" && existing.status !== "completed"
           ? "Saved. They now appear under Completed students."
           : "Changes saved",
       );
     } else {
-      addStudent(data);
       showToast(
         data.status === "completed"
           ? "Student added to Completed students"
@@ -285,9 +608,34 @@ export default function StudentsPage() {
     closeModal();
   }
 
-  function confirmComplete(options) {
+  /* ----- complete ----- */
+
+  async function confirmComplete(options) {
     const ids = modal.ids;
-    completeStudents(ids, options);
+    const toComplete = students.filter((s) => ids.includes(s.id));
+
+    const ok = await run(async () => {
+      await Promise.all(
+        toComplete
+          .filter((s) => s.enrollmentId)
+          .map(async (s) => {
+            // Backend sets progress to 100 itself when status -> completed.
+            await updateEnrollmentStatusMutation.mutateAsync({
+              id: s.enrollmentId,
+              status: "completed",
+            });
+            if (options?.finalScore != null && options.finalScore !== "") {
+              await updateEnrollmentMutation.mutateAsync({
+                id: s.enrollmentId,
+                data: { finalScore: Number(options.finalScore) },
+              });
+            }
+          }),
+      );
+    }, "Could not mark as completed");
+
+    if (!ok) return;
+
     setSelected(new Set());
     showToast(
       ids.length > 1
@@ -297,30 +645,107 @@ export default function StudentsPage() {
     closeModal();
   }
 
-  function confirmDeleteOrReopen() {
-    const { action, ids } = modal;
-    if (action === "delete") {
-      deleteStudents(ids);
-      setSelected((prev) => {
-        const next = new Set(prev);
-        ids.forEach((id) => next.delete(id));
-        return next;
-      });
+  /* ----- delete / reopen ----- */
+
+  const dropFromSelection = (ids) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+
+  // Step 1 sends force: false, so the backend's payment-history safeguard stays
+  // on. Students it blocks (409) go to a second, explicit confirmation.
+  async function deleteWithoutForce(ids) {
+    const results = await Promise.allSettled(
+      ids.map((id) => deleteStudentMutation.mutateAsync({ id, force: false })),
+    );
+
+    const deleted = [];
+    const needsForce = [];
+    const failures = [];
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") deleted.push(ids[i]);
+      else if (isPaymentHistoryError(r.reason)) needsForce.push(ids[i]);
+      else failures.push(r.reason);
+    });
+
+    dropFromSelection(deleted);
+
+    if (deleted.length) {
       showToast(
-        ids.length > 1 ? `${ids.length} students deleted` : "Student deleted",
+        deleted.length > 1
+          ? `${deleted.length} students deleted`
+          : "Student deleted",
         "danger",
       );
-    } else {
-      const had = students.find((s) => s.id === ids[0])?.certificate;
-      reopenStudent(ids[0]);
-      showToast(
-        had
-          ? "Moved back to active. Their certificate was withdrawn."
-          : "Moved back to active",
-        "info",
-      );
+    } else if (failures.length) {
+      showToast(errorMessage(failures[0], "Could not delete"), "danger");
     }
+
+    if (needsForce.length) {
+      setModal({ type: "confirm", action: "delete-force", ids: needsForce });
+      return;
+    }
+    if (deleted.length || !failures.length) closeModal();
+  }
+
+  // Step 2: only reached after the person has read what will be erased.
+  async function deleteWithForce(ids) {
+    const ok = await run(
+      () =>
+        Promise.all(
+          ids.map((id) => deleteStudentMutation.mutateAsync({ id, force: true })),
+        ),
+      "Could not delete",
+    );
+    if (!ok) return;
+
+    dropFromSelection(ids);
+    showToast(
+      ids.length > 1 ? `${ids.length} students deleted` : "Student deleted",
+      "danger",
+    );
     closeModal();
+  }
+
+  async function reopen(student) {
+    const ok = await run(async () => {
+      // The backend refuses to change a completed enrollment while a
+      // certificate is issued, so revoke first.
+      if (student.certificate) {
+        const certs = toList(
+          await getEnrollmentCertificates(student.enrollmentId),
+          "certificates",
+        );
+        for (const c of certs.filter((c) => c.status === "issued")) {
+          await revokeCertificateMutation.mutateAsync(c.id);
+        }
+      }
+      // Reopening takes a seat again; the backend checks capacity and that
+      // there is no other open enrollment in the same program.
+      await updateEnrollmentStatusMutation.mutateAsync({
+        id: student.enrollmentId,
+        status: "active",
+      });
+    }, "Could not move back to active");
+    if (!ok) return;
+
+    showToast(
+      student.certificate
+        ? "Moved back to active. Their certificate was withdrawn."
+        : "Moved back to active",
+      "info",
+    );
+    closeModal();
+  }
+
+  async function confirmDeleteOrReopen() {
+    const { action, ids } = modal;
+    if (action === "delete") return deleteWithoutForce(ids);
+    if (action === "delete-force") return deleteWithForce(ids);
+    const student = students.find((s) => s.id === ids[0]);
+    if (student) return reopen(student);
   }
 
   const askDelete = (s) =>
@@ -343,6 +768,17 @@ export default function StudentsPage() {
     const name = many
       ? `${targets.length} students`
       : `“${targets[0].fullName}”`;
+    if (modal.action === "delete-force") {
+      const paid = targets.reduce((sum, s) => sum + s.amountPaid, 0);
+      return {
+        title: many
+          ? `Delete ${targets.length} students with payment history?`
+          : "Delete a student with payment history?",
+        message: `${name} ${many ? "have" : "has"} ${formatKSh(paid)} in recorded payments. Deleting permanently erases their enrollments, payments, attendance and certificates, which can't be recovered. Marking the enrollment as Dropped keeps the records instead.`,
+        confirmLabel: "Erase records and delete",
+        tone: "danger",
+      };
+    }
     if (modal.action === "delete") {
       const withCert = targets.some((s) => s.certificate);
       return {
@@ -378,6 +814,30 @@ export default function StudentsPage() {
     onReopen: askReopen,
     onDelete: askDelete,
   };
+
+  /* ---------------- loading / error ---------------- */
+  if (isLoading) {
+    return (
+      <div className="sp">
+        <p role="status" className="sp-state">
+          Loading students…
+        </p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="sp">
+        <div role="alert" className="sp-state">
+          <p>{error?.message ?? "Could not load students."}</p>
+          <button type="button" className="sp-add" onClick={() => refetch()}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ---------------- render ---------------- */
   return (
@@ -530,8 +990,10 @@ export default function StudentsPage() {
                 label="Filter by program"
               >
                 <option value="all">All programs</option>
-                {PROGRAM_OPTIONS.map((p) => (
-                  <option key={p.title}>{p.title}</option>
+                {programs.map((p) => (
+                  <option key={p.id ?? p.title} value={p.title}>
+                    {p.title}
+                  </option>
                 ))}
               </Select>
               <Select
@@ -572,8 +1034,10 @@ export default function StudentsPage() {
                 label="Filter by program"
               >
                 <option value="all">All programs</option>
-                {PROGRAM_OPTIONS.map((p) => (
-                  <option key={p.title}>{p.title}</option>
+                {programs.map((p) => (
+                  <option key={p.id ?? p.title} value={p.title}>
+                    {p.title}
+                  </option>
                 ))}
               </Select>
               <Select
@@ -699,6 +1163,8 @@ export default function StudentsPage() {
         <StudentFormModal
           key={modal.id ?? "new"}
           student={modalStudent}
+          programs={enrollablePrograms}
+          programsLoading={programsLoading}
           onSave={(data) => saveStudent(data, modalStudent)}
           onClose={closeModal}
         />
