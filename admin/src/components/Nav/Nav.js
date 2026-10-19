@@ -5,6 +5,7 @@ import {
   FileText,
   CreditCard,
   Award,
+  MessageSquareQuote,
   Settings,
 } from "lucide-react";
 
@@ -45,6 +46,12 @@ export const MAIN_NAV = [
     label: "Certificates",
     subtitle: "Generate and verify certificates",
     icon: Award,
+  },
+  {
+    href: "/dashboard/testimonials",
+    label: "Testimonials",
+    subtitle: "Review and publish parent feedback",
+    icon: MessageSquareQuote,
   },
 ];
 
