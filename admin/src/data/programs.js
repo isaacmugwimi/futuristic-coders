@@ -1,6 +1,6 @@
 // Mock data for the Programs page. Replace with API calls to your backend.
 
-export const PUBLIC_SITE_URL = "https://futuristic-coders.co.ke"; // TODO: your public website URL
+export const PUBLIC_SITE_URL = "https://futuristiccoders.co.ke"; // TODO: your public website URL
 
 /* ------------------------------------------------------------------
    Categories: these become the headings on the public programs page.
