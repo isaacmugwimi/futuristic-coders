@@ -4,8 +4,7 @@
 
 // Next.js exposes env vars through process.env (import.meta.env is Vite only).
 // If this app is Vite, use import.meta.env.VITE_API_URL instead.
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL;
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // ============================================================================
 // API PATHS
@@ -221,5 +220,51 @@ export const API_PATHS = {
       DELETE: (assessmentId) =>
         `/api/students/delete-assessment/${assessmentId}`,
     },
+  },
+
+  // ==========================================================================
+  // TESTIMONIALS
+  // ==========================================================================
+
+  TESTIMONIALS: {
+    // Public
+    // Body: { name, email, relationship, rating, message }
+    SUBMIT: "/api/testimonials/submit-testimonial",
+
+    // Query params: page, limit, rating (0 = all), sort
+    // (newest | oldest | highest | lowest)
+    GET_PUBLISHED: "/api/testimonials/get-published-testimonials",
+
+    // Query param: limit
+    GET_FEATURED: "/api/testimonials/get-featured-testimonials",
+
+    // Admin: read
+    // Query params: status (pending | approved | published | rejected |
+    // archived), rating, search
+    GET_ALL: "/api/testimonials/get-all-testimonials",
+
+    GET_COUNTS: "/api/testimonials/get-testimonial-counts",
+
+    GET_BY_ID: (id) => `/api/testimonials/get-testimonial-by-id/${id}`,
+
+    // Admin: edit
+    // Body: { message?, adminNotes?, featured? }
+    UPDATE: (id) => `/api/testimonials/update-testimonial/${id}`,
+
+    // Admin: moderation
+    APPROVE: (id) => `/api/testimonials/approve-testimonial/${id}`,
+
+    PUBLISH: (id) => `/api/testimonials/publish-testimonial/${id}`,
+
+    // Body (optional): { adminNotes }
+    REJECT: (id) => `/api/testimonials/reject-testimonial/${id}`,
+
+    ARCHIVE: (id) => `/api/testimonials/archive-testimonial/${id}`,
+
+    // Body: { featured: true | false }
+    FEATURE: (id) => `/api/testimonials/feature-testimonial/${id}`,
+
+    // Admin: delete
+    DELETE: (id) => `/api/testimonials/delete-testimonial/${id}`,
   },
 };
