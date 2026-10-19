@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 
-import QueryState, { isBlocked } from "../../QueryState/QueryState";
+import QueryState, { isBlocked } from "../QueryState/QueryState";
 
 import {
   useTestimonials,

@@ -8,7 +8,7 @@ import {
   getAllTestimonials,
   getTestimonialCounts,
   getTestimonialById,
-} from "@/src/services/testimonials/testimonial.service";
+} from "@/src/services/testimonial/testimonial.service";
 
 const STALE_TIME = 1000 * 60 * 5;
 
@@ -23,7 +23,7 @@ const ADMIN_STALE_TIME = 1000 * 60;
 export const usePublishedTestimonials = (params = {}) =>
   useQuery({
     queryKey: ["testimonials", "published", params],
-    queryFn: () => getPublishedTestimonials(params),
+    queryFn: () => getPublishedTestimonialsnials(params),
     staleTime: STALE_TIME,
   });
 
