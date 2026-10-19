@@ -1,6 +1,6 @@
 // src/app/cookies/page.js
 
-import CookiePolicy from "../../components/Cookiepolicy/CookiePolicy";
+import CookiePolicy from "../../components/CookiePolicy/CookiePolicy";
 
 // import CookiePolicy from "../../components/CookiePolicy/CookiePolicy";
 const SITE_URL = "https://www.futuristiccoders.co.ke";
