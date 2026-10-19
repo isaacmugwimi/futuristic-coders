@@ -6,6 +6,7 @@ import healthRoutes from "./routes/health.routes/health.route.js";
 import authRoutes from "./routes/auth/auth.routes.js";
 import userRoutes from "./routes/users/user.routes.js";
 import programRoutes from "./routes/programs/program.routes.js";
+import studentRoutes from "./routes/students/students.routes.js";
 
 import AppError from "./middleware/error/AppError.js";
 import { resetDb } from "./database/config/resetUtilDb.js";
@@ -66,6 +67,7 @@ app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/programs", programRoutes);
+app.use("/api/students", studentRoutes);
 // resetDb();
 // ============================================================================
 // NOT FOUND HANDLER
