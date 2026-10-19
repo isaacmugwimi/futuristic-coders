@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Programs", href: "/programs" },
   { label: "About", href: "/#about" },
+  { label: "Testimonials", href: "/testimonials" },
   { label: "Contact", href: "/#contact" },
   { label: "Verify Certificate", href: "/verify-certificate" },
 ];

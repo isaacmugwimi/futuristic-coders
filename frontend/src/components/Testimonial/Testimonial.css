@@ -1,0 +1,455 @@
+/* components/Testimonials/Testimonials.css
+   Tokens mirror the site's navy + cyan/blue look. Point them at your global.css variables if you have them. */
+.tm {
+  --bg: #060d1f;
+  --panel: #0c1630;
+  --panel-2: #101d3d;
+  --line: rgba(120, 160, 255, 0.16);
+  --text: #f3f6ff;
+  --muted: #93a1c4;
+  --cyan: #38bdf8;
+  --blue: #3b82f6;
+  --star: #fbbf24;
+  --danger: #fb7185;
+  --grad: linear-gradient(135deg, var(--cyan), var(--blue));
+
+  background:
+    radial-gradient(
+      900px 420px at 85% -10%,
+      rgba(59, 130, 246, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 400px at 0% 10%,
+      rgba(56, 189, 248, 0.1),
+      transparent 60%
+    ),
+    var(--bg);
+  color: var(--text);
+  padding: 7rem 1.25rem 5rem;
+  min-height: 100vh;
+}
+.tm > section {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.tm h1,
+.tm h2,
+.tm h3 {
+  margin: 0;
+  line-height: 1.1;
+}
+
+/* Hero */
+.tm-hero {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 4rem;
+}
+.tm-badge {
+  justify-self: start;
+  margin: 0;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--cyan);
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+}
+.tm-hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  max-width: 14ch;
+}
+.tm-lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+  max-width: 52ch;
+}
+
+/* Summary */
+.tm-summary {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 2.5rem;
+  align-items: center;
+  padding: 1.75rem 2rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+.tm-score {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+.tm-score strong {
+  font-size: 4.5rem;
+  font-weight: 900;
+  line-height: 1;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tm-score span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.tm-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.tm-bars button {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr 32px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.tm-bars button:hover,
+.tm-bars button.active {
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--text);
+}
+.tm-bar-track {
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.tm-bar-track span {
+  display: block;
+  height: 100%;
+  background: var(--grad);
+  border-radius: 99px;
+}
+.tm-bar-count {
+  text-align: right;
+}
+
+/* Stars */
+.tm-stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.tm-stars svg {
+  fill: rgba(255, 255, 255, 0.14);
+}
+.tm-stars svg.on {
+  fill: var(--star);
+}
+
+/* Toolbar */
+.tm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.tm-toolbar h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.tm-toolbar h2 span {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+.tm-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.tm-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Grid: columns give the cards natural, uneven heights */
+.tm-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 3 300px;
+  column-gap: 1.25rem;
+}
+.tm-card {
+  break-inside: avoid;
+  margin: 0 0 1.25rem;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.tm-card:first-child {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+}
+.tm-card blockquote {
+  margin: 0;
+  line-height: 1.65;
+  color: #dbe4ff;
+}
+.tm-card footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.tm-card footer strong {
+  display: block;
+}
+.tm-card footer small {
+  color: var(--muted);
+}
+.tm-avatar {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.9rem;
+  background: var(--grad);
+  color: #04101f;
+}
+.tm-skeleton {
+  height: 190px;
+  background: linear-gradient(
+    90deg,
+    var(--panel),
+    var(--panel-2),
+    var(--panel)
+  );
+  background-size: 200% 100%;
+  animation: tm-shimmer 1.4s linear infinite;
+}
+@keyframes tm-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.tm-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+.tm-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Write a review */
+.tm-write {
+  margin-top: 5rem !important;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 3rem;
+  align-items: start;
+  padding: 2.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+}
+.tm-write h2 {
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 900;
+  margin-bottom: 0.75rem;
+}
+.tm-write > div > p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Form */
+.tm-form {
+  display: grid;
+  gap: 1.1rem;
+}
+.tm-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+}
+.tm-form label,
+.tm-field {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  align-content: start;
+}
+.tm-field-label {
+  font-size: 0.9rem;
+}
+.tm input,
+.tm select,
+.tm textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: var(--text);
+  padding: 0.8rem 0.95rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.tm textarea {
+  resize: vertical;
+}
+.tm input[aria-invalid="true"],
+.tm textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.tm em {
+  color: var(--danger);
+  font-style: normal;
+  font-size: 0.82rem;
+}
+.tm-count {
+  justify-self: end;
+  color: var(--muted);
+}
+.tm-hp {
+  position: absolute !important;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.tm-pick {
+  display: flex;
+  gap: 0.15rem;
+}
+.tm-pick button {
+  all: unset;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 6px;
+}
+.tm-pick svg {
+  fill: rgba(255, 255, 255, 0.14);
+  transition: fill 0.15s;
+}
+.tm-pick button.on svg {
+  fill: var(--star);
+}
+.tm-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.tm-alert {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  color: var(--danger);
+  background: rgba(251, 113, 133, 0.1);
+  border: 1px solid rgba(251, 113, 133, 0.35);
+}
+.tm-success {
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.07);
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+.tm-success p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Buttons */
+.tm-btn {
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.85rem 1.6rem;
+  border: 0;
+  border-radius: 12px;
+  color: #04101f;
+  background: var(--grad);
+  justify-self: start;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.tm-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(56, 189, 248, 0.3);
+}
+.tm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.tm-btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.tm-btn.sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Focus + motion */
+.tm :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .tm-summary,
+  .tm-write {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .tm-write {
+    padding: 1.5rem;
+  }
+}
+@media (max-width: 560px) {
+  .tm {
+    padding-top: 5.5rem;
+  }
+  .tm-row {
+    grid-template-columns: 1fr;
+  }
+  .tm-summary {
+    padding: 1.25rem;
+  }
+}
