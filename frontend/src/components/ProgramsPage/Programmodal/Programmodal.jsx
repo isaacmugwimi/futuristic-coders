@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
 import "./Programmodal.css";
 
 const TIER_LABEL = {
@@ -53,11 +54,14 @@ export default function ProgramModal({ program, onClose }) {
   if (!mounted || !program) return null;
 
   const d = program.details || {};
+  // Empty values are hidden automatically
   const facts = [
     ["Duration", program.duration],
     ["Ages", program.ages],
     ["Schedule", d.schedule],
     ["Format", d.format],
+    ["Class days", d.classDays],
+    ["Starts", d.startsOn],
   ].filter(([, v]) => v);
 
   return createPortal(
@@ -81,42 +85,57 @@ export default function ProgramModal({ program, onClose }) {
         <div className="pm-media">
           <div
             className="pm-img"
-            style={program.image ? { backgroundImage: `url(${program.image})` } : undefined}
+            style={
+              program.image
+                ? { backgroundImage: `url(${JSON.stringify(program.image)})` }
+                : undefined
+            }
           />
           <span className="pm-badge">{TIER_LABEL[program.tier]}</span>
         </div>
 
         <div className="pm-body">
-          <h2 id="pm-title" className="pm-title">{program.title}</h2>
-          <p className="pm-overview">{d.overview || program.summary}</p>
+          <h2 id="pm-title" className="pm-title">
+            {program.title}
+          </h2>
 
-          <dl className="pm-facts">
-            {facts.map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
+          {/* The full description is written in Markdown in the admin */}
+          {d.overview ? (
+            <div className="pm-overview pm-markdown">
+              <ReactMarkdown>{d.overview}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="pm-overview">{program.summary}</p>
+          )}
+
+          {facts.length > 0 && (
+            <dl className="pm-facts">
+              {facts.map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
 
           <List title="What you'll learn" items={d.outcomes} />
           <List title="Prerequisites" items={d.prerequisites} />
+          <List title="What you'll need" items={d.requirements} />
 
-          {d.requirements && (
-            <section className="pm-section">
-              <h3 className="pm-h">What you'll need</h3>
-              <p className="pm-text">{d.requirements}</p>
-            </section>
+          {program.tags?.length > 0 && (
+            <ul className="pm-tags">
+              {program.tags.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
           )}
 
-          <ul className="pm-tags">
-            {program.tags.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-
           <div className="pm-actions">
-            <Link href={`/register?program=${program.slug}`} className="pm-enroll">
+            <Link
+              href={`/register?program=${program.slug}`}
+              className="pm-enroll"
+            >
               Enroll Now
             </Link>
             <Link href="/contact" className="pm-secondary">
@@ -126,6 +145,6 @@ export default function ProgramModal({ program, onClose }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
