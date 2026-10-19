@@ -1,4 +1,4 @@
-// src/utils/api/apiPaths.js  (public website: only what the Programs page needs)
+// src/utils/api/apiPaths.js  (public website: Programs and Testimonials)
 
 // ============================================================================
 // BASE URL
@@ -18,5 +18,16 @@ export const API_PATHS = {
     CATEGORIES: {
       GET_ALL: "/api/programs/get-all-categories",
     },
+  },
+
+  TESTIMONIALS: {
+    // POST: submit a review from the website form (saved as pending)
+    SUBMIT: "/api/testimonials/submit-testimonial",
+
+    // GET: published reviews, paged
+    GET_PUBLISHED: "/api/testimonials/get-published-testimonials",
+
+    // GET: featured reviews
+    GET_FEATURED: "/api/testimonials/get-featured-testimonials",
   },
 };

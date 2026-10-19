@@ -1,9 +1,7 @@
 // app/testimonials/page.js  (server component, no "use client")
-// import { fetchTestimonials } from "@/services/testimonials";
 
-// import Testimonials from "../../components/Testimonial/Testimonial";
 import Testimonials from "../../components/Testimonial/Testimonial";
-import { fetchTestimonials } from "../../services/testimonial/testimonial.service";
+import { getPublishedTestimonials } from "../../services/testimonial/testimonial.service";
 
 const SITE = "https://futuristiccoders.co.ke";
 
@@ -29,13 +27,43 @@ export const metadata = {
   },
 };
 
+// The service returns the raw API body (snake_case rows). These read just
+// what the JSON-LD needs. The client hook does its own full mapping.
+const readRows = (res) => {
+  const payload = res?.data;
+  if (Array.isArray(payload)) return payload;
+  return payload?.testimonials ?? res?.testimonials ?? [];
+};
+
+const readStats = (res) => {
+  const s = res?.stats ?? res?.data?.stats ?? {};
+  return {
+    count: Number(s.count ?? s.total ?? 0),
+    average: Number(s.average ?? s.average_rating ?? 0),
+  };
+};
+
+const toIsoDate = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+};
+
 export default async function TestimonialsPage() {
   let initial = null;
   try {
-    initial = await fetchTestimonials({ page: 1, limit: 6 });
+    // Page 1 with the default filters. The hook uses this as its first data.
+    initial = await getPublishedTestimonials({
+      page: 1,
+      limit: 6,
+      rating: 0,
+      sort: "newest",
+    });
   } catch {
-    initial = null; // the client hook will retry and show an error state if needed
+    initial = null; // the client hook fetches again and shows an error state if needed
   }
+
+  const rows = readRows(initial);
+  const { count, average } = readStats(initial);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -47,23 +75,23 @@ export default async function TestimonialsPage() {
       addressLocality: "Nairobi",
       addressCountry: "KE",
     },
-    ...(initial?.stats?.count
+    ...(count > 0 && average > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
-            ratingValue: initial.stats.average,
-            reviewCount: initial.stats.count,
+            ratingValue: Number(average.toFixed(1)),
+            reviewCount: count,
             bestRating: 5,
             worstRating: 1,
           },
-          review: initial.data.slice(0, 5).map((t) => ({
+          review: rows.slice(0, 5).map((t) => ({
             "@type": "Review",
             author: { "@type": "Person", name: t.name },
-            datePublished: t.createdAt,
+            datePublished: toIsoDate(t.createdAt ?? t.created_at),
             reviewBody: t.message,
             reviewRating: {
               "@type": "Rating",
-              ratingValue: t.rating,
+              ratingValue: Number(t.rating),
               bestRating: 5,
             },
           })),

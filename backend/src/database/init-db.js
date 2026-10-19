@@ -1,5 +1,6 @@
 import { createProgramTables } from "./models/programs/program.model.js";
 import { createStudentTables } from "./models/students/student.model.js";
+import { createTestimonialTables } from "./models/testimonial/testimonial.model.js";
 import { createRefreshTokensTable } from "./models/token/refreshToken.model.js";
 import { createUsersTable } from "./models/users/user.model.js";
 // import { createUsersTable } from "./queries/users/user.queries.js";
@@ -10,6 +11,7 @@ export const initDb = async () => {
     await createProgramTables();
     await createRefreshTokensTable();
     await createStudentTables();
+    await createTestimonialTables()
 
     console.log("✅ Tables initialized");
   } catch (error) {
