@@ -1,7 +1,7 @@
-// components/Testimonials/Testimonials.jsx
+// components/Testimonials/Testimonial.jsx  (public website)
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   useTestimonials,
   useSubmitTestimonial,
@@ -21,6 +21,9 @@ const SORTS = [
 
 const RATING_WORDS = ["Poor", "Fair", "Good", "Very good", "Excellent"];
 
+// Who is speaking decides the bubble color.
+const SPEAKERS = ["Parent", "Student", "Alumni"];
+
 // These match the backend's validation. Longer values are rejected there.
 const LIMITS = { name: 100, email: 255, message: 600 };
 const MIN_MESSAGE = 20;
@@ -33,16 +36,6 @@ const EMPTY_FORM = {
   message: "",
   website: "", // honeypot
 };
-
-// Light colors only, so the dark initials always stay readable.
-const AVATARS = [
-  "linear-gradient(135deg, #38bdf8, #60a5fa)",
-  "linear-gradient(135deg, #c4b5fd, #a78bfa)",
-  "linear-gradient(135deg, #6ee7b7, #34d399)",
-  "linear-gradient(135deg, #fcd34d, #fb923c)",
-  "linear-gradient(135deg, #f9a8d4, #c4b5fd)",
-  "linear-gradient(135deg, #5eead4, #38bdf8)",
-];
 
 const STAR_PATH =
   "M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z";
@@ -59,11 +52,8 @@ const initials = (name = "") =>
     .map((part) => part[0].toUpperCase())
     .join("");
 
-// Same name, same color, every time.
-const avatarFor = (name = "") =>
-  AVATARS[
-    [...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % AVATARS.length
-  ];
+const toneOf = (relationship) =>
+  SPEAKERS.includes(relationship) ? String(relationship).toLowerCase() : "parent";
 
 // Fixed timezone so the server and the browser always print the same month.
 const formatDate = (value) => {
@@ -120,17 +110,61 @@ function Stars({ value, size = 16 }) {
 }
 
 // ============================================================================
-// RATING SUMMARY (the bars also work as filters)
+// REVIEW (a speech bubble with the speaker underneath)
 // ============================================================================
 
-function Summary({ stats, active, onPick }) {
+function Review({ review, size = "normal", ghost = false }) {
+  const date = formatDate(review.createdAt);
+  const long = String(review.message).length > 220;
+
+  return (
+    <article
+      className={`tm-review tm-review--${toneOf(review.relationship)} tm-review--${size}${
+        long ? " is-long" : ""
+      }${ghost ? " is-ghost" : ""}`}
+    >
+      <div className="tm-bubble">
+        <Stars value={review.rating} size={size === "spot" ? 20 : 16} />
+        <blockquote>{review.message}</blockquote>
+      </div>
+
+      <footer>
+        <span className="tm-avatar" aria-hidden="true">
+          {initials(review.name) || "?"}
+        </span>
+        <span className="tm-who">
+          <strong>{review.name}</strong>
+          <small>
+            {review.relationship}
+            {date && (
+              <>
+                , <time dateTime={String(review.createdAt)}>{date}</time>
+              </>
+            )}
+          </small>
+        </span>
+        {review.featured && size !== "spot" && (
+          <span className="tm-featured">Featured</span>
+        )}
+      </footer>
+    </article>
+  );
+}
+
+// ============================================================================
+// RATING STRIP (average plus a histogram that doubles as the rating filter)
+// ============================================================================
+
+function RatingStrip({ stats, active, onPick }) {
   if (!stats?.count) return null;
 
+  const counts = [5, 4, 3, 2, 1].map((n) => stats.breakdown?.[n] ?? 0);
+  const peak = Math.max(...counts, 1);
   const fivePct = Math.round(((stats.breakdown?.[5] ?? 0) / stats.count) * 100);
 
   return (
-    <aside className="tm-plate" aria-label="Rating summary">
-      <div className="tm-score">
+    <section className="tm-strip" aria-label="Rating summary">
+      <div className="tm-avg">
         <strong>{stats.average.toFixed(1)}</strong>
         <div>
           <Stars value={stats.average} size={20} />
@@ -141,70 +175,42 @@ function Summary({ stats, active, onPick }) {
         </div>
       </div>
 
-      <ul className="tm-bars" aria-label="Filter reviews by rating">
-        {[5, 4, 3, 2, 1].map((n) => {
-          const count = stats.breakdown?.[n] ?? 0;
-          const pct = (count / stats.count) * 100;
+      <ul
+        className={`tm-hist${active ? " has-active" : ""}`}
+        aria-label="Filter reviews by rating"
+      >
+        {[5, 4, 3, 2, 1].map((n, i) => {
+          const count = counts[i];
+          const height = count ? Math.max((count / peak) * 100, 10) : 4;
 
           return (
             <li key={n}>
               <button
                 type="button"
                 className={active === n ? "active" : ""}
-                onClick={() => onPick(active === n ? 0 : n)}
                 aria-pressed={active === n}
+                aria-label={`${n}-star reviews, ${count}`}
+                onClick={() => onPick(active === n ? 0 : n)}
               >
-                <span className="tm-bar-label">{n} star</span>
-                <span className="tm-bar-track">
-                  <span style={{ width: `${pct}%` }} />
+                <span className="tm-hist-count">{count}</span>
+                <span className="tm-hist-track">
+                  <span
+                    className="tm-hist-bar"
+                    style={{ "--h": `${height}%` }}
+                  />
                 </span>
-                <span className="tm-bar-count">{count}</span>
+                <span className="tm-hist-label">
+                  {n}
+                  <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={STAR_PATH} />
+                  </svg>
+                </span>
               </button>
             </li>
           );
         })}
       </ul>
-    </aside>
-  );
-}
-
-// ============================================================================
-// REVIEW CARD
-// ============================================================================
-
-function Card({ review, ghost = false }) {
-  const date = formatDate(review.createdAt);
-
-  return (
-    <article
-      className={`tm-card${review.featured ? " is-featured" : ""}${ghost ? " is-ghost" : ""}`}
-    >
-      <div className="tm-card-top">
-        <Stars value={review.rating} />
-        <span
-          className={`tm-tag tm-tag--${String(review.relationship).toLowerCase()}`}
-        >
-          {review.relationship}
-        </span>
-      </div>
-
-      <blockquote>{review.message}</blockquote>
-
-      <footer>
-        <span
-          className="tm-avatar"
-          style={{ background: avatarFor(review.name) }}
-          aria-hidden="true"
-        >
-          {initials(review.name) || "?"}
-        </span>
-        <span className="tm-who">
-          <strong>{review.name}</strong>
-          {date && <time dateTime={String(review.createdAt)}>{date}</time>}
-        </span>
-        {review.featured && <span className="tm-featured">Featured</span>}
-      </footer>
-    </article>
+    </section>
   );
 }
 
@@ -260,12 +266,7 @@ function RatingPicker({ value, onChange, error }) {
               onClick={() => onChange(n)}
               onMouseEnter={() => setHover(n)}
             >
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
+              <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                 <path d={STAR_PATH} />
               </svg>
             </button>
@@ -282,7 +283,7 @@ function RatingPicker({ value, onChange, error }) {
 }
 
 // ============================================================================
-// WRITE A REVIEW (form + live preview)
+// WRITE A REVIEW (form + live preview bubble)
 // ============================================================================
 
 function WriteReview() {
@@ -331,7 +332,7 @@ function WriteReview() {
     name: form.name.trim() || "Your name",
     relationship: form.relationship,
     rating: form.rating,
-    message: typed || "Your review appears here as you type.",
+    message: typed || "Your review will appear here as you type.",
     createdAt: null, // a draft has no date, and Date.now() breaks hydration
   };
 
@@ -342,118 +343,139 @@ function WriteReview() {
       aria-labelledby="tm-write-title"
     >
       <div className="tm-write-intro">
-        <h2 id="tm-write-title">Share your experience</h2>
+        <h2 id="tm-write-title">Add your review</h2>
         <p>
-          Your review helps other parents choose with confidence. It takes about
-          a minute, and our team reads it before it appears.
+          One minute is enough. Our team reads every review before it appears
+          on this page.
         </p>
 
         <div className="tm-preview" aria-hidden="true">
-          <span className="tm-preview-label">Live preview</span>
-          <Card review={preview} ghost={!typed} />
+          <span className="tm-preview-label">Preview</span>
+          <Review review={preview} ghost={!typed} />
         </div>
       </div>
 
-      {status === "success" ? (
-        <div className="tm-success" role="status">
-          <span className="tm-check" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24">
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
-          </span>
-          <h3>Review sent</h3>
-          <p>{message}</p>
-          <button type="button" className="tm-btn ghost" onClick={reset}>
-            Write another review
-          </button>
+      <div className="tm-window">
+        <div className="tm-window-bar" aria-hidden="true">
+          <i />
+          <i />
+          <i />
         </div>
-      ) : (
-        <form className="tm-form" onSubmit={onSubmit} noValidate>
-          <div className="tm-row">
-            <label>
-              Your name
-              <input
-                value={form.name}
-                onChange={set("name")}
-                maxLength={LIMITS.name}
-                autoComplete="name"
-                aria-invalid={!!errors.name}
+
+        <div className="tm-window-body">
+          {status === "success" ? (
+            <div className="tm-success" role="status">
+              <span className="tm-check" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+              </span>
+              <h3>Review sent</h3>
+              <p>{message}</p>
+              <button type="button" className="tm-btn ghost" onClick={reset}>
+                Write another review
+              </button>
+            </div>
+          ) : (
+            <form className="tm-form" onSubmit={onSubmit} noValidate>
+              <fieldset className="tm-seg">
+                <legend>I am a</legend>
+                <div className="tm-seg-options">
+                  {SPEAKERS.map((who) => (
+                    <label
+                      key={who}
+                      className={`tm-seg-opt tm-seg-opt--${who.toLowerCase()}`}
+                    >
+                      <input
+                        type="radio"
+                        name="relationship"
+                        value={who}
+                        checked={form.relationship === who}
+                        onChange={set("relationship")}
+                      />
+                      <span>{who}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="tm-row">
+                <label>
+                  Your name
+                  <input
+                    value={form.name}
+                    onChange={set("name")}
+                    maxLength={LIMITS.name}
+                    autoComplete="name"
+                    aria-invalid={!!errors.name}
+                  />
+                  {errors.name && <em>{errors.name}</em>}
+                </label>
+                <label>
+                  Email (kept private)
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={set("email")}
+                    maxLength={LIMITS.email}
+                    autoComplete="email"
+                    aria-invalid={!!errors.email}
+                  />
+                  {errors.email && <em>{errors.email}</em>}
+                </label>
+              </div>
+
+              <RatingPicker
+                value={form.rating}
+                onChange={(n) => update("rating", n)}
+                error={errors.rating}
               />
-              {errors.name && <em>{errors.name}</em>}
-            </label>
-            <label>
-              Email (kept private)
+
+              <label>
+                Your experience
+                <textarea
+                  rows={5}
+                  value={form.message}
+                  onChange={set("message")}
+                  maxLength={LIMITS.message}
+                  aria-invalid={!!errors.message}
+                  placeholder="What did you or your child learn? What stood out?"
+                />
+                <small
+                  className={`tm-count${form.message.length >= LIMITS.message - 60 ? " is-near" : ""}`}
+                >
+                  {form.message.length}/{LIMITS.message}
+                </small>
+                {errors.message && <em>{errors.message}</em>}
+              </label>
+
               <input
-                type="email"
-                value={form.email}
-                onChange={set("email")}
-                maxLength={LIMITS.email}
-                autoComplete="email"
-                aria-invalid={!!errors.email}
+                className="tm-hp"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={form.website}
+                onChange={set("website")}
+                name="website"
               />
-              {errors.email && <em>{errors.email}</em>}
-            </label>
-          </div>
 
-          <div className="tm-row">
-            <label>
-              You are a
-              <select value={form.relationship} onChange={set("relationship")}>
-                <option value="Parent">Parent</option>
-                <option value="Student">Student</option>
-                <option value="Alumni">Alumni</option>
-              </select>
-            </label>
-            <RatingPicker
-              value={form.rating}
-              onChange={(n) => update("rating", n)}
-              error={errors.rating}
-            />
-          </div>
+              {status === "error" && (
+                <p className="tm-alert" role="alert">
+                  {message}
+                </p>
+              )}
 
-          <label>
-            Your experience
-            <textarea
-              rows={5}
-              value={form.message}
-              onChange={set("message")}
-              maxLength={LIMITS.message}
-              aria-invalid={!!errors.message}
-              placeholder="What did you or your child learn? What stood out?"
-            />
-            <small
-              className={`tm-count${form.message.length >= LIMITS.message - 60 ? " is-near" : ""}`}
-            >
-              {form.message.length}/{LIMITS.message}
-            </small>
-            {errors.message && <em>{errors.message}</em>}
-          </label>
-
-          <input
-            className="tm-hp"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-            value={form.website}
-            onChange={set("website")}
-            name="website"
-          />
-
-          {status === "error" && (
-            <p className="tm-alert" role="alert">
-              {message}
-            </p>
+              <button
+                className="tm-btn"
+                type="submit"
+                disabled={status === "submitting"}
+              >
+                {status === "submitting" ? "Sending…" : "Send review"}
+              </button>
+            </form>
           )}
-
-          <button
-            className="tm-btn"
-            type="submit"
-            disabled={status === "submitting"}
-          >
-            {status === "submitting" ? "Sending…" : "Send review"}
-          </button>
-        </form>
-      )}
+        </div>
+      </div>
     </section>
   );
 }
@@ -465,6 +487,18 @@ function WriteReview() {
 export default function Testimonials({ initial = null }) {
   const t = useTestimonials(initial);
 
+  // The hero quote comes from the first page the server sent, so it stays put
+  // while visitors filter and sort the list below.
+  const spotlight = useMemo(() => {
+    const first = initial?.data ?? [];
+    return (
+      first.find((r) => r.featured) ??
+      first.find((r) => r.rating === 5) ??
+      first[0] ??
+      null
+    );
+  }, [initial]);
+
   const shownPct = t.total
     ? Math.min(100, (t.items.length / t.total) * 100)
     : 0;
@@ -472,12 +506,12 @@ export default function Testimonials({ initial = null }) {
   return (
     <div className="tm">
       {/* ---------- hero ---------- */}
-      <section className="tm-hero">
+      <section className={`tm-hero${spotlight ? "" : " no-spot"}`}>
         <div className="tm-hero-copy">
-          <h1>What parents and students say</h1>
+          <h1>What families say about Futuristic Coders</h1>
           <p className="tm-lead">
-            Honest feedback from the Nairobi families learning to code with
-            Futuristic Coders.
+            Reviews from the parents, students and alumni of our coding classes
+            in Nairobi.
           </p>
           <div className="tm-actions">
             <a className="tm-btn" href="#reviews">
@@ -489,8 +523,11 @@ export default function Testimonials({ initial = null }) {
           </div>
         </div>
 
-        <Summary stats={t.stats} active={t.rating} onPick={t.setRating} />
+        {spotlight && <Review review={spotlight} size="spot" />}
       </section>
+
+      {/* ---------- rating strip ---------- */}
+      <RatingStrip stats={t.stats} active={t.rating} onPick={t.setRating} />
 
       {/* ---------- reviews ---------- */}
       <section className="tm-list" id="reviews" aria-labelledby="tm-list-title">
@@ -500,49 +537,30 @@ export default function Testimonials({ initial = null }) {
             <span className="tm-total">{t.total}</span>
           </h2>
 
-          <label className="tm-sort">
-            Sort by
-            <select value={t.sort} onChange={(e) => t.setSort(e.target.value)}>
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="tm-chips" role="group" aria-label="Filter by rating">
-          <button
-            type="button"
-            aria-pressed={!t.rating}
-            onClick={() => t.setRating(0)}
-          >
-            All
-          </button>
-          {[5, 4, 3, 2, 1].map((n) => {
-            const count = t.stats?.breakdown?.[n];
-            return (
+          <div className="tm-controls">
+            {t.rating > 0 && (
               <button
-                key={n}
                 type="button"
-                aria-pressed={t.rating === n}
-                aria-label={`${n}-star reviews${count != null ? `, ${count}` : ""}`}
-                onClick={() => t.setRating(t.rating === n ? 0 : n)}
+                className="tm-clear"
+                onClick={() => t.setRating(0)}
               >
-                {n}
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d={STAR_PATH} />
-                </svg>
-                {count != null && <small>{count}</small>}
+                Show all ratings
               </button>
-            );
-          })}
+            )}
+            <label className="tm-sort">
+              Sort by
+              <select
+                value={t.sort}
+                onChange={(e) => t.setSort(e.target.value)}
+              >
+                {SORTS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
 
         {t.error && (
@@ -559,7 +577,7 @@ export default function Testimonials({ initial = null }) {
           <ul className="tm-grid" aria-busy="true">
             {[0, 1, 2].map((i) => (
               <li key={i}>
-                <div className="tm-card tm-skeleton" />
+                <div className="tm-skeleton" />
               </li>
             ))}
           </ul>
@@ -595,7 +613,7 @@ export default function Testimonials({ initial = null }) {
           <ul className={`tm-grid${t.loading ? " is-loading" : ""}`}>
             {t.items.map((item) => (
               <li key={item.id}>
-                <Card review={item} />
+                <Review review={item} />
               </li>
             ))}
           </ul>

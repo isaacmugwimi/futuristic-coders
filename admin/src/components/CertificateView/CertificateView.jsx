@@ -84,7 +84,7 @@ export function CertificateArtwork({ student, className = "" }) {
   const type =
     certificate.type === "participation" ? "participation" : "completion";
   const copy = COPY[type];
-  const verifyUrl = `${PUBLIC_SITE_URL}/verify/${certificate.number}`;
+const verifyUrl = `${PUBLIC_SITE_URL}/verify?code=${encodeURIComponent(certificate.number)}`;
   const host = PUBLIC_SITE_URL.replace(/^https?:\/\//, "");
   const [director, instructor] = SIGNATORIES;
 
