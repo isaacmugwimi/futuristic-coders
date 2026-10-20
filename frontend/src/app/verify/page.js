@@ -17,14 +17,14 @@ export const metadata = {
   ],
 
   alternates: {
-    canonical: "https://futuristiccoders.co.ke/verify-certificate",
+    canonical: "https://futuristiccoders.co.ke/verify",
   },
 
   openGraph: {
     title: "Verify Certificate | Futuristic Coders Academy",
     description:
       "Verify a certificate issued by Futuristic Coders Academy using its certificate ID or QR code.",
-    url: "https://futuristiccoders.co.ke/verify-certificate",
+    url: "https://futuristiccoders.co.ke/verify",
     siteName: "Futuristic Coders Academy",
     type: "website",
     images: [

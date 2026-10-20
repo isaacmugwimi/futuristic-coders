@@ -1,4 +1,4 @@
-// src/utils/api/apiPaths.js  (public website: Programs and Testimonials)
+// src/utils/api/apiPaths.js  (public website: Programs, Testimonials and Certificates)
 
 // ============================================================================
 // BASE URL
@@ -29,5 +29,12 @@ export const API_PATHS = {
 
     // GET: featured reviews
     GET_FEATURED: "/api/testimonials/get-featured-testimonials",
+  },
+
+  CERTIFICATES: {
+    // GET: public check of a certificate by its number. No login needed.
+    // The route lives under /api/students on the backend.
+    VERIFY: (certificateNo) =>
+      `/api/students/verify-certificate/${encodeURIComponent(certificateNo)}`,
   },
 };

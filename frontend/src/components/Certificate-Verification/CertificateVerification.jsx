@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useVerifyCertificate } from "../../hooks/certificates/useCertificateQueries";
 import "./CertificateVerification.css";
 
 function formatDate(value) {
@@ -9,6 +10,19 @@ function formatDate(value) {
     month: "long",
     year: "numeric",
   });
+}
+
+const TYPE_LABELS = {
+  completion: "Completion",
+  participation: "Participation",
+};
+
+function getErrorMessage(error) {
+  // The API answered (for example a 400 for a badly formed ID): show its message.
+  const serverMessage = error?.response?.data?.message;
+  if (error?.response && serverMessage) return serverMessage;
+
+  return "Could not reach the server. Check your connection and try again.";
 }
 
 // Decorative QR-style grid for the sample certificate (1 = filled cell)
@@ -33,7 +47,7 @@ const QR_PATTERN = [
 const STEPS = [
   {
     title: "Find the certificate ID",
-    text: "It is printed at the bottom of every certificate and starts with FC, followed by the year and a six-digit number.",
+    text: "It is printed at the bottom of every certificate. It starts with FC-CERT or FC-PART, followed by the year and a four-digit number.",
   },
   {
     title: "Enter it or scan the QR code",
@@ -41,7 +55,7 @@ const STEPS = [
   },
   {
     title: "Read the result",
-    text: "You will see who the certificate was awarded to, the course, and the date it was issued.",
+    text: "You will see who the certificate was awarded to, the course, the type of certificate, and the date it was issued.",
   },
 ];
 
@@ -66,7 +80,11 @@ const RESULTS = [
 const FAQS = [
   {
     q: "Where do I find the certificate ID?",
-    a: "Look at the bottom of the certificate, next to the QR code. It follows the format FC-2026-000001.",
+    a: "Look at the bottom of the certificate, next to the QR code. It looks like FC-CERT-2026-0001 for a completion certificate or FC-PART-2026-0001 for a participation certificate.",
+  },
+  {
+    q: "What is the difference between completion and participation?",
+    a: "A completion certificate is awarded to learners who finished the whole course. A participation certificate is awarded to learners who took part in the course but did not finish it.",
   },
   {
     q: "The ID says “Not found”. What should I do?",
@@ -74,11 +92,11 @@ const FAQS = [
   },
   {
     q: "What does “Revoked” mean?",
-    a: "The certificate was genuinely issued by Futuristic Coders but has been withdrawn, for example because it was issued in error. It should no longer be accepted as proof of completion.",
+    a: "The certificate was genuinely issued by Futuristic Coders but has been withdrawn, for example because it was issued in error or replaced by a completion certificate. It should no longer be accepted as proof of completion.",
   },
   {
     q: "What information does the check show?",
-    a: "Only the learner’s name, the course, the issue date and the certificate ID. Nothing else about the learner is shown.",
+    a: "Only the learner’s name, the course, the certificate type, the issue date and the certificate ID. Nothing else about the learner is shown.",
   },
   {
     q: "Do I need an account to verify a certificate?",
@@ -87,51 +105,52 @@ const FAQS = [
 ];
 
 export default function CertificateVerification() {
+  // What the visitor is typing, and what they last submitted.
+  // The check only runs for the submitted ID, not on every keystroke.
   const [code, setCode] = useState("");
-  const [state, setState] = useState({ phase: "idle" }); // idle | loading | valid | revoked | not_found | error
+  const [submittedCode, setSubmittedCode] = useState("");
 
-  async function verify(rawCode) {
-    const value = rawCode.trim().toUpperCase();
-    if (!value) return;
+  const query = useVerifyCertificate(submittedCode);
 
-    setState({ phase: "loading" });
-    try {
-      const res = await fetch(
-        `/api/verify-certificate?code=${encodeURIComponent(value)}`,
-      );
-      const data = await res.json();
-
-      if (data.status === "valid" || data.status === "revoked") {
-        setState({ phase: data.status, certificate: data.certificate });
-      } else if (data.status === "not_found") {
-        setState({ phase: "not_found", code: value });
-      } else {
-        setState({ phase: "error", message: data.message });
-      }
-    } catch {
-      setState({
-        phase: "error",
-        message:
-          "Could not reach the server. Check your connection and try again.",
-      });
-    }
-  }
-
-  // Auto-verify when opened from a QR code: /verify-certificate?code=FC-2026-000001
+  // Auto-verify when opened from a QR code: /verify-certificate?code=FC-CERT-2026-0001
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get("code");
+
     if (fromUrl) {
-      setCode(fromUrl.toUpperCase());
-      verify(fromUrl);
+      const value = fromUrl.trim().toUpperCase();
+      setCode(value);
+      setSubmittedCode(value);
     }
   }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
-    verify(code);
+
+    const value = code.trim().toUpperCase();
+    if (!value) return;
+
+    if (value === submittedCode) {
+      query.refetch(); // same ID again: check it fresh
+    } else {
+      setSubmittedCode(value);
+    }
   }
 
-  const loading = state.phase === "loading";
+  // ---- what to show -------------------------------------------------------
+
+  const loading = Boolean(submittedCode) && query.isFetching;
+  const settled = Boolean(submittedCode) && !loading;
+
+  const notFound =
+    settled && query.isError && query.error?.response?.status === 404;
+  const failed = settled && query.isError && !notFound;
+
+  // The controller wraps the record as { success, data }.
+  const record = query.data?.data ?? query.data;
+  const found = settled && !query.isError && Boolean(record);
+
+  const verified = found && record.valid === true;
+  const revoked = found && record.valid === false;
 
   return (
     <main className="cv">
@@ -158,7 +177,7 @@ export default function CertificateVerification() {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="FC-2026-000001"
+              placeholder="FC-CERT-2026-0001"
               autoComplete="off"
               spellCheck={false}
               maxLength={30}
@@ -172,55 +191,63 @@ export default function CertificateVerification() {
             </button>
           </form>
 
-          <p className="cv-hint">
-            Free to use. No account needed.
-          </p>
+          <p className="cv-hint">Free to use. No account needed.</p>
 
           <div className="cv-result" aria-live="polite">
-            {state.phase === "valid" && (
+            {verified && (
               <div className="cv-card cv-card--valid">
                 <div className="cv-badge cv-badge--valid">Verified</div>
                 <p className="cv-statement">This certificate is genuine.</p>
                 <dl className="cv-details">
                   <div>
                     <dt>Awarded to</dt>
-                    <dd>{state.certificate.learnerName}</dd>
+                    <dd>{record.full_name}</dd>
                   </div>
                   <div>
                     <dt>Course</dt>
-                    <dd>{state.certificate.course}</dd>
+                    <dd>{record.program_title}</dd>
+                  </div>
+                  <div>
+                    <dt>Certificate type</dt>
+                    <dd>
+                      {TYPE_LABELS[record.certificate_type] ??
+                        record.certificate_type}
+                    </dd>
                   </div>
                   <div>
                     <dt>Issued on</dt>
-                    <dd>{formatDate(state.certificate.issuedOn)}</dd>
+                    <dd>{formatDate(record.issued_at)}</dd>
                   </div>
                   <div>
                     <dt>Certificate ID</dt>
-                    <dd>{state.certificate.code}</dd>
+                    <dd>{record.certificate_no}</dd>
                   </div>
                 </dl>
               </div>
             )}
 
-            {state.phase === "revoked" && (
+            {revoked && (
               <div className="cv-card cv-card--revoked">
                 <div className="cv-badge cv-badge--revoked">Revoked</div>
                 <p className="cv-statement">
                   This certificate is no longer valid.
                 </p>
                 <p className="cv-note">
-                  Certificate {state.certificate.code} was issued by Futuristic
-                  Coders but has since been withdrawn. Contact us if you think
-                  this is a mistake.
+                  Certificate {record.certificate_no} was issued by Futuristic
+                  Coders
+                  {record.revoked_at
+                    ? ` but was withdrawn on ${formatDate(record.revoked_at)}`
+                    : " but has since been withdrawn"}
+                  . Contact us if you think this is a mistake.
                 </p>
               </div>
             )}
 
-            {state.phase === "not_found" && (
+            {notFound && (
               <div className="cv-card cv-card--missing">
                 <div className="cv-badge cv-badge--missing">Not found</div>
                 <p className="cv-statement">
-                  We have no certificate with ID {state.code}.
+                  We have no certificate with ID {submittedCode}.
                 </p>
                 <p className="cv-note">
                   Check the ID for typos (0 vs O, 1 vs I). If it still fails,
@@ -229,10 +256,10 @@ export default function CertificateVerification() {
               </div>
             )}
 
-            {state.phase === "error" && (
+            {failed && (
               <div className="cv-card cv-card--missing">
                 <div className="cv-badge cv-badge--missing">Error</div>
-                <p className="cv-statement">{state.message}</p>
+                <p className="cv-statement">{getErrorMessage(query.error)}</p>
               </div>
             )}
           </div>
@@ -240,19 +267,23 @@ export default function CertificateVerification() {
 
         {/* Sample certificate showing where the ID and QR code are */}
         <figure className="cv-sample">
-          <div className="cv-cert" role="img" aria-label="Sample certificate showing the certificate ID and QR code at the bottom">
+          <div
+            className="cv-cert"
+            role="img"
+            aria-label="Sample certificate showing the certificate ID and QR code at the bottom"
+          >
             <div className="cv-cert-frame">
               <p className="cv-cert-brand">Futuristic Coders</p>
               <p className="cv-cert-kind">Certificate of Completion</p>
               <p className="cv-cert-small">This certifies that</p>
               <p className="cv-cert-name">Learner Name</p>
               <p className="cv-cert-small">has successfully completed</p>
-              <p className="cv-cert-course">Course Title</p> 
+              <p className="cv-cert-course">Course Title</p>
 
               <div className="cv-cert-foot">
                 <div className="cv-cert-id">
                   <span className="cv-cert-idlabel">Certificate ID</span>
-                  <span className="cv-cert-idvalue">FC-2026-000001</span>
+                  <span className="cv-cert-idvalue">FC-CERT-2026-0001</span>
                 </div>
                 <div className="cv-qr">
                   {QR_PATTERN.join("")
@@ -292,7 +323,10 @@ export default function CertificateVerification() {
         <h2 className="cv-h2">What the results mean</h2>
         <ul className="cv-results">
           {RESULTS.map((r) => (
-            <li className={`cv-result-item cv-result-item--${r.tone}`} key={r.label}>
+            <li
+              className={`cv-result-item cv-result-item--${r.tone}`}
+              key={r.label}
+            >
               <span className={`cv-badge cv-badge--${r.tone}`}>{r.label}</span>
               <p className="cv-text">{r.text}</p>
             </li>
@@ -317,10 +351,12 @@ export default function CertificateVerification() {
       <section className="cv-section">
         <div className="cv-help">
           <div>
-            <h2 className="cv-help-title">Still can&rsquo;t verify a certificate?</h2>
+            <h2 className="cv-help-title">
+              Still can&rsquo;t verify a certificate?
+            </h2>
             <p className="cv-help-text">
-              Send us the certificate ID and a photo of the certificate and
-              we will check our records.
+              Send us the certificate ID and a photo of the certificate and we
+              will check our records.
             </p>
           </div>
           <a className="cv-help-link" href="/contact">
