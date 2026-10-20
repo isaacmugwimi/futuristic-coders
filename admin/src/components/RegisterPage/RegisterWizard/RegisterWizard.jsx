@@ -164,7 +164,7 @@ function RegisterSuccess({ fullName, email, staffCode }) {
 /* ============================== the wizard ============================== */
 
 // TODO: point this at your backend (set NEXT_PUBLIC_API_URL in .env.local)
-const REGISTER_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/auth/register`;
+const REGISTER_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/users/create-user`;
 
 export default function RegisterWizard() {
   const [step, setStep] = useState(0);

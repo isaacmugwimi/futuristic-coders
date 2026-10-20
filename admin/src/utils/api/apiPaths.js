@@ -27,7 +27,7 @@ export const API_PATHS = {
 
   USERS: {
     // Create
-    CREATE: "/api/users/create-users",
+    CREATE: "/api/users/create-user",
 
     // Read
     GET_ALL: "/api/users/get-all-users",
