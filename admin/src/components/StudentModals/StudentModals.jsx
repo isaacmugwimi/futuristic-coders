@@ -23,10 +23,10 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+
 import {
-  AGE_GROUPS,
   CERTIFICATE_TYPES,
-  PROGRAM_OPTIONS,
+  PAYMENT_METHODS,
   STATUS_META,
   avatarTone,
   certificateEligibility,
@@ -35,16 +35,19 @@ import {
   formatPhone,
   honorsFor,
   initials,
+  isChildAgeGroup,
   normalizeKenyanPhone,
   paymentInfo,
-  programWeeks,
   todayISO,
 } from "@/src/data/students";
+
+import { useEnrollmentCertificates } from "@/src/hooks/students/useStudentQueries";
 
 /**
  * StudentModals.jsx
  * Every popup on the Students page: details, add/edit form, confirmations,
  * the "mark as completed" dialog and the toast message.
+ * Programs, age groups and certificates all come from the backend.
  */
 
 /* ============================== modal shell ============================== */
@@ -272,7 +275,9 @@ export function CompleteDialog({ students, onConfirm, onCancel }) {
     onConfirm({});
   }
 
-  const lowAttendance = students.filter((s) => s.attendance < 75);
+  const lowAttendance = students.filter(
+    (s) => s.attendance != null && s.attendance < 75,
+  );
 
   return (
     <Modal
@@ -387,13 +392,26 @@ export function StudentDetailsModal({
   onComplete,
   onReopen,
 }) {
-  const meta = STATUS_META[s.status];
+  const meta = STATUS_META[s.status] ?? STATUS_META.active;
   const completed = s.status === "completed";
   const pay = paymentInfo(s);
   const honors = honorsFor(s.finalScore);
-  const weeks = programWeeks(s.program);
+  const weeks = s.programWeeks;
   const elig = certificateEligibility(s);
   const cert = s.certificate;
+
+  // The list only says whether a certificate exists. Its type and issue date
+  // come from the certificates endpoint, fetched only when there is one.
+  const { data: certResponse } = useEnrollmentCertificates(
+    cert ? s.enrollmentId : null,
+  );
+  const issuedCert = (certResponse?.data ?? []).find(
+    (c) => c.status === "issued",
+  );
+  const certTypeKey =
+    issuedCert?.certificate_type ??
+    (completed ? "completion" : "participation");
+  const certNo = issuedCert?.certificate_no ?? cert?.no;
 
   return (
     <Modal
@@ -438,7 +456,7 @@ export function StudentDetailsModal({
             <p>{s.program}</p>
             <div className="sm-profile__badges">
               <Badge tone={meta.tone}>{meta.label}</Badge>
-              <Badge>{s.ageGroup}</Badge>
+              {s.ageGroup && <Badge>{s.ageGroup}</Badge>}
               {honors && (
                 <Badge tone="gold" icon={Award}>
                   {honors}
@@ -481,7 +499,7 @@ export function StudentDetailsModal({
         <section className="sm-section">
           <h4>Progress</h4>
           <Meter value={s.progress} label="Course progress" />
-          <Meter value={s.attendance} label="Attendance" />
+          <Meter value={s.attendance ?? 0} label="Attendance" />
           {s.finalScore != null && (
             <p className="sm-section__line">
               Final score: <strong>{s.finalScore}%</strong>
@@ -534,13 +552,17 @@ export function StudentDetailsModal({
           <div>
             <strong>
               {cert
-                ? `${CERTIFICATE_TYPES[cert.type ?? "completion"].label} · ${cert.number}`
+                ? `${CERTIFICATE_TYPES[certTypeKey]?.label ?? "Certificate"} · ${certNo}`
                 : elig.type
                   ? `Eligible for a ${CERTIFICATE_TYPES[elig.type].label}`
                   : "No certificate yet"}
             </strong>
             <span>
-              {cert ? `Issued ${formatDate(cert.issuedOn)}` : elig.reason}
+              {cert
+                ? issuedCert
+                  ? `Issued ${formatDate(issuedCert.issued_at)}`
+                  : "Issued"
+                : elig.reason}
             </span>
           </div>
           {(cert || elig.type) && (
@@ -566,47 +588,49 @@ export function StudentDetailsModal({
 
 /* ============================== add / edit form ============================== */
 
+// Payment fields are only sent when an amount is entered.
+const EMPTY_PAYMENT = { payAmount: "", payMethod: "mpesa", payReference: "" };
+
 function toValues(s) {
   return {
-    fullName: s.fullName,
-    email: s.email,
-    phone: s.phone,
-    ageGroup: s.ageGroup,
+    fullName: s.fullName ?? "",
+    email: s.email ?? "",
+    phone: s.phone ?? "",
+    ageGroup: s.ageGroup ?? "",
     county: s.county ?? "",
-    guardianName: s.guardianName,
-    guardianPhone: s.guardianPhone,
-    program: s.program,
-    enrolledOn: s.enrolledOn,
+    guardianName: s.guardianName ?? "",
+    guardianPhone: s.guardianPhone ?? "",
+    programId: s.programId ?? "",
+    enrolledOn: s.enrolledOn ?? todayISO(),
     status: s.status,
-    progress: String(s.progress),
-    attendance: String(s.attendance),
+    progress: String(s.progress ?? 0),
     finalScore: s.finalScore == null ? "" : String(s.finalScore),
-    fee: String(s.fee),
-    amountPaid: String(s.amountPaid),
-    notes: s.notes,
+    fee: String(s.fee ?? 0),
+    notes: s.notes ?? "",
+    ...EMPTY_PAYMENT,
   };
 }
 
-const NEW_VALUES = {
+const newValues = () => ({
   fullName: "",
   email: "",
   phone: "",
-  ageGroup: AGE_GROUPS[1],
+  ageGroup: "",
   county: "",
   guardianName: "",
   guardianPhone: "",
-  program: PROGRAM_OPTIONS[2].title,
+  programId: "",
   enrolledOn: todayISO(),
   status: "active",
   progress: "0",
-  attendance: "100",
   finalScore: "",
-  fee: String(PROGRAM_OPTIONS[2].fee),
-  amountPaid: "0",
+  fee: "",
   notes: "",
-};
+  ...EMPTY_PAYMENT,
+});
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const MPESA_CODE_PATTERN = /^[A-Za-z0-9]{8,12}$/;
 
 function Field({ id, label, required, error, hint, className = "", children }) {
   return (
@@ -627,16 +651,31 @@ function Field({ id, label, required, error, hint, className = "", children }) {
   );
 }
 
-function StudentFormModal({
+/**
+ * programs: published programs the student can be enrolled in.
+ * ageGroups: age group labels taken from the programs and students.
+ *
+ * onSave receives:
+ *   fullName, email, phone, ageGroup, county, guardianName, guardianPhone,
+ *   enrolledOn, status, finalScore, fee, notes,
+ *   programId (adding only), progress (editing only),
+ *   payment: { amount, paymentMethod, reference } or null
+ */
+export function StudentFormModal({
   student,
   programs = [],
   programsLoading = false,
+  ageGroups = [],
   onSave,
   onClose,
 }) {
   const editing = Boolean(student);
+  // A student with no enrollment has no program, fees or progress to edit.
+  const showEnrollment = !editing || Boolean(student.enrollmentId);
+  const paidSoFar = editing ? Number(student.amountPaid ?? 0) : 0;
+
   const [values, setValues] = useState(() =>
-    student ? toValues(student) : NEW_VALUES,
+    student ? toValues(student) : newValues(),
   );
   const [errors, setErrors] = useState({});
   const [feeTouched, setFeeTouched] = useState(editing);
@@ -649,50 +688,89 @@ function StudentFormModal({
     "aria-describedby": errors[name] ? `${id(name)}-error` : undefined,
   });
 
+  const childGroup = isChildAgeGroup(values.ageGroup);
+
+  // Keep an existing student's age group selectable even if no program uses it.
+  const ageOptions =
+    !values.ageGroup || ageGroups.includes(values.ageGroup)
+      ? ageGroups
+      : [values.ageGroup, ...ageGroups];
+
   function set(name, value) {
     setValues((v) => ({ ...v, [name]: value }));
     if (errors[name]) setErrors((e) => ({ ...e, [name]: undefined }));
   }
 
-  function onProgramChange(title) {
-    const option = PROGRAM_OPTIONS.find((p) => p.title === title);
+  // Picking a program fills in its price until the fee is edited by hand.
+  function onProgramChange(programId) {
+    const program = programs.find((p) => p.id === programId);
     setValues((v) => ({
       ...v,
-      program: title,
-      fee: !feeTouched && option ? String(option.fee) : v.fee,
+      programId,
+      fee: !feeTouched && program ? String(Number(program.price ?? 0)) : v.fee,
     }));
+    if (errors.programId) setErrors((e) => ({ ...e, programId: undefined }));
   }
 
   function validate(v) {
     const e = {};
-    const num = (x) => (x.trim() === "" ? NaN : Number(x));
-    const kid = v.ageGroup === AGE_GROUPS[0];
+    const num = (x) => (String(x).trim() === "" ? NaN : Number(x));
 
     if (v.fullName.trim().length < 3) e.fullName = "Enter the student's name.";
     if (v.email.trim() && !EMAIL_PATTERN.test(v.email.trim()))
       e.email = "Enter a valid email address.";
-    if (!normalizeKenyanPhone(v.phone))
+
+    if (v.phone.trim() && !normalizeKenyanPhone(v.phone))
       e.phone = "Enter a valid Kenyan number, e.g. 0712 345 678.";
-    if (kid && !v.guardianName.trim())
+    // The backend needs at least one way to reach the student.
+    if (!v.phone.trim() && !v.guardianPhone.trim() && !v.email.trim())
+      e.phone = "Add a phone number, a guardian phone or an email.";
+
+    // Kids need a parent or guardian; for everyone else it's optional.
+    if (childGroup && !v.guardianName.trim())
       e.guardianName = "Kids need a parent or guardian name.";
-    if (v.guardianPhone.trim() ? !normalizeKenyanPhone(v.guardianPhone) : kid)
-      e.guardianPhone = "Enter a valid guardian phone number.";
-    if (!v.enrolledOn) e.enrolledOn = "Pick the enrollment date.";
-    for (const key of ["progress", "attendance"]) {
-      const n = num(v[key]);
-      if (!(n >= 0 && n <= 100)) e[key] = "Enter 0 to 100.";
-    }
     if (
-      v.finalScore.trim() !== "" &&
-      !(num(v.finalScore) >= 0 && num(v.finalScore) <= 100)
+      v.guardianPhone.trim()
+        ? !normalizeKenyanPhone(v.guardianPhone)
+        : childGroup
     )
-      e.finalScore = "Enter 0 to 100.";
-    const fee = num(v.fee);
-    const paid = num(v.amountPaid);
-    if (!(fee >= 0)) e.fee = "Enter the fee in KSh.";
-    if (!(paid >= 0)) e.amountPaid = "Enter the amount paid.";
-    else if (fee >= 0 && paid > fee)
-      e.amountPaid = "Paid amount can't be more than the fee.";
+      e.guardianPhone = "Enter a valid guardian phone number.";
+
+    if (showEnrollment) {
+      if (!editing && !v.programId) e.programId = "Choose a program.";
+      if (!v.enrolledOn) e.enrolledOn = "Pick the enrollment date.";
+
+      if (editing) {
+        const progress = num(v.progress);
+        if (!(Number.isInteger(progress) && progress >= 0 && progress <= 100))
+          e.progress = "Enter a whole number from 0 to 100.";
+      }
+
+      if (
+        v.finalScore.trim() !== "" &&
+        !(num(v.finalScore) >= 0 && num(v.finalScore) <= 100)
+      )
+        e.finalScore = "Enter 0 to 100.";
+
+      const fee = num(v.fee);
+      if (!(fee >= 0)) e.fee = "Enter the fee in KSh.";
+      else if (fee < paidSoFar)
+        e.fee = `Fee can't be lower than the ${formatKSh(paidSoFar)} already paid.`;
+
+      if (v.payAmount.trim() !== "") {
+        const amount = num(v.payAmount);
+        if (!(amount > 0)) e.payAmount = "Enter an amount above 0.";
+        else if (fee >= 0 && amount > fee - paidSoFar + 0.001)
+          e.payAmount = `Can't be more than the balance of ${formatKSh(Math.max(fee - paidSoFar, 0))}.`;
+
+        if (
+          v.payMethod === "mpesa" &&
+          !MPESA_CODE_PATTERN.test(v.payReference.trim())
+        )
+          e.payReference = "Enter the M-Pesa transaction code.";
+      }
+    }
+
     return e;
   }
 
@@ -706,26 +784,39 @@ function StudentFormModal({
       );
       return;
     }
+
+    const payAmount =
+      values.payAmount.trim() === "" ? 0 : Number(values.payAmount);
+
     onSave({
       fullName: values.fullName.trim().replace(/\s+/g, " "),
       email: values.email.trim().toLowerCase(),
-      phone: normalizeKenyanPhone(values.phone),
+      phone: values.phone.trim() ? normalizeKenyanPhone(values.phone) : "",
       ageGroup: values.ageGroup,
       county: values.county.trim(),
       guardianName: values.guardianName.trim(),
       guardianPhone: values.guardianPhone.trim()
         ? normalizeKenyanPhone(values.guardianPhone)
         : "",
-      program: values.program,
-      enrolledOn: values.enrolledOn,
-      status: values.status,
-      progress: Number(values.progress),
-      attendance: Number(values.attendance),
-      finalScore:
-        values.finalScore.trim() === "" ? null : Number(values.finalScore),
-      fee: Number(values.fee),
-      amountPaid: Number(values.amountPaid),
       notes: values.notes.trim(),
+      ...(showEnrollment && {
+        ...(editing
+          ? { progress: Number(values.progress) }
+          : { programId: values.programId }),
+        enrolledOn: values.enrolledOn,
+        status: values.status,
+        finalScore:
+          values.finalScore.trim() === "" ? null : Number(values.finalScore),
+        fee: Number(values.fee),
+        payment:
+          payAmount > 0
+            ? {
+                amount: payAmount,
+                paymentMethod: values.payMethod,
+                reference: values.payReference.trim(),
+              }
+            : null,
+      }),
     });
   }
 
@@ -740,12 +831,14 @@ function StudentFormModal({
     />
   );
 
-  const select = (name, options, onChange) => (
+  const select = (name, options, onChange, extra = {}) => (
     <select
       id={id(name)}
       className="sm-input"
       value={values[name]}
       onChange={(e) => (onChange ?? ((v) => set(name, v)))(e.target.value)}
+      {...aria(name)}
+      {...extra}
     >
       {options.map((option) => (
         <option key={option.value ?? option} value={option.value ?? option}>
@@ -754,6 +847,8 @@ function StudentFormModal({
       ))}
     </select>
   );
+
+  const balanceNow = Math.max(Number(values.fee || 0) - paidSoFar, 0);
 
   return (
     <Modal
@@ -801,7 +896,12 @@ function StudentFormModal({
               })}
             </Field>
             <Field id={id("ageGroup")} label="Age group">
-              {select("ageGroup", AGE_GROUPS)}
+              {ageOptions.length > 0
+                ? select("ageGroup", [
+                    { value: "", label: "Select age group" },
+                    ...ageOptions.map((a) => ({ value: a, label: a })),
+                  ])
+                : input("ageGroup", { placeholder: "e.g. Kids (7–12)" })}
             </Field>
             <Field id={id("county")} label="County / town">
               {input("county", { placeholder: "e.g. Kirinyaga" })}
@@ -809,8 +909,8 @@ function StudentFormModal({
             <Field
               id={id("phone")}
               label="Phone number"
-              required
               error={errors.phone}
+              hint="Student or guardian phone, or an email, is needed."
             >
               {input("phone", { type: "tel", placeholder: "0712 345 678" })}
             </Field>
@@ -834,7 +934,7 @@ function StudentFormModal({
             <Field
               id={id("guardianName")}
               label="Guardian name"
-              required={values.ageGroup === AGE_GROUPS[0]}
+              required={childGroup}
               error={errors.guardianName}
             >
               {input("guardianName")}
@@ -842,7 +942,7 @@ function StudentFormModal({
             <Field
               id={id("guardianPhone")}
               label="Guardian phone"
-              required={values.ageGroup === AGE_GROUPS[0]}
+              required={childGroup}
               error={errors.guardianPhone}
             >
               {input("guardianPhone", {
@@ -853,109 +953,176 @@ function StudentFormModal({
           </div>
         </section>
 
-        <section>
-          <h3>Program &amp; progress</h3>
-          <div className="sm-grid">
-            <Field id={id("program")} label="Program" className="sm-full">
-              {select(
-                "program",
-                PROGRAM_OPTIONS.map((p) => p.title),
-                onProgramChange,
+        {showEnrollment && (
+          <section>
+            <h3>Program &amp; progress</h3>
+            <div className="sm-grid">
+              <Field
+                id={id("programId")}
+                label="Program"
+                required={!editing}
+                error={errors.programId}
+                hint={
+                  editing
+                    ? "The program can't be changed after enrolling."
+                    : programs.length === 0 && !programsLoading
+                      ? "No published programs yet. Publish a program first."
+                      : undefined
+                }
+                className="sm-full"
+              >
+                {editing ? (
+                  <input
+                    id={id("programId")}
+                    className="sm-input"
+                    value={student.program}
+                    readOnly
+                    disabled
+                  />
+                ) : (
+                  select(
+                    "programId",
+                    [
+                      {
+                        value: "",
+                        label: programsLoading
+                          ? "Loading programs…"
+                          : "Select a program",
+                      },
+                      ...programs.map((p) => ({ value: p.id, label: p.title })),
+                    ],
+                    onProgramChange,
+                    { disabled: programsLoading },
+                  )
+                )}
+              </Field>
+              <Field
+                id={id("enrolledOn")}
+                label="Enrolled on"
+                required
+                error={errors.enrolledOn}
+              >
+                {input("enrolledOn", { type: "date" })}
+              </Field>
+              <Field
+                id={id("status")}
+                label="Status"
+                hint={
+                  values.status === "completed"
+                    ? "Completed sets progress to 100%."
+                    : undefined
+                }
+              >
+                {select(
+                  "status",
+                  Object.entries(STATUS_META).map(([value, meta]) => ({
+                    value,
+                    label: meta.label,
+                  })),
+                )}
+              </Field>
+              {editing && (
+                <Field
+                  id={id("progress")}
+                  label="Progress (%)"
+                  error={errors.progress}
+                  hint="Attendance is worked out from recorded sessions."
+                >
+                  {input("progress", {
+                    type: "number",
+                    min: 0,
+                    max: 100,
+                    inputMode: "numeric",
+                  })}
+                </Field>
               )}
-            </Field>
-            <Field
-              id={id("enrolledOn")}
-              label="Enrolled on"
-              required
-              error={errors.enrolledOn}
-            >
-              {input("enrolledOn", { type: "date" })}
-            </Field>
-            <Field
-              id={id("status")}
-              label="Status"
-              hint={
-                values.status === "completed"
-                  ? "Completed sets progress to 100%."
-                  : undefined
-              }
-            >
-              {select(
-                "status",
-                Object.entries(STATUS_META).map(([value, meta]) => ({
-                  value,
-                  label: meta.label,
-                })),
+              {(editing || values.status === "completed") && (
+                <Field
+                  id={id("finalScore")}
+                  label="Final score (%)"
+                  error={errors.finalScore}
+                  hint="Optional"
+                >
+                  {input("finalScore", {
+                    type: "number",
+                    min: 0,
+                    max: 100,
+                    inputMode: "numeric",
+                  })}
+                </Field>
               )}
-            </Field>
-            <Field
-              id={id("progress")}
-              label="Progress (%)"
-              error={errors.progress}
-            >
-              {input("progress", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
-            </Field>
-            <Field
-              id={id("attendance")}
-              label="Attendance (%)"
-              error={errors.attendance}
-            >
-              {input("attendance", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
-            </Field>
-            <Field
-              id={id("finalScore")}
-              label="Final score (%)"
-              error={errors.finalScore}
-              hint="Optional"
-            >
-              {input("finalScore", {
-                type: "number",
-                min: 0,
-                max: 100,
-                inputMode: "numeric",
-              })}
-            </Field>
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
-        <section>
-          <h3>Fees (KSh)</h3>
-          <div className="sm-grid">
-            <Field id={id("fee")} label="Total fee" required error={errors.fee}>
-              {input("fee", {
-                type: "number",
-                min: 0,
-                inputMode: "numeric",
-                onChange: (e) => {
-                  setFeeTouched(true);
-                  set("fee", e.target.value);
-                },
-              })}
-            </Field>
-            <Field
-              id={id("amountPaid")}
-              label="Amount paid"
-              required
-              error={errors.amountPaid}
-            >
-              {input("amountPaid", {
-                type: "number",
-                min: 0,
-                inputMode: "numeric",
-              })}
-            </Field>
-          </div>
-        </section>
+        {showEnrollment && (
+          <section>
+            <h3>Fees (KSh)</h3>
+            <div className="sm-grid">
+              <Field
+                id={id("fee")}
+                label="Total fee"
+                required
+                error={errors.fee}
+                hint={
+                  editing
+                    ? `Paid so far ${formatKSh(paidSoFar)} · Balance ${formatKSh(balanceNow)}`
+                    : "Filled in from the program's price."
+                }
+              >
+                {input("fee", {
+                  type: "number",
+                  min: 0,
+                  inputMode: "numeric",
+                  onChange: (e) => {
+                    setFeeTouched(true);
+                    set("fee", e.target.value);
+                  },
+                })}
+              </Field>
+              <Field
+                id={id("payAmount")}
+                label={editing ? "Record a payment" : "First payment"}
+                error={errors.payAmount}
+                hint="Optional"
+              >
+                {input("payAmount", {
+                  type: "number",
+                  min: 0,
+                  inputMode: "numeric",
+                  placeholder: "Amount in KSh",
+                })}
+              </Field>
+              {values.payAmount.trim() !== "" && (
+                <>
+                  <Field id={id("payMethod")} label="Payment method">
+                    {select("payMethod", PAYMENT_METHODS)}
+                  </Field>
+                  <Field
+                    id={id("payReference")}
+                    label={
+                      values.payMethod === "mpesa"
+                        ? "M-Pesa transaction code"
+                        : "Reference"
+                    }
+                    required={values.payMethod === "mpesa"}
+                    error={errors.payReference}
+                    hint={
+                      values.payMethod === "mpesa"
+                        ? undefined
+                        : "Optional, e.g. a receipt number"
+                    }
+                  >
+                    {input("payReference", {
+                      placeholder:
+                        values.payMethod === "mpesa" ? "e.g. QGH7XYZ123" : "",
+                    })}
+                  </Field>
+                </>
+              )}
+            </div>
+          </section>
+        )}
 
         <section>
           <h3>Notes</h3>

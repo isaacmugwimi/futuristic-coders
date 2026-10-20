@@ -1,28 +1,14 @@
-// Shared mock data + tiny store for the Students and Certificates pages.
-// Both pages read the same list, so completing a student on one page shows up
-// on the other. Certificates come in two types: completion and participation. Replace the actions below with API calls when your backend is ready.
+// Shared helpers for the Students module.
+// These replace the helpers that used to live in the mock file
+// "@/src/data/students". They only read values the backend already returns
+// (agreed fee, amount paid, status, enrollment date, program length and
+// certificate), so nothing here is hard-coded student data.
 
-import { useSyncExternalStore } from "react";
+// ============================================================================
+// LABELS AND OPTIONS
+// ============================================================================
 
-export const PUBLIC_SITE_URL = "https://futuristiccoders.co.ke"; // TODO: your public website
-
-/* ============================== options ============================== */
-
-export const PROGRAM_OPTIONS = [
-  { title: "Scratch Juniors", weeks: 6, fee: 6000 },
-  { title: "Game Design with Scratch", weeks: 8, fee: 7500 },
-  { title: "Web Development Foundations", weeks: 8, fee: 9500 },
-  { title: "JavaScript Essentials", weeks: 10, fee: 11000 },
-  { title: "React for Builders", weeks: 10, fee: 15000 },
-  { title: "Python Basics", weeks: 8, fee: 9500 },
-  { title: "Python for Data & Automation", weeks: 10, fee: 14000 },
-  { title: "SQL & PostgreSQL Fundamentals", weeks: 5, fee: 8000 },
-  { title: "Full-Stack Bootcamp", weeks: 16, fee: 45000 },
-  { title: "Holiday Code Camp", weeks: 2, fee: 4500 },
-];
-
-export const AGE_GROUPS = ["Kids (7–12)", "Teens (13–17)", "Adults (18+)"];
-
+// status -> label and badge tone
 export const STATUS_META = {
   active: { label: "Active", tone: "success" },
   on_hold: { label: "On hold", tone: "warning" },
@@ -30,85 +16,9 @@ export const STATUS_META = {
   completed: { label: "Completed", tone: "violet" },
 };
 
-export const CURRENT_STATUSES = ["active", "on_hold", "dropped"];
-
-/* ============================== helpers ============================== */
-
-export const todayISO = () => new Date().toISOString().slice(0, 10);
-
-export const formatKSh = (amount) =>
-  `KSh ${Number(amount || 0).toLocaleString("en-US")}`;
-
-export const formatDate = (iso) =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        timeZone: "UTC",
-      })
-    : "—";
-
-/** 16 October 2026 (used on certificates) */
-export const formatLongDate = (iso) =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "UTC",
-      })
-    : "—";
-
-export const initials = (name) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
-
-/** 0-5, a stable colour per person for avatars */
-export const avatarTone = (name) =>
-  [...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 6;
-
-/** 0712 345 678 / +254712345678 / 254112345678 -> "+254712345678", else null */
-export function normalizeKenyanPhone(input) {
-  const compact = String(input ?? "").replace(/[\s()-]/g, "");
-  const match = compact.match(/^(?:\+?254|0)([17]\d{8})$/);
-  return match ? `+254${match[1]}` : null;
-}
-
-export function formatPhone(value) {
-  const n = normalizeKenyanPhone(value);
-  return n
-    ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)} ${n.slice(10)}`
-    : value || "—";
-}
-
-/** { balance, status: "paid" | "partial" | "pending" } */
-export function paymentInfo(student) {
-  const balance = Math.max(0, student.fee - student.amountPaid);
-  const status =
-    balance === 0 ? "paid" : student.amountPaid > 0 ? "partial" : "pending";
-  return { balance, status };
-}
-
-export function honorsFor(score) {
-  if (score == null) return null;
-  if (score >= 85) return "Distinction";
-  if (score >= 70) return "Merit";
-  if (score >= 50) return "Pass";
-  return null;
-}
-
-export const programWeeks = (title) =>
-  PROGRAM_OPTIONS.find((p) => p.title === title)?.weeks ?? null;
-
-/* ============================== certificates ============================== */
-
-/** Two kinds of certificate. Completion: finished the program. Participation: did not finish but paid in full. */
+// Two kinds of certificate:
+//   completion    -> finished the program
+//   participation -> did not finish, but paid in full
 export const CERTIFICATE_TYPES = {
   completion: {
     label: "Certificate of Completion",
@@ -122,58 +32,134 @@ export const CERTIFICATE_TYPES = {
   },
 };
 
-/** Names printed under the signature lines. Edit these when the people change. */
-export const SIGNATORIES = [
-  { name: "Faith Lilian", title: "Program Director" },
-  { name: "Isaac Mugwimi", title: "Lead Instructor" },
+// value is what the backend stores; the backend also accepts "M-Pesa" etc.
+export const PAYMENT_METHODS = [
+  { value: "mpesa", label: "M-Pesa" },
+  { value: "cash", label: "Cash" },
+  { value: "bank_transfer", label: "Bank transfer" },
 ];
 
-/** Minimum attendance (%) for a participation certificate. 0 = paying in full is enough; raise it (e.g. 50) to ask for some attendance too. */
+// Kids (7–12) need a parent or guardian.
+export const isChildAgeGroup = (label) => /kid|child/i.test(label ?? "");
+
+// ============================================================================
+// MONEY
+// ============================================================================
+
+// 12000 -> "KSh 12,000"
+export const formatKSh = (amount) =>
+  `KSh ${Number(amount || 0).toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+  })}`;
+
+// Same rule as the backend: fully paid once amount paid reaches the agreed fee.
+// status: "paid" | "partial" | "pending" (pending = nothing paid yet)
+export const paymentInfo = (student) => {
+  const fee = Number(student?.fee ?? 0);
+  const paid = Number(student?.amountPaid ?? 0);
+  const balance = Math.max(0, fee - paid);
+
+  return {
+    fee,
+    paid,
+    balance,
+    status: balance === 0 ? "paid" : paid > 0 ? "partial" : "pending",
+  };
+};
+
+export const isFullyPaid = (student) => paymentInfo(student).balance === 0;
+
+// ============================================================================
+// DATES
+// ============================================================================
+
+// Today's date (YYYY-MM-DD) in Kenya time.
+export const todayISO = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Nairobi" }).format(
+    new Date(),
+  );
+
+// "2026-10-19" or an ISO timestamp -> "19 Oct 2026"
+export const formatDate = (value) => {
+  if (!value) return "—";
+
+  const text = String(value);
+  const date = new Date(text);
+
+  if (Number.isNaN(date.getTime())) return "—";
+
+  // Plain dates are UTC midnight; timestamps are shown in Kenya time.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: dateOnly ? "UTC" : "Africa/Nairobi",
+  });
+};
+
+// ============================================================================
+// CERTIFICATE ELIGIBILITY
+// ============================================================================
+
+// Minimum attendance (%) for a participation certificate.
+// 0 = paying in full is enough; raise it (e.g. 50) to ask for some attendance.
 export const PARTICIPATION_MIN_ATTENDANCE = 0;
 
-/** The day the program is expected to end (enrolment date + program length), or null if unknown. */
+// The day the program is expected to end (enrollment date + program length),
+// or null if unknown. student.programWeeks is added by the Students page from
+// the program's duration.
 export function programEndDate(student) {
-  const weeks = programWeeks(student.program);
-  if (!weeks || !student.enrolledOn) return null;
+  const weeks = student?.programWeeks;
+
+  if (!weeks || !student?.enrolledOn) return null;
+
   const end = new Date(`${student.enrolledOn}T00:00:00Z`);
   end.setUTCDate(end.getUTCDate() + weeks * 7);
+
   return end.toISOString().slice(0, 10);
 }
 
-export const isFullyPaid = (student) => student.amountPaid >= student.fee;
-
-/**
- * Which certificate (if any) can this student receive?
- *   completed                                   -> "completion"
- *   not completed, fees paid in full, and they
- *   are no longer learning (on hold, dropped,
- *   or the program period has ended)            -> "participation"
- *   anything else                               -> null, with the reason
- */
+// Which certificate (if any) can this student receive?
+//   completed                                  -> "completion"
+//   not completed, fees paid in full, and they
+//   are no longer learning (on hold, dropped,
+//   or the program period has ended)           -> "participation"
+//   anything else                              -> null, with the reason
+// This only says which type applies. Whether one has already been issued
+// is on student.certificate.
 export function certificateEligibility(student, today = todayISO()) {
-  if (student.status === "completed")
+  if (student.status === "completed") {
     return { type: "completion", reason: "Completed the program" };
+  }
 
-  const owes = Math.max(0, student.fee - student.amountPaid);
-  if (owes > 0)
+  const owes = paymentInfo(student).balance;
+
+  if (owes > 0) {
     return {
       type: null,
       reason: `Fees not fully paid (owes ${formatKSh(owes)})`,
     };
-  if (student.attendance < PARTICIPATION_MIN_ATTENDANCE)
+  }
+
+  if ((student.attendance ?? 0) < PARTICIPATION_MIN_ATTENDANCE) {
     return {
       type: null,
       reason: `Attendance is below ${PARTICIPATION_MIN_ATTENDANCE}%`,
     };
+  }
 
   const end = programEndDate(student);
-  if (student.status === "active" && (!end || end >= today))
+
+  if (student.status === "active" && (!end || end >= today)) {
     return {
       type: null,
       reason: end
         ? `Still learning. Program ends ${formatDate(end)}`
         : "Still learning",
     };
+  }
 
   const reason =
     student.status === "dropped"
@@ -181,539 +167,162 @@ export function certificateEligibility(student, today = todayISO()) {
       : student.status === "on_hold"
         ? "Learning paused, fees paid in full"
         : "Program period ended without completion, fees paid in full";
+
   return { type: "participation", reason };
 }
 
-/** Looks a certificate number up. A completion certificate is valid only while the student is completed; a participation certificate only while they are not. */
-export function findCertificate(students, number) {
-  const wanted = String(number ?? "")
-    .trim()
-    .toUpperCase();
-  if (!wanted) return null;
-  return (
-    students.find((s) => {
-      if (s.certificate?.number !== wanted) return false;
-      return s.certificate.type === "participation"
-        ? s.status !== "completed"
-        : s.status === "completed";
-    }) ?? null
-  );
-}
+// ============================================================================
+// DISPLAY HELPERS
+// ============================================================================
 
-function nextCertificateNumber(students, year, type) {
-  const prefix = `${CERTIFICATE_TYPES[type].prefix}-${year}-`;
-  const highest = students
-    .map((s) => s.certificate?.number)
-    .filter((n) => n && n.startsWith(prefix))
-    .reduce((max, n) => Math.max(max, Number(n.slice(prefix.length)) || 0), 0);
-  return `${prefix}${String(highest + 1).padStart(4, "0")}`;
-}
+// "Amina Wanjiru" -> "AW"
+export const initials = (name) =>
+  String(name ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase() || "?";
 
-/* ============================== mock data ============================== */
+// Number of .sm-avatar--toneN classes in StudentModals.css (tone0 to tone5).
+export const AVATAR_TONE_COUNT = 6;
 
-let counter = 0;
-const make = (o) => {
-  counter += 1;
-  return {
-    id: `stu_${String(counter).padStart(3, "0")}`,
-    studentNo: `FCS-${String(counter).padStart(4, "0")}`,
-    email: "",
-    guardianName: "",
-    guardianPhone: "",
-    notes: "",
-    attendance: 100,
-    finalScore: null,
-    completedOn: null,
-    certificate: null,
-    ...o,
-    createdAt: `${o.enrolledOn}T08:00:00Z`,
-    updatedAt: `${o.completedOn ?? o.enrolledOn}T10:00:00Z`,
-  };
+// 0-5, a stable colour per person for avatars.
+export const avatarTone = (name) =>
+  [...String(name ?? "")].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) %
+  AVATAR_TONE_COUNT;
+
+// Final score -> label printed on the certificate.
+export const honorsFor = (score) => {
+  if (score === null || score === undefined) return null;
+  if (score >= 85) return "Distinction";
+  if (score >= 70) return "Merit";
+  if (score >= 50) return "Pass";
+  return null;
 };
 
-export const INITIAL_STUDENTS = [
-  make({
-    fullName: "Amina Wanjiru",
-    email: "amina.w@example.com",
-    phone: "+254712345001",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Grace Wanjiru",
-    guardianPhone: "+254722111001",
-    county: "Nairobi",
-    program: "Web Development Foundations",
-    enrolledOn: "2026-09-01",
-    status: "active",
-    progress: 72,
-    attendance: 94,
-    fee: 9500,
-    amountPaid: 9500,
-    notes: "Great with layout and CSS.",
-  }),
-  make({
-    fullName: "Brian Otieno",
-    email: "brian.o@example.com",
-    phone: "+254712345002",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Rose Otieno",
-    guardianPhone: "+254722111002",
-    county: "Kisumu",
-    program: "Python Basics",
-    enrolledOn: "2026-09-05",
-    status: "active",
-    progress: 55,
-    attendance: 88,
-    fee: 9500,
-    amountPaid: 5000,
-  }),
-  make({
-    fullName: "Cynthia Mwende",
-    email: "cynthia.m@example.com",
-    phone: "+254712345003",
-    ageGroup: "Adults (18+)",
-    county: "Machakos",
-    program: "React for Builders",
-    enrolledOn: "2026-08-24",
-    status: "active",
-    progress: 40,
-    attendance: 91,
-    fee: 15000,
-    amountPaid: 15000,
-  }),
-  make({
-    fullName: "David Kiprop",
-    email: "david.k@example.com",
-    phone: "+254712345004",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Alice Kiprop",
-    guardianPhone: "+254722111004",
-    county: "Eldoret",
-    program: "JavaScript Essentials",
-    enrolledOn: "2026-08-17",
-    status: "on_hold",
-    progress: 35,
-    attendance: 70,
-    fee: 11000,
-    amountPaid: 5500,
-    notes: "Paused for exams. Resumes in November.",
-  }),
-  make({
-    fullName: "Esther Njeri",
-    phone: "+254712345005",
-    ageGroup: "Kids (7–12)",
-    guardianName: "Joseph Njeri",
-    guardianPhone: "+254722111005",
-    county: "Kirinyaga",
-    program: "Scratch Juniors",
-    enrolledOn: "2026-09-12",
-    status: "active",
-    progress: 83,
-    attendance: 97,
-    fee: 6000,
-    amountPaid: 6000,
-  }),
-  make({
-    fullName: "Felix Mutua",
-    email: "felix.m@example.com",
-    phone: "+254712345006",
-    ageGroup: "Adults (18+)",
-    county: "Nairobi",
-    program: "Full-Stack Bootcamp",
-    enrolledOn: "2026-07-20",
-    status: "active",
-    progress: 22,
-    attendance: 85,
-    fee: 45000,
-    amountPaid: 15000,
-  }),
-  make({
-    fullName: "Gladys Achieng",
-    phone: "+254712345007",
-    ageGroup: "Kids (7–12)",
-    guardianName: "Peter Achieng",
-    guardianPhone: "+254722111007",
-    county: "Kiambu",
-    program: "Game Design with Scratch",
-    enrolledOn: "2026-09-19",
-    status: "active",
-    progress: 60,
-    attendance: 92,
-    fee: 7500,
-    amountPaid: 7500,
-  }),
-  make({
-    fullName: "Hassan Abdi",
-    email: "hassan.a@example.com",
-    phone: "+254712345008",
-    ageGroup: "Adults (18+)",
-    county: "Mombasa",
-    program: "SQL & PostgreSQL Fundamentals",
-    enrolledOn: "2026-08-03",
-    status: "dropped",
-    progress: 18,
-    attendance: 40,
-    fee: 8000,
-    amountPaid: 8000,
-    notes: "Relocated for work. Fees were paid in full.",
-  }),
-  make({
-    fullName: "Irene Chebet",
-    email: "irene.c@example.com",
-    phone: "+254712345009",
-    ageGroup: "Adults (18+)",
-    county: "Nakuru",
-    program: "Python for Data & Automation",
-    enrolledOn: "2026-08-31",
-    status: "active",
-    progress: 48,
-    attendance: 89,
-    fee: 14000,
-    amountPaid: 7000,
-  }),
-  make({
-    fullName: "Joel Kamau",
-    email: "joel.k@example.com",
-    phone: "+254712345010",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Susan Kamau",
-    guardianPhone: "+254722111010",
-    county: "Nyeri",
-    program: "Web Development Foundations",
-    enrolledOn: "2026-08-10",
-    status: "active",
-    progress: 94,
-    attendance: 96,
-    fee: 9500,
-    amountPaid: 9500,
-    notes: "Almost done. Ready to complete.",
-  }),
-  make({
-    fullName: "Kevin Ouma",
-    email: "kevin.o@example.com",
-    phone: "+254712345011",
-    ageGroup: "Adults (18+)",
-    county: "Nairobi",
-    program: "JavaScript Essentials",
-    enrolledOn: "2026-10-05",
-    status: "active",
-    progress: 12,
-    attendance: 100,
-    fee: 11000,
-    amountPaid: 0,
-  }),
+// ============================================================================
+// PHONE NUMBERS
+// ============================================================================
 
-  make({
-    fullName: "Lucy Nyambura",
-    email: "lucy.n@example.com",
-    phone: "+254712345012",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Mary Nyambura",
-    guardianPhone: "+254722111012",
-    county: "Kirinyaga",
-    program: "Python Basics",
-    enrolledOn: "2026-07-11",
-    status: "completed",
-    progress: 100,
-    attendance: 98,
-    finalScore: 91,
-    fee: 9500,
-    amountPaid: 9500,
-    completedOn: "2026-09-12",
-    certificate: {
-      type: "completion",
-      number: "FC-CERT-2026-0001",
-      issuedOn: "2026-09-14",
-    },
-  }),
-  make({
-    fullName: "Martin Karanja",
-    email: "martin.k@example.com",
-    phone: "+254712345013",
-    ageGroup: "Teens (13–17)",
-    guardianName: "John Karanja",
-    guardianPhone: "+254722111013",
-    county: "Nairobi",
-    program: "Web Development Foundations",
-    enrolledOn: "2026-07-01",
-    status: "completed",
-    progress: 100,
-    attendance: 90,
-    finalScore: 78,
-    fee: 9500,
-    amountPaid: 9500,
-    completedOn: "2026-08-29",
-    certificate: {
-      type: "completion",
-      number: "FC-CERT-2026-0002",
-      issuedOn: "2026-09-01",
-    },
-  }),
-  make({
-    fullName: "Naomi Wairimu",
-    phone: "+254712345014",
-    ageGroup: "Kids (7–12)",
-    guardianName: "Esther Wairimu",
-    guardianPhone: "+254722111014",
-    county: "Kiambu",
-    program: "Scratch Juniors",
-    enrolledOn: "2026-08-08",
-    status: "completed",
-    progress: 100,
-    attendance: 100,
-    finalScore: 96,
-    fee: 6000,
-    amountPaid: 6000,
-    completedOn: "2026-09-20",
-    certificate: {
-      type: "completion",
-      number: "FC-CERT-2026-0003",
-      issuedOn: "2026-09-22",
-    },
-  }),
-  make({
-    fullName: "Oscar Mugambi",
-    email: "oscar.m@example.com",
-    phone: "+254712345015",
-    ageGroup: "Teens (13–17)",
-    guardianName: "Beth Mugambi",
-    guardianPhone: "+254722111015",
-    county: "Meru",
-    program: "JavaScript Essentials",
-    enrolledOn: "2026-07-27",
-    status: "completed",
-    progress: 100,
-    attendance: 86,
-    finalScore: 66,
-    fee: 11000,
-    amountPaid: 11000,
-    completedOn: "2026-10-03",
-  }),
-  make({
-    fullName: "Purity Wangui",
-    email: "purity.w@example.com",
-    phone: "+254712345016",
-    ageGroup: "Adults (18+)",
-    county: "Nyeri",
-    program: "SQL & PostgreSQL Fundamentals",
-    enrolledOn: "2026-08-31",
-    status: "completed",
-    progress: 100,
-    attendance: 95,
-    finalScore: 82,
-    fee: 8000,
-    amountPaid: 8000,
-    completedOn: "2026-10-08",
-  }),
-  make({
-    fullName: "Quincy Mwangi",
-    email: "quincy.m@example.com",
-    phone: "+254712345017",
-    ageGroup: "Adults (18+)",
-    county: "Nairobi",
-    program: "React for Builders",
-    enrolledOn: "2026-05-18",
-    status: "completed",
-    progress: 100,
-    attendance: 93,
-    finalScore: 88,
-    fee: 15000,
-    amountPaid: 15000,
-    completedOn: "2026-07-30",
-    certificate: {
-      type: "completion",
-      number: "FC-CERT-2026-0004",
-      issuedOn: "2026-08-02",
-    },
-  }),
-  make({
-    fullName: "Rita Cherono",
-    email: "rita.c@example.com",
-    phone: "+254712345018",
-    ageGroup: "Adults (18+)",
-    county: "Nakuru",
-    program: "Python Basics",
-    enrolledOn: "2026-06-15",
-    status: "active",
-    progress: 70,
-    attendance: 82,
-    fee: 9500,
-    amountPaid: 9500,
-    certificate: {
-      type: "participation",
-      number: "FC-PART-2026-0001",
-      issuedOn: "2026-09-02",
-    },
-    notes: "Program period ended before she could finish.",
-  }),
+// 0712 345 678 / +254712345678 / 254112345678 -> "+254712345678", else "".
+export const normalizeKenyanPhone = (value) => {
+  const compact = String(value ?? "").replace(/[\s()-]/g, "");
+  const match = compact.match(/^(?:\+?254|0)([17]\d{8})$/);
+
+  return match ? `+254${match[1]}` : "";
+};
+
+// "+254712345678" -> "+254 712 345 678"
+export const formatPhone = (value) => {
+  const n = normalizeKenyanPhone(value);
+
+  return n
+    ? `${n.slice(0, 4)} ${n.slice(4, 7)} ${n.slice(7, 10)} ${n.slice(10)}`
+    : value || "—";
+};
+
+// ============================================================================
+// DATES (LONG FORM AND KENYA TIME)
+// ============================================================================
+
+// "2026-10-16" -> "16 October 2026" (used on certificates)
+export const formatLongDate = (value) => {
+  if (!value) return "—";
+
+  const text = String(value);
+  const date = new Date(text);
+
+  if (Number.isNaN(date.getTime())) return "—";
+
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(text);
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: dateOnly ? "UTC" : "Africa/Nairobi",
+  });
+};
+
+// A timestamp (e.g. when a certificate was issued) -> its Kenya date, "2026-10-16".
+export const kenyaDate = (timestamp) => {
+  if (!timestamp) return null;
+
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Nairobi",
+  }).format(date);
+};
+
+// ============================================================================
+// CERTIFICATE SETTINGS
+// ============================================================================
+
+// Set NEXT_PUBLIC_SITE_URL in .env to your public website.
+export const PUBLIC_SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://futuristiccoders.co.ke";
+
+// Names printed under the signature lines. Edit these when the people change.
+export const SIGNATORIES = [
+  { name: "Faith Lilian", title: "Program Director" },
+  { name: "Isaac Mugwimi", title: "Lead Instructor" },
 ];
 
-/* ============================== store ============================== */
+// ============================================================================
+// BACKEND -> UI STUDENT
+// ============================================================================
 
-const STORAGE_KEY = "fc_admin_students_v2";
-const listeners = new Set();
-let state = INITIAL_STUDENTS;
-let loaded = false;
+// API responses look like { success, data: [...] }.
+export const listOf = (response) => response?.data ?? [];
 
-function emit() {
-  listeners.forEach((listener) => listener());
-}
+// "2026-10-19T00:00:00.000Z" -> "2026-10-19"
+const dateOnly = (value) => (value ? String(value).slice(0, 10) : null);
 
-function commit(next) {
-  state = next;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    /* storage unavailable: keep working in memory */
-  }
-  emit();
-}
+const optionalNumber = (value) =>
+  value === null || value === undefined ? null : Number(value);
 
-function subscribe(listener) {
-  listeners.add(listener);
-  // Load saved demo data once, after the first render (avoids a hydration mismatch)
-  if (!loaded && typeof window !== "undefined") {
-    loaded = true;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        state = JSON.parse(saved);
-        queueMicrotask(emit);
-      }
-    } catch {
-      /* ignore broken saved data */
-    }
-  }
-  return () => listeners.delete(listener);
-}
+// A row from GET /get-all-students is one student merged with their latest
+// enrollment (snake_case). The UI works with camelCase, so this is the one
+// place that renames the fields. The raw row is kept so nothing is lost.
+// weeksByProgram: Map of program ID -> duration in weeks.
+export function toUiStudent(row, weeksByProgram = new Map()) {
+  return {
+    ...row,
+    id: row.id,
+    studentNo: row.student_no,
+    fullName: row.full_name ?? "",
+    guardianName: row.guardian_name,
+    guardianPhone: row.guardian_phone,
+    ageGroup: row.age_group,
+    createdAt: String(row.created_at ?? ""),
 
-const getSnapshot = () => state;
-const getServerSnapshot = () => INITIAL_STUDENTS;
-
-/** const students = useStudents(); re-renders whenever any page changes the list */
-export function useStudents() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-export function resetStudents() {
-  commit(INITIAL_STUDENTS);
-}
-
-/* ---------------- actions (swap for API calls later) ---------------- */
-
-const stamp = () => new Date().toISOString();
-
-export function addStudent(data) {
-  const ts = stamp();
-  const next =
-    Math.max(0, ...state.map((s) => Number(s.studentNo.slice(4)) || 0)) + 1;
-  const student = {
-    email: "",
-    guardianName: "",
-    guardianPhone: "",
-    notes: "",
-    finalScore: null,
-    completedOn: null,
-    certificate: null,
-    ...data,
-    id: `stu_${Date.now()}`,
-    studentNo: `FCS-${String(next).padStart(4, "0")}`,
-    createdAt: ts,
-    updatedAt: ts,
+    enrollmentId: row.enrollment_id ?? null,
+    programId: row.program_id ?? null,
+    program: row.program_title ?? "",
+    // Program length in weeks; used to work out when the program period ends.
+    programWeeks: weeksByProgram.get(row.program_id) ?? null,
+    status: row.status ?? "active",
+    enrolledOn: dateOnly(row.enrolled_on),
+    completedOn: dateOnly(row.completed_on),
+    progress: Number(row.progress ?? 0),
+    fee: Number(row.agreed_fee ?? 0),
+    amountPaid: Number(row.amount_paid ?? 0),
+    // Read-only: calculated by the backend from per-session attendance.
+    attendance: optionalNumber(row.attendance_percentage),
+    finalScore: optionalNumber(row.final_score),
+    certificate:
+      row.certificate_status === "issued"
+        ? {
+            type: row.certificate_type ?? "completion",
+            number: row.certificate_no ?? null,
+            no: row.certificate_no ?? null, // same value, for older code
+            issuedOn: kenyaDate(row.certificate_issued_at),
+          }
+        : null,
   };
-  if (student.status === "completed") {
-    student.progress = 100;
-    student.completedOn = student.completedOn ?? todayISO();
-  }
-  commit([student, ...state]);
-  return student;
-}
-
-export function updateStudent(id, patch) {
-  const ts = stamp();
-  commit(
-    state.map((s) => {
-      if (s.id !== id) return s;
-      const merged = { ...s, ...patch, updatedAt: ts };
-      const certType = merged.certificate?.type ?? "completion";
-      if (merged.status === "completed") {
-        merged.progress = 100;
-        merged.completedOn = merged.completedOn ?? todayISO();
-        if (certType === "participation") merged.certificate = null; // replaced by a completion certificate
-      } else {
-        merged.completedOn = null;
-        if (certType === "completion")
-          merged.certificate = null; // completion certificates need a completed student
-        else if (!isFullyPaid(merged)) merged.certificate = null; // participation certificates need fees paid in full
-      }
-      return merged;
-    }),
-  );
-}
-
-export function deleteStudents(ids) {
-  commit(state.filter((s) => !ids.includes(s.id)));
-}
-
-/** Moves students to Completed. finalScore (0-100) is only applied when given. */
-export function completeStudents(ids, { finalScore } = {}) {
-  const ts = stamp();
-  commit(
-    state.map((s) =>
-      ids.includes(s.id)
-        ? {
-            ...s,
-            status: "completed",
-            progress: 100,
-            completedOn: s.completedOn ?? todayISO(),
-            finalScore: finalScore ?? s.finalScore,
-            certificate:
-              s.certificate?.type === "participation" ? null : s.certificate, // they now qualify for a completion certificate
-            updatedAt: ts,
-          }
-        : s,
-    ),
-  );
-}
-
-/** Back to Active. Their certificate is withdrawn. */
-export function reopenStudent(id) {
-  const ts = stamp();
-  commit(
-    state.map((s) =>
-      s.id === id
-        ? {
-            ...s,
-            status: "active",
-            completedOn: null,
-            certificate: null,
-            updatedAt: ts,
-          }
-        : s,
-    ),
-  );
-}
-
-/**
- * Issues the right certificate to every listed student who is eligible and doesn't have one:
- * completed -> Completion, paid-in-full but not finished -> Participation. Returns how many were issued.
- */
-export function issueCertificates(ids) {
-  const issuedOn = todayISO();
-  const year = issuedOn.slice(0, 4);
-  let working = state;
-  let count = 0;
-  for (const id of ids) {
-    const target = working.find((s) => s.id === id);
-    if (!target || target.certificate) continue;
-    const { type } = certificateEligibility(target, issuedOn);
-    if (!type) continue;
-    const number = nextCertificateNumber(working, year, type);
-    working = working.map((s) =>
-      s.id === id
-        ? { ...s, certificate: { type, number, issuedOn }, updatedAt: stamp() }
-        : s,
-    );
-    count += 1;
-  }
-  if (count) commit(working);
-  return count;
 }

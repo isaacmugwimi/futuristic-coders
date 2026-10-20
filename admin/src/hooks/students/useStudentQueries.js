@@ -59,6 +59,37 @@ export const useStudents = (params = {}) =>
   });
 
 // ============================================================================
+// GET EVERY STUDENT (all pages)
+// ============================================================================
+
+// The API returns at most 100 students per page, so this walks every page
+// and returns one combined list. Use it on screens that search, filter and
+// sort on the client. The result has the same shape as one page:
+// { data, pagination }.
+export const useAllStudents = () =>
+  useQuery({
+    queryKey: ["students", "list", "all"],
+    queryFn: async () => {
+      const limit = 100;
+
+      const first = await getAllStudents({ page: 1, limit });
+      const totalPages = first?.pagination?.totalPages ?? 1;
+
+      const rest = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) =>
+          getAllStudents({ page: index + 2, limit }),
+        ),
+      );
+
+      return {
+        ...first,
+        data: [first, ...rest].flatMap((response) => response?.data ?? []),
+      };
+    },
+    staleTime: STALE_TIME,
+  });
+
+// ============================================================================
 // GET STUDENT STATS
 // ============================================================================
 

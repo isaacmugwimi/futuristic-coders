@@ -22,7 +22,6 @@ import {
   getAttendanceByEnrollment,
   getAttendanceSummary,
   deleteAttendance,
-  getCertificateEligibility,
   issueCertificate,
   getCertificatesByEnrollment,
   revokeCertificate,
@@ -51,7 +50,13 @@ const PAYMENT_FILTERS = ["unpaid", "partial", "paid"];
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "excused"];
 const CERTIFICATE_TYPES = ["completion", "participation"];
 
-const MIN_ATTENDANCE = 75; // % required for a certificate
+// Certificate rules (they match the Students and Certificates pages).
+//   completion    -> the student finished the program
+//   participation -> did not finish, fees paid in full, no longer learning
+// Minimum attendance (%) for each. 0 means attendance is not checked;
+// raise a value (e.g. 75) to ask for some attendance as well.
+const COMPLETION_MIN_ATTENDANCE = 0;
+const PARTICIPATION_MIN_ATTENDANCE = 0;
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -975,12 +980,23 @@ export const updateEnrollmentStatusService = async (id, status, user) => {
       );
     }
 
-    // A completed course is 100% done.
     if (status === "completed") {
+      // A completed course is 100% done.
       await client.query(
         `UPDATE student_enrollments
          SET progress = 100
          WHERE id = $1 AND progress < 100`,
+        [id],
+      );
+
+      // A participation certificate is replaced by a completion certificate,
+      // so withdraw it. The record is kept.
+      await client.query(
+        `UPDATE student_certificates
+         SET status = 'revoked', revoked_at = NOW()
+         WHERE enrollment_id = $1
+           AND status = 'issued'
+           AND certificate_type = 'participation'`,
         [id],
       );
     }
@@ -1319,35 +1335,83 @@ export const deleteAttendanceService = async (id, user) => {
 // CERTIFICATE ELIGIBILITY
 // ============================================================
 
-export const getCertificateEligibilityService = async (
-  enrollmentId,
-  { minAttendance = MIN_ATTENDANCE } = {},
-) => {
-  assertUuid(enrollmentId, "enrollment ID");
+// The day the program is expected to end (enrollment date + program length),
+// or null if unknown.
+const programEndDate = (enrollment) => {
+  const weeks = Number(enrollment.program_weeks);
 
-  const threshold = Number(minAttendance);
+  if (!weeks || !enrollment.enrolled_on) return null;
 
-  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
-    throw new AppError("Minimum attendance must be between 0 and 100.", 400);
+  const end = new Date(`${toDateString(enrollment.enrolled_on)}T00:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + weeks * 7);
+
+  return end.toISOString().slice(0, 10);
+};
+
+// Which certificate can this enrollment receive, and what is in the way?
+//   completed                           -> "completion"
+//   not completed, fees paid in full,
+//   and no longer learning (on hold,
+//   dropped, or the program period
+//   has ended)                          -> "participation"
+// reasons is empty when the certificate can be issued right now.
+const assessCertificate = (enrollment) => {
+  const attendance = Number(enrollment.attendance_percentage ?? 0);
+  const reasons = [];
+
+  if (enrollment.status === "completed") {
+    if (attendance < COMPLETION_MIN_ATTENDANCE) {
+      reasons.push(`Attendance is below ${COMPLETION_MIN_ATTENDANCE}%`);
+    }
+    if (enrollment.certificate_status === "issued") {
+      reasons.push("A certificate has already been issued");
+    }
+
+    return { type: "completion", reasons };
   }
 
-  const eligibility = await getCertificateEligibility(enrollmentId, {
-    minAttendance: threshold,
-  });
-
-  if (!eligibility) {
-    throw new AppError("Enrollment not found.", 404);
+  if (Number(enrollment.balance) > 0) {
+    reasons.push(
+      `Fees are not fully paid (owes ${formatMoney(enrollment.balance)})`,
+    );
   }
 
-  return eligibility;
+  if (attendance < PARTICIPATION_MIN_ATTENDANCE) {
+    reasons.push(`Attendance is below ${PARTICIPATION_MIN_ATTENDANCE}%`);
+  }
+
+  const end = programEndDate(enrollment);
+
+  if (enrollment.status === "active" && (!end || end >= today())) {
+    reasons.push(
+      end
+        ? `The student is still learning (program ends ${end})`
+        : "The student is still learning",
+    );
+  }
+
+  if (enrollment.certificate_status === "issued") {
+    reasons.push("A certificate has already been issued");
+  }
+
+  return { type: "participation", reasons };
+};
+
+export const getCertificateEligibilityService = async (enrollmentId) => {
+  const enrollment = await assertEnrollmentExists(enrollmentId);
+
+  const { type, reasons } = assessCertificate(enrollment);
+
+  return { eligible: reasons.length === 0, type, reasons, enrollment };
 };
 
 // ============================================================
 // ISSUE CERTIFICATE
 // ============================================================
 
-// completion    -> must pass every eligibility rule
-// participation -> not dropped, attendance at or above the minimum
+// The type is worked out from the enrollment. If the request names a type,
+// it must match, so a student who qualifies for a participation certificate
+// can't be given a completion one by mistake.
 export const issueCertificateService = async (enrollmentId, data, user) => {
   requireAccess(
     user,
@@ -1356,51 +1420,34 @@ export const issueCertificateService = async (enrollmentId, data, user) => {
   );
   assertUuid(enrollmentId, "enrollment ID");
 
-  const type =
-    data?.certificateType ??
-    data?.certificate_type ??
-    data?.type ??
-    "completion";
+  const requestedType =
+    data?.certificateType ?? data?.certificate_type ?? data?.type;
 
-  if (!CERTIFICATE_TYPES.includes(type)) {
+  if (
+    requestedType !== undefined &&
+    !CERTIFICATE_TYPES.includes(requestedType)
+  ) {
     throw new AppError("Invalid certificate type.", 400);
   }
 
   return await withTransaction(async (client) => {
     await lockEnrollment(client, enrollmentId);
 
-    const eligibility = await getCertificateEligibility(enrollmentId, {
-      minAttendance: MIN_ATTENDANCE,
-    });
+    const enrollment = await getEnrollmentById(enrollmentId);
+    const { type, reasons } = assessCertificate(enrollment);
 
-    const { enrollment, reasons } = eligibility;
+    if (requestedType && requestedType !== type) {
+      throw new AppError(
+        `This student qualifies for a ${type} certificate, not a ${requestedType} one.`,
+        409,
+      );
+    }
 
-    if (type === "completion") {
-      if (reasons.length > 0) {
-        throw new AppError(
-          `This student is not eligible for a certificate: ${reasons.join("; ")}.`,
-          409,
-        );
-      }
-    } else {
-      const blockers = [];
-
-      if (enrollment.status === "dropped") {
-        blockers.push("The enrollment was dropped");
-      }
-      if (Number(enrollment.attendance_percentage) < MIN_ATTENDANCE) {
-        blockers.push(`Attendance is below ${MIN_ATTENDANCE}%`);
-      }
-      if (enrollment.certificate_status === "issued") {
-        blockers.push("A certificate has already been issued");
-      }
-
-      if (blockers.length > 0) {
-        throw new AppError(
-          `This student is not eligible for a certificate: ${blockers.join("; ")}.`,
-          409,
-        );
-      }
+    if (reasons.length > 0) {
+      throw new AppError(
+        `This student is not eligible for a certificate: ${reasons.join("; ")}.`,
+        409,
+      );
     }
 
     return await issueCertificate(client, enrollmentId, type);

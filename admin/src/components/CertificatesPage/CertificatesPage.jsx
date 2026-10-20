@@ -19,23 +19,30 @@ import {
   Search,
   X,
 } from "lucide-react";
+
 import {
   CERTIFICATE_TYPES,
-  PROGRAM_OPTIONS,
   PUBLIC_SITE_URL,
   STATUS_META,
   certificateEligibility,
-  findCertificate,
   formatDate,
   honorsFor,
-  issueCertificates,
-  useStudents,
+  listOf,
+  toUiStudent,
 } from "@/src/data/students";
+
 import {
   CertificateArtwork,
   CertificateModal,
   Dialog,
 } from "../CertificateView/CertificateView";
+
+import {
+  useAllStudents,
+  useVerifyCertificate,
+} from "@/src/hooks/students/useStudentQueries";
+import { usePrograms } from "@/src/hooks/programs/useProgramQueries";
+import { useIssueCertificate } from "@/src/hooks/students/useStudentMutation";
 
 /**
  * CertificatesPage.jsx
@@ -44,24 +51,41 @@ import {
  *   - Participation: for students who didn't finish but have paid in full and are no longer learning
  * Lists who is eligible, issues certificates, opens/prints them and verifies a number.
  * /dashboard/certificates?student=<id> jumps straight to that student.
+ * Everything comes from the backend through the React Query hooks.
  */
 
 const typeOf = (student) => student.certificate?.type ?? "completion";
 
+const errorMessage = (err, fallback) =>
+  err?.response?.data?.message ?? err?.message ?? fallback;
+
 export default function CertificatesPage() {
-  const students = useStudents();
+  const {
+    data: studentsResponse,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useAllStudents();
+  const { data: programsResponse } = usePrograms();
+  const issueMutation = useIssueCertificate();
+
   const paramId = useSearchParams().get("student");
 
   const [tabChoice, setTabChoice] = useState(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
-  const [program, setProgram] = useState("all");
+  const [program, setProgram] = useState("all"); // a program ID
   const [viewId, setViewId] = useState(null);
   const [issueIds, setIssueIds] = useState(null);
+  const [issuing, setIssuing] = useState(false);
   const [dismissed, setDismissed] = useState(false); // closed a popup that was opened from the URL
   const [verifyInput, setVerifyInput] = useState("");
-  const [verifyResult, setVerifyResult] = useState(null); // { text, student }
+  const [verifyNumber, setVerifyNumber] = useState(""); // the number last submitted
   const [toast, setToast] = useState(null);
+
+  // Checks the submitted number against the backend (public endpoint).
+  const verifyQuery = useVerifyCertificate(verifyNumber);
 
   const showToast = useCallback(
     (message, tone = "success") => setToast({ id: Date.now(), message, tone }),
@@ -73,6 +97,18 @@ export default function CertificatesPage() {
     const timer = setTimeout(() => setToast(null), 4000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  /* ---------------- data ---------------- */
+  const programs = useMemo(() => listOf(programsResponse), [programsResponse]);
+
+  const students = useMemo(() => {
+    const weeksByProgram = new Map(
+      programs.map((p) => [p.id, p.duration_weeks]),
+    );
+    return listOf(studentsResponse).map((row) =>
+      toUiStudent(row, weeksByProgram),
+    );
+  }, [studentsResponse, programs]);
 
   /* ---------------- who gets which certificate ---------------- */
   const eligibility = useMemo(
@@ -110,18 +146,18 @@ export default function CertificatesPage() {
       .filter((s) => {
         if (status === "issued" && !s.certificate) return false;
         if (status === "pending" && s.certificate) return false;
-        if (program !== "all" && s.program !== program) return false;
+        if (program !== "all" && s.programId !== program) return false;
         if (!q) return true;
         return [
           s.fullName,
           s.program,
           s.studentNo,
           s.certificate?.number ?? "",
-        ].some((v) => v.toLowerCase().includes(q));
+        ].some((v) => (v ?? "").toLowerCase().includes(q));
       })
       .sort((a, b) =>
-        (b.completedOn ?? b.updatedAt).localeCompare(
-          a.completedOn ?? a.updatedAt,
+        String(b.completedOn ?? b.updated_at ?? "").localeCompare(
+          String(a.completedOn ?? a.updated_at ?? ""),
         ),
       );
   }, [lists, tab, query, status, program]);
@@ -151,12 +187,21 @@ export default function CertificatesPage() {
         (s) =>
           activeIssueIds.includes(s.id) &&
           !s.certificate &&
+          s.enrollmentId &&
           eligibility.get(s.id).type,
       )
     : [];
   const issueType = issueTargets[0]
     ? eligibility.get(issueTargets[0].id).type
     : tab;
+
+  /* ---------------- verify result ---------------- */
+  const verified = verifyQuery.data?.data ?? null; // the certificate record
+  const verifiedStudent =
+    verified && verifyQuery.data?.valid
+      ? students.find((s) => s.certificate?.number === verified.certificate_no)
+      : null;
+  const verifyNotFound = verifyQuery.error?.response?.status === 404;
 
   /* ---------------- actions ---------------- */
   function closeAll() {
@@ -165,14 +210,53 @@ export default function CertificatesPage() {
     setDismissed(true);
   }
 
-  function confirmIssue() {
-    const ids = issueTargets.map((s) => s.id);
-    const count = issueCertificates(ids);
+  // Each student gets the type the backend works out for them. One failing
+  // (e.g. a rule the backend enforces) does not stop the others.
+  async function confirmIssue() {
+    const targets = issueTargets;
+    setIssuing(true);
+
+    const results = await Promise.allSettled(
+      targets.map((s) =>
+        issueMutation.mutateAsync({
+          enrollmentId: s.enrollmentId,
+          data: { certificateType: eligibility.get(s.id).type },
+        }),
+      ),
+    );
+
+    setIssuing(false);
+
+    const issuedIds = targets
+      .filter((_, i) => results[i].status === "fulfilled")
+      .map((s) => s.id);
+    const failures = results.filter((r) => r.status === "rejected");
+
     setIssueIds(null);
     setDismissed(true);
-    if (ids.length === 1) setViewId(ids[0]); // open the new certificate straight away
+
+    if (targets.length === 1 && issuedIds.length === 1) {
+      setViewId(issuedIds[0]); // open the new certificate straight away
+    }
+
+    if (failures.length) {
+      const reason = errorMessage(
+        failures[0].reason,
+        "Could not issue the certificate",
+      );
+      showToast(
+        issuedIds.length
+          ? `${issuedIds.length} issued, ${failures.length} failed. ${reason}`
+          : reason,
+        "danger",
+      );
+      return;
+    }
+
     showToast(
-      count === 1 ? "Certificate issued" : `${count} certificates issued`,
+      issuedIds.length === 1
+        ? "Certificate issued"
+        : `${issuedIds.length} certificates issued`,
     );
   }
 
@@ -187,9 +271,9 @@ export default function CertificatesPage() {
 
   function verify(event) {
     event.preventDefault();
-    const text = verifyInput.trim();
+    const text = verifyInput.trim().toUpperCase();
     if (!text) return;
-    setVerifyResult({ text, student: findCertificate(students, text) });
+    setVerifyNumber(text);
   }
 
   function changeTab(next) {
@@ -204,6 +288,35 @@ export default function CertificatesPage() {
   }
 
   const TabIcon = tab === "completion" ? GraduationCap : Handshake;
+
+  /* ---------------- loading / error ---------------- */
+  if (isLoading) {
+    return (
+      <div className="cp">
+        <div className="cp-empty" role="status">
+          <h3>Loading certificates…</h3>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="cp">
+        <div className="cp-empty" role="alert">
+          <h3>Could not load certificates</h3>
+          <p>{errorMessage(error, "Something went wrong.")}</p>
+          <button
+            type="button"
+            className="cp-btn cp-btn--primary"
+            onClick={() => refetch()}
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   /* ---------------- render ---------------- */
   return (
@@ -284,7 +397,7 @@ export default function CertificatesPage() {
             value={verifyInput}
             onChange={(e) => {
               setVerifyInput(e.target.value);
-              setVerifyResult(null);
+              setVerifyNumber("");
             }}
             placeholder="e.g. FC-CERT-2026-0001 or FC-PART-2026-0001"
             aria-label="Certificate number"
@@ -294,50 +407,94 @@ export default function CertificatesPage() {
             Verify
           </button>
         </form>
-        {verifyResult &&
-          (verifyResult.student ? (
-            <div className="cp-result cp-result--valid" role="status">
-              <CircleCheck size={22} aria-hidden="true" />
-              <div>
-                <strong>
-                  Valid {CERTIFICATE_TYPES[typeOf(verifyResult.student)].label}
-                </strong>
-                <span>
-                  {verifyResult.student.fullName}{" "}
-                  {typeOf(verifyResult.student) === "completion" ? (
-                    <>
-                      completed <b>{verifyResult.student.program}</b> on{" "}
-                      {formatDate(verifyResult.student.completedOn)}.
-                    </>
-                  ) : (
-                    <>
-                      took part in <b>{verifyResult.student.program}</b>.
-                    </>
-                  )}{" "}
-                  Issued {formatDate(verifyResult.student.certificate.issuedOn)}
-                  .
-                </span>
-              </div>
-              <button
-                type="button"
-                className="cp-btn"
-                onClick={() => setViewId(verifyResult.student.id)}
-              >
-                View
-              </button>
+
+        {verifyNumber && verifyQuery.isFetching && (
+          <div className="cp-result" role="status">
+            <ScanSearch size={22} aria-hidden="true" />
+            <div>
+              <strong>Checking…</strong>
             </div>
-          ) : (
-            <div className="cp-result cp-result--invalid" role="status">
-              <CircleX size={22} aria-hidden="true" />
-              <div>
-                <strong>No certificate found</strong>
-                <span>
-                  “{verifyResult.text}” doesn&apos;t match any valid
-                  certificate. Check the number and try again.
-                </span>
+          </div>
+        )}
+
+        {verifyNumber && !verifyQuery.isFetching && verified && (
+          <>
+            {verifyQuery.data?.valid ? (
+              <div className="cp-result cp-result--valid" role="status">
+                <CircleCheck size={22} aria-hidden="true" />
+                <div>
+                  <strong>
+                    Valid{" "}
+                    {CERTIFICATE_TYPES[verified.certificate_type]?.label ??
+                      "certificate"}
+                  </strong>
+                  <span>
+                    {verified.full_name}{" "}
+                    {verified.certificate_type === "participation" ? (
+                      <>
+                        took part in <b>{verified.program_title}</b>.
+                      </>
+                    ) : (
+                      <>
+                        completed <b>{verified.program_title}</b>
+                        {verified.completed_on
+                          ? ` on ${formatDate(verified.completed_on)}`
+                          : ""}
+                        .
+                      </>
+                    )}{" "}
+                    Issued {formatDate(verified.issued_at)}.
+                  </span>
+                </div>
+                {verifiedStudent && (
+                  <button
+                    type="button"
+                    className="cp-btn"
+                    onClick={() => setViewId(verifiedStudent.id)}
+                  >
+                    View
+                  </button>
+                )}
               </div>
+            ) : (
+              <div className="cp-result cp-result--invalid" role="status">
+                <CircleX size={22} aria-hidden="true" />
+                <div>
+                  <strong>Certificate withdrawn</strong>
+                  <span>
+                    “{verified.certificate_no}” was issued to{" "}
+                    {verified.full_name} but has since been withdrawn
+                    {verified.revoked_at
+                      ? ` (${formatDate(verified.revoked_at)})`
+                      : ""}
+                    , so it is no longer valid.
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {verifyNumber && !verifyQuery.isFetching && verifyQuery.isError && (
+          <div className="cp-result cp-result--invalid" role="status">
+            <CircleX size={22} aria-hidden="true" />
+            <div>
+              <strong>
+                {verifyNotFound
+                  ? "No certificate found"
+                  : "Couldn't check right now"}
+              </strong>
+              <span>
+                {verifyNotFound
+                  ? `“${verifyNumber}” doesn't match any certificate. Check the number and try again.`
+                  : errorMessage(
+                      verifyQuery.error,
+                      "Something went wrong. Please try again.",
+                    )}
+              </span>
             </div>
-          ))}
+          </div>
+        )}
       </section>
 
       <section className="cp-card">
@@ -399,8 +556,10 @@ export default function CertificatesPage() {
             aria-label="Filter by program"
           >
             <option value="all">All programs</option>
-            {PROGRAM_OPTIONS.map((p) => (
-              <option key={p.title}>{p.title}</option>
+            {programs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
             ))}
           </select>
           {hasFilters && (
@@ -456,6 +615,8 @@ export default function CertificatesPage() {
             {list.map((s) => {
               const honors =
                 tab === "completion" ? honorsFor(s.finalScore) : null;
+              const statusLabel = (STATUS_META[s.status] ?? STATUS_META.active)
+                .label;
               return (
                 <li
                   key={s.id}
@@ -483,7 +644,7 @@ export default function CertificatesPage() {
                     <p className="cp-item__meta">
                       {tab === "completion"
                         ? `Completed ${formatDate(s.completedOn)}${honors ? ` · ${honors}` : ""}`
-                        : `${STATUS_META[s.status].label} · ${s.progress}% progress · ${s.attendance}% attendance`}
+                        : `${statusLabel} · ${s.progress}% progress · ${s.attendance ?? 0}% attendance`}
                     </p>
                     {tab === "participation" && (
                       <p className="cp-item__meta">
@@ -567,17 +728,24 @@ export default function CertificatesPage() {
           onClose={closeAll}
           footer={
             <>
-              <button type="button" className="cp-btn" onClick={closeAll}>
+              <button
+                type="button"
+                className="cp-btn"
+                onClick={closeAll}
+                disabled={issuing}
+              >
                 Cancel
               </button>
               <button
                 type="button"
                 className="cp-btn cp-btn--primary"
                 onClick={confirmIssue}
+                disabled={issuing}
               >
                 <Award size={16} aria-hidden="true" />
-                Issue{" "}
-                {issueTargets.length === 1 ? "certificate" : "certificates"}
+                {issuing
+                  ? "Issuing…"
+                  : `Issue ${issueTargets.length === 1 ? "certificate" : "certificates"}`}
               </button>
             </>
           }
@@ -591,8 +759,8 @@ export default function CertificatesPage() {
               </>
             ) : (
               <>
-                A <strong>{CERTIFICATE_TYPES[issueType].label}</strong> will be
-                issued to each of these students:
+                A certificate of the right type will be issued to each of these
+                students:
               </>
             )}{" "}
             Certificate numbers are assigned automatically.

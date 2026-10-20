@@ -242,9 +242,19 @@ export const generateStudentNo = async (client) => {
   return generateEntityCode(client, "student", `FCA-${year}`);
 };
 
-export const generateCertificateNo = async (client) => {
+// completion    -> FC-CERT-2026-0001
+// participation -> FC-PART-2026-0001
+// Each type has its own counter, and it restarts every year.
+const CERTIFICATE_PREFIXES = {
+  completion: "FC-CERT",
+  participation: "FC-PART",
+};
+
+export const generateCertificateNo = async (client, type = "completion") => {
   const year = new Date().getFullYear();
-  return generateEntityCode(client, "certificate", `CERT-${year}`);
+  const prefix = CERTIFICATE_PREFIXES[type] ?? CERTIFICATE_PREFIXES.completion;
+
+  return generateEntityCode(client, "certificate", `${prefix}-${year}`);
 };
 
 // ─────────────────────────────────────────────
@@ -267,6 +277,7 @@ const ENROLLMENT_SELECT = `
     p.code AS program_code,
     p.price AS program_price,
     p.instructor,
+    p.duration_weeks AS program_weeks,
     COALESCE(pay.amount_paid, 0) AS amount_paid,
     GREATEST(e.agreed_fee - COALESCE(pay.amount_paid, 0), 0) AS balance,
     CASE
@@ -279,6 +290,8 @@ const ENROLLMENT_SELECT = `
     COALESCE(att.attendance_percentage, 0) AS attendance_percentage,
     cert.certificate_id,
     cert.certificate_no,
+    cert.certificate_type,
+    cert.certificate_issued_at,
     cert.certificate_status
   FROM student_enrollments e
   JOIN programs p ON p.id = e.program_id
@@ -305,6 +318,8 @@ const ENROLLMENT_SELECT = `
     SELECT
       sc.id AS certificate_id,
       sc.certificate_no,
+      sc.certificate_type,
+      sc.issued_at AS certificate_issued_at,
       sc.status AS certificate_status
     FROM student_certificates sc
     WHERE sc.enrollment_id = e.id
@@ -468,6 +483,8 @@ export const getAllStudents = async (filters = {}) => {
       le.attendance_percentage,
       le.final_score,
       le.certificate_no,
+      le.certificate_type,
+      le.certificate_issued_at,
       le.certificate_status
     ${fromSql}
     ${whereSql}
@@ -966,50 +983,13 @@ export const deleteAttendance = async (client, id) => {
 };
 
 // ─────────────────────────────────────────────
-// CERTIFICATE ELIGIBILITY
-// ─────────────────────────────────────────────
-
-// Rules (adjust to your academy's policy):
-// - enrollment status is 'completed' and progress is 100
-// - attendance is at least minAttendance %
-// - balance is fully cleared
-// - no certificate is currently issued
-export const getCertificateEligibility = async (
-  enrollmentId,
-  { minAttendance = 75 } = {},
-) => {
-  const enrollment = await getEnrollmentById(enrollmentId);
-  if (!enrollment) return null;
-
-  const reasons = [];
-
-  if (enrollment.status !== "completed") {
-    reasons.push("Enrollment is not marked as completed");
-  }
-  if (Number(enrollment.progress) < 100) {
-    reasons.push("Course progress is below 100%");
-  }
-  if (Number(enrollment.attendance_percentage) < minAttendance) {
-    reasons.push(`Attendance is below ${minAttendance}%`);
-  }
-  if (Number(enrollment.balance) > 0) {
-    reasons.push("There is an outstanding fee balance");
-  }
-  if (enrollment.certificate_status === "issued") {
-    reasons.push("A certificate has already been issued");
-  }
-
-  return { eligible: reasons.length === 0, reasons, enrollment };
-};
-
-// ─────────────────────────────────────────────
 // ISSUE CERTIFICATE
 // ─────────────────────────────────────────────
 
-// Call getCertificateEligibility first in the controller/service.
+// The service decides who is eligible before calling this.
 // The partial unique index blocks a second 'issued' certificate.
 export const issueCertificate = async (client, enrollmentId, type) => {
-  const certificateNo = await generateCertificateNo(client);
+  const certificateNo = await generateCertificateNo(client, type);
 
   const result = await client.query(
     `INSERT INTO student_certificates (

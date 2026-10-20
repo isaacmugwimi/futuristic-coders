@@ -13,7 +13,7 @@ const NAV_LINKS = [
   { label: "About", href: "/#about" },
   { label: "Testimonials", href: "/testimonials" },
   { label: "Contact", href: "/#contact" },
-  { label: "Verify Certificate", href: "/verify-certificate" },
+  { label: "Verify Certificate", href: "/verify" },
 ];
 
 export default function Navbar() {

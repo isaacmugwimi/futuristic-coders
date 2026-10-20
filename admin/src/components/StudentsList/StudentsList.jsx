@@ -35,6 +35,7 @@ import {
  *   - CurrentStudentsTable: everyone still learning (table with all actions)
  *   - CompletedStudentsGrid: graduates (cards, certificate status)
  * plus the bulk bar, pagination and empty states they share.
+ * Rows are the UI students built by StudentsPage from the backend.
  */
 
 /* ============================== small pieces ============================== */
@@ -282,10 +283,11 @@ export function CurrentStudentsTable({
           </thead>
           <tbody>
             {rows.map((s) => {
-              const meta = STATUS_META[s.status];
+              const meta = STATUS_META[s.status] ?? STATUS_META.active;
               const pay = paymentInfo(s);
               const elig = certificateEligibility(s);
               const isSelected = selected.has(s.id);
+              const attendance = s.attendance ?? 0;
 
               return (
                 <tr
@@ -313,17 +315,21 @@ export function CurrentStudentsTable({
                           {s.fullName}
                         </button>
                         <span className="sl-sub">
-                          {s.studentNo} · {s.ageGroup}
+                          {[s.studentNo, s.ageGroup]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </span>
                       </div>
                     </div>
                   </td>
                   <td>
-                    {s.program}
-                    <span className="sl-sub sl-sub--block">
-                      <CalendarDays size={12} aria-hidden="true" /> Since{" "}
-                      {formatDate(s.enrolledOn)}
-                    </span>
+                    {s.program || "—"}
+                    {s.enrolledOn && (
+                      <span className="sl-sub sl-sub--block">
+                        <CalendarDays size={12} aria-hidden="true" /> Since{" "}
+                        {formatDate(s.enrolledOn)}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <div className="sl-progress">
@@ -332,8 +338,8 @@ export function CurrentStudentsTable({
                     </div>
                   </td>
                   <td>
-                    <span className={s.attendance < 75 ? "sl-low" : ""}>
-                      {s.attendance}%
+                    <span className={attendance < 75 ? "sl-low" : ""}>
+                      {attendance}%
                     </span>
                   </td>
                   <td>
@@ -510,7 +516,7 @@ export function CompletedStudentsGrid({
                   </div>
                   <div>
                     <dt>Attendance</dt>
-                    <dd>{s.attendance}%</dd>
+                    <dd>{s.attendance ?? 0}%</dd>
                   </div>
                 </dl>
 
@@ -520,7 +526,7 @@ export function CompletedStudentsGrid({
                   <Award size={18} aria-hidden="true" />
                   <span>
                     {s.certificate
-                      ? `${s.certificate.number}`
+                      ? (s.certificate.no ?? "Certificate issued")
                       : "Certificate not issued yet"}
                   </span>
                 </div>

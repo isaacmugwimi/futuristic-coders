@@ -16,8 +16,10 @@ import {
 import {
   certificateEligibility,
   formatKSh,
+  listOf,
   paymentInfo,
-} from "@/src/utils/students";
+  toUiStudent,
+} from "@/src/data/students";
 
 import {
   CompletedStudentsGrid,
@@ -48,6 +50,7 @@ import {
   useDeleteStudent,
   useUpdateEnrollment,
   useUpdateEnrollmentStatus,
+  useRecordPayment,
   useRevokeCertificate,
 } from "@/src/hooks/students/useStudentMutation";
 
@@ -71,9 +74,6 @@ const DEFAULT_FILTERS = {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-// API responses look like { success, data: [...] }.
-const listOf = (response) => response?.data ?? [];
-
 // Drops undefined / null / "" so we never send empty strings to the API.
 const compact = (obj) =>
   Object.fromEntries(
@@ -90,50 +90,6 @@ const errorMessage = (err, fallback) =>
 // The backend's payment-history safeguard answers 409 with this wording.
 const isPaymentHistoryError = (err) =>
   errorStatus(err) === 409 && /payment history/i.test(errorMessage(err, ""));
-
-// "2026-10-19T00:00:00.000Z" -> "2026-10-19"
-const dateOnly = (value) => (value ? String(value).slice(0, 10) : null);
-
-const optionalNumber = (value) =>
-  value === null || value === undefined ? null : Number(value);
-
-/* ------------------------------------------------------------------ */
-/* Backend -> UI mapping                                               */
-/*                                                                     */
-/* A row from GET /get-all-students is one student merged with their   */
-/* latest enrollment (snake_case). The UI works with camelCase, so      */
-/* this is the one place that renames the fields. The raw row is kept   */
-/* so nothing is lost.                                                  */
-/* ------------------------------------------------------------------ */
-function toUiStudent(row) {
-  return {
-    ...row,
-    id: row.id,
-    studentNo: row.student_no,
-    fullName: row.full_name ?? "",
-    guardianName: row.guardian_name,
-    guardianPhone: row.guardian_phone,
-    ageGroup: row.age_group,
-    createdAt: String(row.created_at ?? ""),
-
-    enrollmentId: row.enrollment_id ?? null,
-    programId: row.program_id ?? null,
-    program: row.program_title ?? "",
-    status: row.status ?? "active",
-    enrolledOn: dateOnly(row.enrolled_on),
-    completedOn: dateOnly(row.completed_on),
-    progress: Number(row.progress ?? 0),
-    fee: Number(row.agreed_fee ?? 0),
-    amountPaid: Number(row.amount_paid ?? 0),
-    // Read-only: calculated by the backend from per-session attendance.
-    attendance: optionalNumber(row.attendance_percentage),
-    finalScore: optionalNumber(row.final_score),
-    certificate:
-      row.certificate_status === "issued"
-        ? { type: null, no: row.certificate_no ?? null }
-        : null,
-  };
-}
 
 const SORTS = {
   current: [
@@ -247,12 +203,8 @@ export default function StudentsPage() {
   const deleteStudentMutation = useDeleteStudent();
   const updateEnrollmentMutation = useUpdateEnrollment();
   const updateEnrollmentStatusMutation = useUpdateEnrollmentStatus();
+  const recordPaymentMutation = useRecordPayment();
   const revokeCertificateMutation = useRevokeCertificate();
-
-  const students = useMemo(
-    () => listOf(studentsResponse).map(toUiStudent),
-    [studentsResponse],
-  );
 
   // Filters list every program; the form only offers published ones because
   // the backend rejects enrolment in any other.
@@ -261,6 +213,15 @@ export default function StudentsPage() {
     () => programs.filter((p) => p.status === "published"),
     [programs],
   );
+
+  const students = useMemo(() => {
+    const weeksByProgram = new Map(
+      programs.map((p) => [p.id, p.duration_weeks]),
+    );
+    return listOf(studentsResponse).map((row) =>
+      toUiStudent(row, weeksByProgram),
+    );
+  }, [studentsResponse, programs]);
 
   // Age groups come from the programs and students that exist.
   const ageGroups = useMemo(
@@ -417,34 +378,13 @@ export default function StudentsPage() {
 
   /* ----- create ----- */
 
-  // Form -> POST /register-student payload. The backend wants a programId (not
-  // a title) and takes the first deposit as `initialPayment`. An initial
-  // payment needs a program, M-Pesa needs a transaction code, and the deposit
-  // can't exceed the agreed fee; the backend validates all of that and its
-  // message is shown as a toast.
+  // Form -> POST /register-student payload. The form sends a programId and
+  // the first deposit as `payment`, which the backend takes as
+  // `initialPayment`. M-Pesa needs a transaction code and the deposit can't
+  // exceed the agreed fee; the backend validates all of that and its message
+  // is shown as a toast.
   function buildCreatePayload(data) {
-    const programId =
-      data.programId ?? programs.find((p) => p.title === data.program)?.id;
-
-    if (data.program && !programId) {
-      throw new Error("Choose a program from the list.");
-    }
-
-    const depositAmount = Number(
-      data.initialDeposit ?? data.deposit ?? data.amountPaid ?? 0,
-    );
-    const initialPayment =
-      data.initialPayment ??
-      (depositAmount > 0
-        ? compact({
-            amount: depositAmount,
-            paymentMethod: data.paymentMethod,
-            reference: data.reference ?? data.mpesaCode,
-            paidAt: data.paidAt,
-          })
-        : undefined);
-
-    const fee = data.fee ?? data.agreedFee;
+    const fee = data.fee;
 
     return compact({
       fullName: data.fullName,
@@ -455,11 +395,11 @@ export default function StudentsPage() {
       ageGroup: data.ageGroup,
       county: data.county,
       notes: data.notes,
-      programId,
+      programId: data.programId,
       // Omitted => backend uses the program's current price.
       agreedFee: fee === undefined || fee === "" ? undefined : Number(fee),
       enrolledOn: data.enrolledOn,
-      initialPayment,
+      initialPayment: data.payment ? compact(data.payment) : undefined,
     });
   }
 
@@ -562,6 +502,15 @@ export default function StudentsPage() {
       await updateEnrollmentMutation.mutateAsync({
         id: existing.enrollmentId,
         data: changes,
+      });
+    }
+
+    // A payment is its own record. It goes last so the overpayment check
+    // uses the new fee if the fee was changed above.
+    if (data.payment) {
+      await recordPaymentMutation.mutateAsync({
+        enrollmentId: existing.enrollmentId,
+        data: compact(data.payment),
       });
     }
   }
