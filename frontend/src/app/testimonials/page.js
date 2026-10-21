@@ -15,16 +15,29 @@ export const metadata = {
   openGraph: {
     title: "Parent and student reviews | Futuristic Coders",
     description:
-      "See why families in Nairobi trust Futuristic Coders to teach kids real programming skills.",
+      "See why families all over Kenya trust Futuristic Coders to teach kids real programming skills.",
     url: `${SITE}/testimonials`,
     siteName: "Futuristic Coders",
     type: "website",
     locale: "en_KE",
+    images: [
+      {
+        url: `${SITE}/images/testimonials-og.jpg`,
+        width: 1712,
+        height: 896,
+        alt: "Futuristic Coders Academy — parent and student testimonials about online coding classes",
+        type: "image/jpg",
+      },
+    ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Testimonials | Futuristic Coders",
-  },
+twitter: {
+  card: "summary_large_image",
+  title: "Testimonials | Futuristic Coders",
+  description:
+    "Read parent and student reviews of Futuristic Coders Academy.",
+  images: [`${SITE}/images/testimonials-og.jpg
+    `],
+},
 };
 
 // The service returns the raw API body (snake_case rows). These read just

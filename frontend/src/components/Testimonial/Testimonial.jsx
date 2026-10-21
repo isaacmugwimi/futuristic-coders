@@ -511,7 +511,7 @@ export default function Testimonials({ initial = null }) {
           <h1>What families say about Futuristic Coders</h1>
           <p className="tm-lead">
             Reviews from the parents, students and alumni of our coding classes
-            in Nairobi.
+            all over the world.
           </p>
           <div className="tm-actions">
             <a className="tm-btn" href="#reviews">
