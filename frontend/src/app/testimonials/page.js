@@ -26,7 +26,7 @@ export const metadata = {
         width: 1712,
         height: 896,
         alt: "Futuristic Coders Academy — parent and student testimonials about online coding classes",
-        type: "image/jpg",
+        type: "image/jpeg",
       },
     ],
   },
