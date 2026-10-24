@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import "./ProgramDetail.css";
+
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -93,6 +93,28 @@ function HeroFact({ label, value }) {
     <div className="program-detail__fact">
       <dt>{label}</dt>
       <dd>{value}</dd>
+    </div>
+  );
+}
+
+function ProgramImage({ src, title, level }) {
+  return (
+    <div className="program-detail__media">
+      {src ? (
+        // Plain <img>: works with any image host, same as the listing page.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={`${title}: ${level ? `${level} ` : ""}coding program at Futuristic Coders`}
+          className="program-detail__image"
+          loading="eager"
+          decoding="async"
+        />
+      ) : (
+        <div className="program-detail__media-placeholder" aria-hidden="true">
+          {"</>"}
+        </div>
+      )}
     </div>
   );
 }
@@ -227,7 +249,7 @@ export default function ProgramDetail({ program }) {
     level,
     age_group: ageGroup,
     mode,
-    thumbnail,
+    thumbnail, // already resolved to an absolute URL by page.js
   } = program;
 
   const weeks = toNumber(program.duration_weeks);
@@ -277,25 +299,7 @@ export default function ProgramDetail({ program }) {
             </div>
           </div>
 
-          <div className="program-detail__media">
-            {thumbnail ? (
-              <Image
-                src={thumbnail}
-                alt={`${title}: ${level ? `${level} ` : ""}coding program at Futuristic Coders`}
-                fill
-                priority
-                sizes="(max-width: 900px) 100vw, 480px"
-                className="program-detail__image"
-              />
-            ) : (
-              <div
-                className="program-detail__media-placeholder"
-                aria-hidden="true"
-              >
-                {"</>"}
-              </div>
-            )}
-          </div>
+          <ProgramImage src={thumbnail} title={title} level={level} />
         </div>
       </header>
 

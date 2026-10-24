@@ -65,6 +65,33 @@ const getProgram = cache(async (slug) => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Image helper                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Returns an absolute image URL or null.
+ * Checks several possible field names and turns relative paths
+ * (e.g. "/uploads/pic.png") into absolute URLs using the backend BASE_URL.
+ * If your backend uses a different field name, add it to the list below.
+ */
+function resolveImage(program) {
+  const raw =
+    program.thumbnail ||
+    program.thumbnail_url ||
+    program.image ||
+    program.image_url ||
+    null;
+
+  if (!raw || typeof raw !== "string") return null;
+
+  const src = raw.trim();
+  if (!src) return null;
+  if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
+
+  return `${String(BASE_URL).replace(/\/+$/, "")}/${src.replace(/^\/+/, "")}`;
+}
+
+/* ------------------------------------------------------------------ */
 /* SEO helpers                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -99,7 +126,7 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-function buildJsonLd(program, canonicalUrl) {
+function buildJsonLd(program, canonicalUrl, image) {
   const price = toNumber(program.price);
   const weeks = toNumber(program.duration_weeks);
   const perWeek = toNumber(program.sessions_per_week);
@@ -134,7 +161,7 @@ function buildJsonLd(program, canonicalUrl) {
       name: SITE_NAME,
       url: SITE_URL,
     },
-    ...(program.thumbnail ? { image: program.thumbnail } : {}),
+    ...(image ? { image } : {}),
     ...(program.level ? { educationalLevel: program.level } : {}),
     ...(price !== null
       ? {
@@ -201,8 +228,9 @@ export async function generateMetadata({ params }) {
   const canonical = getCanonicalUrl(program.slug || slug);
   const title = `${program.title} | ${SITE_NAME}`;
   const description = getDescription(program);
-  const images = program.thumbnail
-    ? [{ url: program.thumbnail, alt: `${program.title} program thumbnail` }]
+  const image = resolveImage(program);
+  const images = image
+    ? [{ url: image, alt: `${program.title} program thumbnail` }]
     : undefined;
 
   return {
@@ -222,7 +250,7 @@ export async function generateMetadata({ params }) {
       card: images ? "summary_large_image" : "summary",
       title,
       description,
-      ...(images ? { images: images.map((i) => i.url) } : {}),
+      ...(images ? { images: [image] } : {}),
     },
   };
 }
@@ -240,16 +268,20 @@ export default async function ProgramPage({ params }) {
   }
 
   const canonical = getCanonicalUrl(program.slug || slug);
+  const image = resolveImage(program);
+
+  // The component always receives the resolved, absolute URL as `thumbnail`.
+  const programForUi = { ...program, thumbnail: image };
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: serializeJsonLd(buildJsonLd(program, canonical)),
+          __html: serializeJsonLd(buildJsonLd(program, canonical, image)),
         }}
       />
-      <ProgramDetail program={program} />
+      <ProgramDetail program={programForUi} />
     </>
   );
 }
