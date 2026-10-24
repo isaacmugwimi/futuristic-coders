@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import ProgramModal from "./Programmodal/Programmodal";
 import "./Programs.css";
 import { buildCatalog } from "./programsAdapter";
-import { usePublishedPrograms,useCategories } from "../../hooks/programs/useProgramQueries";
+import {
+  usePublishedPrograms,
+  useCategories,
+} from "../../hooks/programs/useProgramQueries";
 
 const TIER_LABEL = {
   beginner: "Beginner",
@@ -59,7 +61,6 @@ export default function Programs() {
   const categoriesQuery = useCategories();
 
   const [active, setActive] = useState("all");
-  const [selected, setSelected] = useState(null);
 
   const { categories, programs } = useMemo(
     () =>
@@ -169,20 +170,6 @@ export default function Programs() {
                       <article
                         className={`pp-card tier-${p.tier}`}
                         key={p.slug}
-                        onClick={() => setSelected(p)}
-                        onKeyDown={(e) => {
-                          if (
-                            e.target === e.currentTarget &&
-                            (e.key === "Enter" || e.key === " ")
-                          ) {
-                            e.preventDefault();
-                            setSelected(p);
-                          }
-                        }}
-                        tabIndex={0}
-                        role="button"
-                        aria-haspopup="dialog"
-                        aria-label={`View details for ${p.title}`}
                       >
                         <div className="pp-media">
                           <div
@@ -209,7 +196,17 @@ export default function Programs() {
                             )}
                             {p.duration}
                           </p>
-                          <h3 className="pp-card-title">{p.title}</h3>
+
+                          <h3 className="pp-card-title">
+                            {/* Stretched link: the whole card is clickable */}
+                            <Link
+                              href={`/programs/${encodeURIComponent(p.slug)}`}
+                              className="pp-card-link"
+                            >
+                              {p.title}
+                            </Link>
+                          </h3>
+
                           <p className="pp-summary">{p.summary}</p>
 
                           {p.tags.length > 0 && (
@@ -224,7 +221,6 @@ export default function Programs() {
                             href={`/register?program=${p.slug}`}
                             className="pp-enroll"
                             aria-label={`Enroll in ${p.title}`}
-                            onClick={(e) => e.stopPropagation()}
                           >
                             Enroll Now <Arrow />
                           </Link>
@@ -245,8 +241,6 @@ export default function Programs() {
           </Link>
         </p>
       </div>
-
-      <ProgramModal program={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }

@@ -337,7 +337,6 @@
   }
 }
 
-
 /* ==========================================================================
    PART 1: append to the END of Programs.css
    Colours match the dark navy theme used on the other public pages.
@@ -522,4 +521,37 @@
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* ---- Whole card clickable (stretched link) ---- */
+.pp-card {
+  position: relative;
+  cursor: pointer;
+}
+
+.pp-card-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pp-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.pp-card-link:focus-visible {
+  outline: none;
+}
+
+.pp-card:has(.pp-card-link:focus-visible) {
+  outline: 3px solid #ff8a1f; /* swap for your brand focus colour */
+  outline-offset: 3px;
+}
+
+/* Keeps the Enroll button clickable above the stretched link */
+.pp-enroll {
+  position: relative;
+  z-index: 2;
 }

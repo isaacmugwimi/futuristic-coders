@@ -37,7 +37,12 @@
 /* ---------- Hero ---------- */
 
 .program-detail__hero {
-  background: linear-gradient(135deg, var(--pd-navy) 0%, var(--pd-navy-soft) 60%, #1a3a6e 100%);
+  background: linear-gradient(
+    135deg,
+    var(--pd-navy) 0%,
+    var(--pd-navy-soft) 60%,
+    #1a3a6e 100%
+  );
   color: #fff;
   padding: 32px 0 64px;
 }
@@ -163,7 +168,10 @@
   font-size: 1rem;
   text-decoration: none;
   border: 2px solid transparent;
-  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .program-detail__btn:focus-visible,
@@ -258,13 +266,71 @@
   color: var(--pd-navy);
 }
 
-.program-detail__text {
-  margin: 0 0 14px;
-  color: var(--pd-text);
+/* ---------- Markdown description ---------- */
+
+.program-detail__markdown {
+  overflow-wrap: anywhere;
 }
 
-.program-detail__text:last-child {
+.program-detail__markdown > :first-child {
+  margin-top: 0;
+}
+
+.program-detail__markdown > :last-child {
   margin-bottom: 0;
+}
+
+.program-detail__markdown p {
+  margin: 0 0 14px;
+}
+
+.program-detail__markdown ul,
+.program-detail__markdown ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+
+.program-detail__markdown li {
+  margin-bottom: 6px;
+}
+
+.program-detail__markdown h1,
+.program-detail__markdown h2,
+.program-detail__markdown h3,
+.program-detail__markdown h4 {
+  margin: 22px 0 8px;
+  color: var(--pd-navy);
+  line-height: 1.3;
+}
+
+.program-detail__markdown h1,
+.program-detail__markdown h2 {
+  font-size: 1.2rem;
+}
+
+.program-detail__markdown h3,
+.program-detail__markdown h4 {
+  font-size: 1.05rem;
+}
+
+.program-detail__markdown a {
+  color: var(--pd-accent-dark);
+  text-decoration: underline;
+}
+
+.program-detail__markdown blockquote {
+  margin: 0 0 14px;
+  padding: 8px 16px;
+  border-left: 4px solid var(--pd-accent);
+  background: #f0f7fb;
+  color: var(--pd-muted);
+}
+
+.program-detail__markdown code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eef2f8;
+  font-size: 0.9em;
 }
 
 /* ---------- Lists ---------- */
@@ -454,7 +520,7 @@
 
   .program-detail__sidebar {
     position: static;
-    order: -1; /* enrollment card appears before long content on small screens */
+    order: -1; /* enrollment card before the long content on small screens */
   }
 }
 
@@ -508,6 +574,7 @@
   .program-detail__btn {
     transition: none;
   }
+
   .program-detail__btn--primary:hover {
     transform: none;
   }

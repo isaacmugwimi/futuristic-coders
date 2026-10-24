@@ -1,25 +1,25 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import ProgramDetail from "../../../components/ProgramsPage/ProgramDetail";
 import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
+import ProgramDetail from "../../../components/ProgramsPage/ProgramDetail";
 
 export const revalidate = 300;
 
-const SITE_URL = "https://futuristiccoders.co.ke";
-const SITE_NAME = "Futuristic Coders Academy";
+const SITE_URL = "https://www.futuristiccoders.co.ke";
+const SITE_NAME = "Futuristic Coders";
 
 /* ------------------------------------------------------------------ */
 /* Data fetching                                                       */
 /* ------------------------------------------------------------------ */
 
-// Tolerate both `API_PATHS.PROGRAMS.GET_PUBLISHED_BY_SLUG` and a flat
-// `API_PATHS.GET_PUBLISHED_BY_SLUG`, depending on how apiPaths.js is organised.
+// Works whether the key is API_PATHS.PROGRAMS.GET_PUBLISHED_BY_SLUG
+// or a flat API_PATHS.GET_PUBLISHED_BY_SLUG.
 const getSlugPath =
   API_PATHS?.PROGRAMS?.GET_PUBLISHED_BY_SLUG ??
   API_PATHS?.GET_PUBLISHED_BY_SLUG;
 
 async function resolveSlug(params) {
-  // `params` is a Promise in Next.js 15+, a plain object in 14. `await` handles both.
+  // `params` is a Promise in Next.js 15+, a plain object in 14.
   const { slug } = await params;
   try {
     return decodeURIComponent(slug);
@@ -29,26 +29,21 @@ async function resolveSlug(params) {
 }
 
 /**
- * Wrapped in React `cache()` so generateMetadata() and the page component
- * share one result per request. The fetch itself is also memoized by Next.js
- * because the URL and options are identical.
- *
- * Returns:
- *  - the program object when found and published
- *  - null when it does not exist (404) or is not published
- * Throws on network failures and 5xx/other errors so they surface through the
- * error boundary instead of being disguised as a 404.
+ * Wrapped in React cache() so generateMetadata() and the page share one
+ * result per request.
+ *  - returns the program when it exists and is published
+ *  - returns null for 404 / unpublished
+ *  - throws on network errors and 5xx so they reach the error boundary
  */
 const getProgram = cache(async (slug) => {
   if (typeof getSlugPath !== "function") {
     throw new Error(
-      "API_PATHS.GET_PUBLISHED_BY_SLUG is not defined in src/utils/api/apiPaths.js",
+      "GET_PUBLISHED_BY_SLUG is missing from src/utils/apiPaths.js",
     );
   }
 
   const base = String(BASE_URL).replace(/\/+$/, "");
-  // The path helper already runs encodeURIComponent, so pass the raw slug.
-  const url = `${base}${getSlugPath(slug)}`;
+  const url = `${base}${getSlugPath(slug)}`; // helper already encodes the slug
 
   const res = await fetch(url, {
     headers: { Accept: "application/json" },
@@ -56,7 +51,6 @@ const getProgram = cache(async (slug) => {
   });
 
   if (res.status === 404) return null;
-
   if (!res.ok) {
     throw new Error(`Failed to load program "${slug}" (HTTP ${res.status})`);
   }
@@ -77,6 +71,7 @@ const getProgram = cache(async (slug) => {
 function stripText(value) {
   return String(value ?? "")
     .replace(/<[^>]*>/g, " ")
+    .replace(/[#*_`>~-]{1,}/g, " ") // light Markdown cleanup for descriptions
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -104,7 +99,7 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-function buildCourseJsonLd(program, canonicalUrl) {
+function buildJsonLd(program, canonicalUrl) {
   const price = toNumber(program.price);
   const weeks = toNumber(program.duration_weeks);
   const perWeek = toNumber(program.sessions_per_week);
@@ -127,7 +122,7 @@ function buildCourseJsonLd(program, canonicalUrl) {
       : {}),
   };
 
-  return {
+  const course = {
     "@context": "https://schema.org",
     "@type": "Course",
     name: program.title,
@@ -135,9 +130,9 @@ function buildCourseJsonLd(program, canonicalUrl) {
     url: canonicalUrl,
     inLanguage: "en",
     provider: {
-      "@type": "Organization",
+      "@type": "EducationalOrganization",
       name: SITE_NAME,
-      sameAs: SITE_URL,
+      url: SITE_URL,
     },
     ...(program.thumbnail ? { image: program.thumbnail } : {}),
     ...(program.level ? { educationalLevel: program.level } : {}),
@@ -156,6 +151,28 @@ function buildCourseJsonLd(program, canonicalUrl) {
       ? { hasCourseInstance: instance }
       : {}),
   };
+
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Programs",
+        item: `${SITE_URL}/programs`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: program.title,
+        item: canonicalUrl,
+      },
+    ],
+  };
+
+  return [course, breadcrumb];
 }
 
 // Escape "<" so the JSON can never break out of the <script> tag.
@@ -189,7 +206,7 @@ export async function generateMetadata({ params }) {
     : undefined;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical },
     openGraph: {
@@ -223,13 +240,14 @@ export default async function ProgramPage({ params }) {
   }
 
   const canonical = getCanonicalUrl(program.slug || slug);
-  const jsonLd = buildCourseJsonLd(program, canonical);
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(buildJsonLd(program, canonical)),
+        }}
       />
       <ProgramDetail program={program} />
     </>

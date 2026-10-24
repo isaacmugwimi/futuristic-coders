@@ -1,12 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import "./ProgramDetail.css"
-
+import ReactMarkdown from "react-markdown";
+import "./ProgramDetail.css";
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-// Accepts an array, a JSON-encoded array string, or a newline-separated string.
+// Accepts an array, a JSON-encoded array string, or newline-separated text.
 function toList(value) {
   if (Array.isArray(value)) {
     return value.map((v) => String(v).trim()).filter(Boolean);
@@ -58,13 +58,6 @@ function formatDate(value) {
 
 function plural(n, singular, pluralWord = `${singular}s`) {
   return `${n} ${n === 1 ? singular : pluralWord}`;
-}
-
-function toParagraphs(text) {
-  return String(text ?? "")
-    .split(/\n{2,}|\r\n\r\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
 }
 
 function getInstructorName(program) {
@@ -134,6 +127,21 @@ function TechSection({ items }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function AboutSection({ description }) {
+  if (!description || !String(description).trim()) return null;
+  return (
+    <section className="program-detail__section" aria-labelledby="pd-about">
+      <h2 id="pd-about" className="program-detail__section-title">
+        About This Program
+      </h2>
+      {/* Descriptions are written in Markdown in the admin */}
+      <div className="program-detail__markdown">
+        <ReactMarkdown>{String(description)}</ReactMarkdown>
+      </div>
     </section>
   );
 }
@@ -229,7 +237,6 @@ export default function ProgramDetail({ program }) {
   const prerequisites = toList(program.prerequisites);
   const requirements = toList(program.requirements);
   const tools = toList(program.tools);
-  const paragraphs = toParagraphs(description);
 
   const enrollHref = `/register?program=${encodeURIComponent(slug)}`;
 
@@ -274,7 +281,7 @@ export default function ProgramDetail({ program }) {
             {thumbnail ? (
               <Image
                 src={thumbnail}
-                alt={`${title}: ${level ? `${level} ` : ""}coding program at Futuristic Coders Academy`}
+                alt={`${title}: ${level ? `${level} ` : ""}coding program at Futuristic Coders`}
                 fill
                 priority
                 sizes="(max-width: 900px) 100vw, 480px"
@@ -295,22 +302,7 @@ export default function ProgramDetail({ program }) {
       {/* Body */}
       <div className="program-detail__container program-detail__layout">
         <div className="program-detail__main">
-          {paragraphs.length > 0 && (
-            <section
-              className="program-detail__section"
-              aria-labelledby="pd-about"
-            >
-              <h2 id="pd-about" className="program-detail__section-title">
-                About This Program
-              </h2>
-              {paragraphs.map((p, i) => (
-                <p key={`about-${i}`} className="program-detail__text">
-                  {p}
-                </p>
-              ))}
-            </section>
-          )}
-
+          <AboutSection description={description} />
           <ListSection
             id="pd-outcomes"
             title="What You Will Learn"
