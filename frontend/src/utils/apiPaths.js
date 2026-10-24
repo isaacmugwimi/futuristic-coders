@@ -15,6 +15,9 @@ export const API_PATHS = {
   PROGRAMS: {
     GET_PUBLISHED: "/api/programs/get-published-programs",
 
+    GET_PUBLISHED_BY_SLUG: (slug) =>
+      `/api/programs/get-program-by-slug/${encodeURIComponent(slug)}`,
+
     CATEGORIES: {
       GET_ALL: "/api/programs/get-all-categories",
     },
