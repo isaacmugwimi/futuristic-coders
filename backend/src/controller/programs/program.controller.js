@@ -3,7 +3,6 @@ import * as programService from "../../services/programs/programs.service.js";
 
 // ============================================================
 // CREATE PROGRAM
-// POST /api/programs
 // ============================================================
 
 export const createProgram = asyncHandler(async (req, res) => {
@@ -32,7 +31,6 @@ export const createProgram = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET ALL PROGRAMS
-// GET /api/programs
 // ============================================================
 
 export const getAllPrograms = asyncHandler(async (req, res) => {
@@ -47,7 +45,6 @@ export const getAllPrograms = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET PUBLISHED PROGRAMS
-// GET /api/programs/published
 // ============================================================
 
 export const getPublishedPrograms = asyncHandler(async (req, res) => {
@@ -62,7 +59,6 @@ export const getPublishedPrograms = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET PROGRAM BY ID
-// GET /api/programs/:id
 // ============================================================
 
 export const getProgramById = asyncHandler(async (req, res) => {
@@ -78,7 +74,6 @@ export const getProgramById = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET PROGRAM BY SLUG
-// GET /api/programs/slug/:slug
 // ============================================================
 
 export const getProgramBySlug = asyncHandler(async (req, res) => {
@@ -94,7 +89,6 @@ export const getProgramBySlug = asyncHandler(async (req, res) => {
 
 // ============================================================
 // SEARCH PROGRAMS
-// GET /api/programs/search?q=python
 // ============================================================
 
 export const searchPrograms = asyncHandler(async (req, res) => {
@@ -111,7 +105,6 @@ export const searchPrograms = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET PROGRAMS BY CATEGORY
-// GET /api/programs/category/:categoryId
 // ============================================================
 
 export const getProgramsByCategory = asyncHandler(async (req, res) => {
@@ -129,7 +122,6 @@ export const getProgramsByCategory = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET FEATURED PROGRAMS
-// GET /api/programs/featured
 // ============================================================
 
 export const getFeaturedPrograms = asyncHandler(async (req, res) => {
@@ -144,7 +136,6 @@ export const getFeaturedPrograms = asyncHandler(async (req, res) => {
 
 // ============================================================
 // UPDATE PROGRAM
-// PATCH /api/programs/:id
 // ============================================================
 
 export const updateProgram = asyncHandler(async (req, res) => {
@@ -165,7 +156,6 @@ export const updateProgram = asyncHandler(async (req, res) => {
 
 // ============================================================
 // PUBLISH PROGRAM
-// PATCH /api/programs/:id/publish
 // ============================================================
 
 export const publishProgram = asyncHandler(async (req, res) => {
@@ -182,7 +172,6 @@ export const publishProgram = asyncHandler(async (req, res) => {
 
 // ============================================================
 // ARCHIVE PROGRAM
-// PATCH /api/programs/:id/archive
 // ============================================================
 
 export const archiveProgram = asyncHandler(async (req, res) => {
@@ -199,7 +188,6 @@ export const archiveProgram = asyncHandler(async (req, res) => {
 
 // ============================================================
 // DELETE PROGRAM
-// DELETE /api/programs/:id
 // ============================================================
 
 export const deleteProgram = asyncHandler(async (req, res) => {
@@ -215,7 +203,6 @@ export const deleteProgram = asyncHandler(async (req, res) => {
 
 // ============================================================
 // CREATE PROGRAM CATEGORY
-// POST /api/programs/categories
 // ============================================================
 
 export const createProgramCategory = asyncHandler(async (req, res) => {
@@ -230,7 +217,6 @@ export const createProgramCategory = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET ALL PROGRAM CATEGORIES
-// GET /api/programs/categories
 // ============================================================
 
 export const getAllProgramCategories = asyncHandler(async (req, res) => {
@@ -245,7 +231,6 @@ export const getAllProgramCategories = asyncHandler(async (req, res) => {
 
 // ============================================================
 // GET PROGRAM CATEGORY BY ID
-// GET /api/programs/categories/:id
 // ============================================================
 
 export const getProgramCategoryById = asyncHandler(async (req, res) => {
@@ -261,7 +246,6 @@ export const getProgramCategoryById = asyncHandler(async (req, res) => {
 
 // ============================================================
 // UPDATE PROGRAM CATEGORY
-// PATCH /api/programs/categories/:id
 // ============================================================
 
 export const updateProgramCategory = asyncHandler(async (req, res) => {
@@ -281,7 +265,7 @@ export const updateProgramCategory = asyncHandler(async (req, res) => {
 
 // ============================================================
 // DELETE PROGRAM CATEGORY
-// DELETE /api/programs/categories/:id
+
 // ============================================================
 
 export const deleteProgramCategory = asyncHandler(async (req, res) => {
@@ -294,3 +278,4 @@ export const deleteProgramCategory = asyncHandler(async (req, res) => {
     message: "Program category deleted successfully.",
   });
 });
+

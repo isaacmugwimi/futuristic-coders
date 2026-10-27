@@ -8,7 +8,7 @@ import userRoutes from "./routes/users/user.routes.js";
 import programRoutes from "./routes/programs/program.routes.js";
 import studentRoutes from "./routes/students/students.routes.js";
 import testimonialRoutes from "./routes/testimonial/testimonial.routes.js";
-
+import uploadRoutes from "./routes/uploads/upload.routes.js";
 import AppError from "./middleware/error/AppError.js";
 import { resetDb } from "./database/config/resetUtilDb.js";
 
@@ -23,7 +23,6 @@ const allowedOrigins = [
   "http://localhost:3001",
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL,
- 
 ].filter(Boolean);
 
 app.use(
@@ -71,6 +70,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/programs", programRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/testimonials", testimonialRoutes);
+app.use("/api/uploads", uploadRoutes);
 // resetDb();
 // ============================================================================
 // NOT FOUND HANDLER
