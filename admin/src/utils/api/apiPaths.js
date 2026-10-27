@@ -267,4 +267,11 @@ export const API_PATHS = {
     // Admin: delete
     DELETE: (id) => `/api/testimonials/delete-testimonial/${id}`,
   },
+  // ==========================================================================
+  // IMAGE UPLOADS
+  // ==========================================================================
+
+  UPLOADS: {
+    IMAGE: "/api/uploads/image",
+  },
 };

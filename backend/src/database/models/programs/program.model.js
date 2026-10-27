@@ -103,7 +103,6 @@ export const createProgramTables = async () => {
   await query(CREATE_PROGRAM_CODE_COUNTERS_TABLE);
   await query(CREATE_PROGRAM_CATEGORIES_TABLE);
 
-
   await query(CREATE_PROGRAMS_TABLE);
   await query(CREATE_PROGRAM_INDEXES);
 

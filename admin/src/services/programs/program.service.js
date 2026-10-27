@@ -90,3 +90,20 @@ export const createProgramCategory = async (categoryData) => {
   );
   return data;
 };
+
+
+
+export const uploadImage = async (file, category = "general") => {
+  const formData = new FormData();
+
+  formData.append("image", file);
+  formData.append("category", category);
+
+  const { data } = await api.post(API_PATHS.UPLOADS.IMAGE, formData);
+
+  if (!data?.success || !data?.data?.url) {
+    throw new Error(data?.message || "Image upload failed.");
+  }
+
+  return data.data;
+};
