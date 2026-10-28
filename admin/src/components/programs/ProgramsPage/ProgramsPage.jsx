@@ -47,6 +47,7 @@ import {
   useUpdateProgram,
 } from "@/src/hooks/programs/useProgramMutations";
 import QueryState, { isBlocked } from "../../QueryState/QueryState";
+import { uploadImage } from "@/src/services/programs/program.service";
 
 const PAGE_SIZES = [5, 8, 15, 25];
 
@@ -119,8 +120,10 @@ const SERVER_KEYS = [
  * FormData POST to an API route) and return the final public URL.
  * The object URL below only lives until the page reloads.
  */
+
 async function uploadThumbnail(file) {
-  return URL.createObjectURL(file);
+  const result = await uploadImage(file, "programs");
+  return result.url;
 }
 
 /** Works out the final thumbnail URL from the form / details-modal payload. */
@@ -213,10 +216,10 @@ export default function ProgramsPage() {
   const programsResponse = programsQuery.data;
   const categoriesResponse = categoriesQuery.data;
 
-const programs = useMemo(
-  () => (programsResponse?.data ?? []).map(normalizeProgram),
-  [programsResponse],
-);
+  const programs = useMemo(
+    () => (programsResponse?.data ?? []).map(normalizeProgram),
+    [programsResponse],
+  );
 
   // Categories retrieved from the backend
   const categories = useMemo(() => {
@@ -476,21 +479,28 @@ const programs = useMemo(
 
   async function saveProgram(data, existing) {
     const { publish, featured } = data;
-    // The form never sends the program code or slug; the backend generates both.
+
+    // Remove form-only fields before sending data to the backend.
     const fields = Object.fromEntries(
       Object.entries(data).filter(([key]) => !CONTROL_KEYS.includes(key)),
     );
+
     const status = publish ? "published" : "draft";
 
+    // Upload the selected image first and obtain its permanent URL.
     let thumbnail;
+
     try {
       thumbnail = await resolveThumbnail(data);
-    } catch {
-      showToast("Couldn't upload the thumbnail. Try again.", "danger");
-      return; // keep the form open
+    } catch (err) {
+      showToast(
+        err?.message || "Couldn't upload the thumbnail. Try again.",
+        "danger",
+      );
+      return;
     }
 
-    // Create the category through the backend first.
+    // Create the category through the backend first if necessary.
     if (data.isNewCategory) {
       if (createCategory.isPending) return;
 
@@ -508,6 +518,7 @@ const programs = useMemo(
       }
     }
 
+    // Update an existing program.
     if (existing) {
       if (updateProgramMutation.isPending) return;
 
@@ -516,10 +527,7 @@ const programs = useMemo(
           id: existing.id,
           data: {
             ...fields,
-            thumbnail:
-              data.thumbnailSource === "upload"
-                ? (existing.thumbnail ?? null)
-                : thumbnail,
+            thumbnail,
             status,
             featured,
           },
@@ -531,16 +539,16 @@ const programs = useMemo(
           err?.message || "Couldn't update the program. Try again.",
           "danger",
         );
-        return; // Keep the form open if the update fails
+        return;
       }
     } else {
-      if (createProgram.isPending) return; // ignore double clicks
+      // Create a new program.
+      if (createProgram.isPending) return;
 
       try {
         await createProgram.mutateAsync({
           ...fields,
-          // Thumbnail file uploads come in a later step. For now only send a URL.
-          thumbnail: data.thumbnailSource === "upload" ? null : thumbnail,
+          thumbnail,
           status,
           featured,
         });
@@ -549,29 +557,45 @@ const programs = useMemo(
           err?.message || "Couldn't create the program. Try again.",
           "danger",
         );
-        return; // keep the form open so nothing typed is lost
+        return;
       }
 
       setSort("recent");
       setPage(1);
+
       showToast(
         publish
           ? "Program created and published"
           : "Program created as a draft",
       );
     }
+
     closeModal();
   }
 
   // Used by the "Change image" editor in the details modal.
   // Errors are left to throw so the editor can show them.
+
   async function changeThumbnail(p, payload) {
-    const thumbnail = await resolveThumbnail(payload);
-    await updateProgramMutation.mutateAsync({
-      id: p.id,
-      data: { thumbnail },
-    });
-    showToast(thumbnail ? "Thumbnail updated" : "Thumbnail removed", "info");
+    try {
+      const thumbnail = await resolveThumbnail(payload);
+
+      await updateProgramMutation.mutateAsync({
+        id: p.id,
+        data: { thumbnail },
+      });
+
+      showToast(
+        thumbnail ? "Thumbnail updated successfully" : "Thumbnail removed",
+        thumbnail ? "success" : "info",
+      );
+    } catch (err) {
+      showToast(
+        err?.message || "Couldn't update the thumbnail. Try again.",
+        "danger",
+      );
+      throw err;
+    }
   }
 
   /* ---------------- confirmations ---------------- */
