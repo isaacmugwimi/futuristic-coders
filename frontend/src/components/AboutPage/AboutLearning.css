@@ -1,0 +1,175 @@
+/* ─── ABOUT LEARNING (values, journey, steps) ────────────── */
+.ab-learn {
+  padding: 40px 0 100px;
+  background: #0a0f1e;
+  color: #f8fafc;
+}
+
+.ab-learn__container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ab-learn__block {
+  margin-bottom: 96px;
+}
+
+.ab-learn__block:last-child {
+  margin-bottom: 0;
+}
+
+.ab-learn__title {
+  margin: 0 0 16px;
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.ab-learn__intro {
+  max-width: 60ch;
+  margin: 0 0 40px;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #94a3b8;
+}
+
+.ab-learn ul,
+.ab-learn ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ab-learn h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.ab-learn p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: #94a3b8;
+}
+
+.ab-learn__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  color: var(--accent, #38bdf8);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+/* ─── VALUES ─────────────────────────────────────────────── */
+.ab-learn__values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 32px;
+}
+
+.ab-learn__value {
+  padding-top: 24px;
+  border-top: 2px solid var(--accent, #38bdf8);
+}
+
+/* ─── JOURNEY ────────────────────────────────────────────── */
+.ab-learn__journey {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.ab-learn__stage {
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  background: #0d1426;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+}
+
+.ab-learn__who {
+  margin-bottom: 12px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600;
+  color: var(--accent, #38bdf8) !important;
+}
+
+.ab-learn__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto !important;
+  padding-top: 20px !important;
+}
+
+.ab-learn__tags li {
+  padding: 5px 12px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+}
+
+/* ─── STEPS ──────────────────────────────────────────────── */
+.ab-learn__steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  margin: 32px 0 40px !important;
+}
+
+.ab-learn__step {
+  position: relative;
+}
+
+.ab-learn__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0a0f1e;
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  border-radius: 50%;
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .ab-learn__values,
+  .ab-learn__journey {
+    grid-template-columns: 1fr;
+  }
+
+  .ab-learn__steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .ab-learn {
+    padding-bottom: 72px;
+  }
+
+  .ab-learn__block {
+    margin-bottom: 72px;
+  }
+
+  .ab-learn__steps {
+    grid-template-columns: 1fr;
+  }
+}

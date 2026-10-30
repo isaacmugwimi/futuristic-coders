@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { FaBookOpen, FaUsers, FaStar } from "react-icons/fa";
 import "./About.css";
+import Link from "next/link";
 
 const VALUES = [
   {
@@ -24,10 +25,10 @@ const VALUES = [
 ];
 
 const STATS = [
-  { number: "500+", label: "Students Trained" },
-  { number: "3", label: "Learning Tracks" },
-  { number: "98%", label: "Parent Satisfaction" },
-  { number: "5★", label: "Average Rating" },
+  { number: "30+", label: "Students Trained" },
+  { number: "Multiple", label: "Learning Tracks" },
+  { number: "Kids & Teens", label: "Learners Empowered" },
+  { number: "100%", label: "Hands-On Learning" },
 ];
 
 export default function About() {
@@ -64,7 +65,7 @@ export default function About() {
             {/* FLOATING BADGE */}
             <div className="about-badge">
               <span className="about-badge-dot"></span>
-              Est. 2026 · Nairobi, Kenya
+              Est. 2026 · Kenya
             </div>
           </div>
 
@@ -117,6 +118,9 @@ export default function About() {
               <a href="#contact" className="about-cta-secondary">
                 Get in Touch
               </a>
+              <Link href="/about" className="about-cta-secondary">
+                Learn more about us
+              </Link>
             </div>
           </div>
         </div>
