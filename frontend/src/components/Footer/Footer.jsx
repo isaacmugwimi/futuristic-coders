@@ -19,12 +19,14 @@ const QUICK_LINKS = [
   { label: "About", href: "/#about" },
   { label: "Contact", href: "/contact" },
   { label: "Apply Now", href: "/register" },
-];const PROGRAMS = [
-  "Foundations (Beginner)",
-  "Web Development",
-  "React & AI",
-  "Summer Bootcamp",
-  "Corporate Training",
+];
+
+const RESOURCES = [
+  { label: "FAQs", href: "/#faqs" },
+  { label: "Student Projects", href: "/#projects" },
+  { label: "Class Schedule", href: "/#schedule" },
+  { label: "Testimonials", href: "/#testimonials" },
+  { label: "Get in Touch", href: "/contact" },
 ];
 
 export default function Footer() {
@@ -49,8 +51,7 @@ export default function Footer() {
 
               <div className="navbar-logo-text">
                 <span className="navbar-logo-title">
-                  {" "}
-                  <span> Futuristic</span> <span> Coders</span>{" "}
+                  <span>Futuristic</span> <span>Coders</span>
                 </span>
 
                 <span className="navbar-logo-subtitle">
@@ -84,21 +85,19 @@ export default function Footer() {
             <ul className="fc-footer-links">
               {QUICK_LINKS.map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href}>
-                    {link.label}
-                  </Link>
+                  <Link href={link.href}>{link.label}</Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* PROGRAMS */}
+          {/* RESOURCES */}
           <div className="fc-footer-section">
-            <h4 className="fc-footer-title">Programs</h4>
+            <h4 className="fc-footer-title">Resources</h4>
             <ul className="fc-footer-links">
-              {PROGRAMS.map((program) => (
-                <li key={program}>
-                  <Link href="/programs">{program}</Link>
+              {RESOURCES.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href}>{item.label}</Link>
                 </li>
               ))}
             </ul>
