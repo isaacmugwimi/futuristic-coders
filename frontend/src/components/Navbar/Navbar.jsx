@@ -12,7 +12,7 @@ const NAV_LINKS = [
   { label: "Programs", href: "/programs" },
   { label: "About", href: "/about" },
   { label: "Testimonials", href: "/testimonials" },
-  { label: "Contact", href: "/#contact" },
+  { label: "Contact", href: "/contact" },
   { label: "Verify Certificate", href: "/verify" },
 ];
 
