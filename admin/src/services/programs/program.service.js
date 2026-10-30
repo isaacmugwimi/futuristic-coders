@@ -101,9 +101,7 @@ export const uploadImage = async (file, category = "general") => {
 
   const { data } = await api.post(API_PATHS.UPLOADS.IMAGE, formData);
 
-  if (!data?.success || !data?.data?.url) {
-    throw new Error(data?.message || "Image upload failed.");
-  }
+  
 
   return data.data;
 };
