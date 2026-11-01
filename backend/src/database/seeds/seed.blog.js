@@ -1,16 +1,17 @@
-// database/seeds/seed.blog.js
+// node src/database/seeds/seed.blog.js
+
+
+// src/database/seeds/seed.blog.js
 //
-// Seeds 5 categories and 20 blog articles.
+// Seeds 5 categories and 20 blog articles, each with a cover image.
 //
-//   node database/seeds/seed.blog.js           add the articles (skips ones that already exist)
-//   node database/seeds/seed.blog.js --fresh   delete the seeded articles first, then add them again
+//   node src/database/seeds/seed.blog.js           add the articles (existing ones just get their images refreshed)
+//   node src/database/seeds/seed.blog.js --fresh   delete the seeded articles first, then add them again
 //
 // Uses the blog model, so reading time and slugs are generated exactly like
-// the real admin does. Cover images are left empty on purpose: the website
-// shows a coloured gradient until you add real images.
+// the real admin does. Cover images are free placeholder photos from
+// picsum.photos; replace them with real images whenever you like.
 
-
-// node src/database/seeds/seed.blog.js
 import { pool } from "../config/config.db.js";
 import {
   createBlogTables,
@@ -31,25 +32,26 @@ const md = (intro, sections) =>
 
 const TEAM = "Futuristic Coders Team";
 
+// Free placeholder photos from picsum.photos. The same title always gives the
+// same picture. Replace with real images later (e.g. upload through your admin).
+const coverFor = (title) => {
+  const key = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `https://picsum.photos/seed/${key}/1200/630`;
+};
+
 // ─────────────────────────────────────────────
 // CATEGORIES
 // ─────────────────────────────────────────────
 
 const CATEGORIES = [
-  {
-    name: "Kids & Parents",
-    description: "Guides for parents of young coders.",
-  },
+  { name: "Kids & Parents", description: "Guides for parents of young coders." },
   { name: "Web Development", description: "HTML, CSS, JavaScript and React." },
   { name: "Python", description: "Python for beginners, automation and data." },
-  {
-    name: "Careers",
-    description: "Jobs, portfolios, freelancing and interviews.",
-  },
-  {
-    name: "Learning Tips",
-    description: "Study habits that help you learn faster.",
-  },
+  { name: "Careers", description: "Jobs, portfolios, freelancing and interviews." },
+  { name: "Learning Tips", description: "Study habits that help you learn faster." },
 ];
 
 // ─────────────────────────────────────────────
@@ -89,8 +91,7 @@ const POSTS = [
   },
   {
     category: "Kids & Parents",
-    title:
-      "Scratch for Beginners: A Parent's Guide to Your Child's First Coding Language",
+    title: "Scratch for Beginners: A Parent's Guide to Your Child's First Coding Language",
     excerpt:
       "Scratch is a free, visual way for children to learn programming. Here is what it is, what your child will build, and how you can support them at home.",
     tags: ["scratch", "kids coding", "beginners"],
@@ -691,6 +692,12 @@ async function seed() {
       );
 
       if (exists.rows.length > 0) {
+        await client.query(
+          `UPDATE blog_posts
+           SET cover_image = $2, cover_alt = $3
+           WHERE title = $1`,
+          [post.title, coverFor(post.title), `Cover image for ${post.title}`],
+        );
         skipped++;
         continue;
       }
@@ -700,6 +707,8 @@ async function seed() {
         category_id: categoryIds[post.category],
         excerpt: post.excerpt,
         content: post.content,
+        cover_image: coverFor(post.title),
+        cover_alt: `Cover image for ${post.title}`,
         tags: post.tags,
         author_name: TEAM,
         status: "published",
