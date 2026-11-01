@@ -292,6 +292,7 @@ export const createBlogPost = async (client, postData) => {
   // Slug is generated from the title unless the admin typed one.
   const finalSlug = await generateUniqueSlug(client, slug || title);
   const finalStatus = status ?? "draft";
+  const publishedAt = finalStatus === "published" ? new Date() : null;
 
   const result = await client.query(
     `INSERT INTO blog_posts (
@@ -315,9 +316,7 @@ export const createBlogPost = async (client, postData) => {
     )
     VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10,
-      $11, $12, $13, $14, $15,
-      CASE WHEN $14 = 'published' THEN NOW() ELSE NULL END,
-      $16
+      $11, $12, $13, $14, $15, $16, $17
     )
     RETURNING id`,
     [
@@ -336,6 +335,7 @@ export const createBlogPost = async (client, postData) => {
       seo_description ?? null,
       finalStatus,
       featured ?? false,
+      publishedAt,
       created_by ?? null,
     ],
   );
@@ -414,13 +414,15 @@ export const searchBlogPosts = async (searchTerm) => {
   const result = await query(
     `SELECT ${POST_FIELDS}
     ${POST_FROM}
-    WHERE
-      p.title ILIKE $1 OR
-      p.excerpt ILIKE $1 OR
-      p.author_name ILIKE $1 OR
-      bc.name ILIKE $1 OR
-      p.tags::text ILIKE $1
-    ORDER BY p.created_at DESC`,
+    WHERE p.status = 'published'
+      AND (
+        p.title ILIKE $1 OR
+        p.excerpt ILIKE $1 OR
+        p.author_name ILIKE $1 OR
+        bc.name ILIKE $1 OR
+        p.tags::text ILIKE $1
+      )
+    ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC`,
     [`%${searchTerm}%`],
   );
 
@@ -436,6 +438,7 @@ export const getBlogPostsByCategory = async (categoryId) => {
     `SELECT ${POST_FIELDS}
     ${POST_FROM}
     WHERE p.category_id = $1
+      AND p.status = 'published'
     ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC`,
     [categoryId],
   );
@@ -501,10 +504,10 @@ export const updateBlogPost = async (client, id, postData) => {
       reading_time = COALESCE($12, reading_time),
       seo_title = COALESCE($13, seo_title),
       seo_description = COALESCE($14, seo_description),
-      status = COALESCE($15, status),
+      status = COALESCE($15::varchar, status),
       featured = COALESCE($16, featured),
       published_at = CASE
-        WHEN COALESCE($15, status) = 'published' AND published_at IS NULL
+        WHEN COALESCE($15::varchar, status) = 'published' AND published_at IS NULL
           THEN NOW()
         ELSE published_at
       END,
