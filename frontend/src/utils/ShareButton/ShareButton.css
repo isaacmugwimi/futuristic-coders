@@ -1,0 +1,128 @@
+.sb {
+  position: relative;
+  display: inline-block;
+  z-index: 3;
+}
+
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: inherit;
+  font-weight: 600;
+  color: #b7c3e0;
+  cursor: pointer;
+  background: #0a1122;
+  border: 1px solid #222d4d;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.15s;
+}
+.sb-btn:hover {
+  color: #fff;
+  border-color: #38bdf8;
+}
+.sb-btn:active {
+  transform: scale(0.94);
+}
+.sb-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.sb--pill .sb-btn {
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+}
+.sb--icon .sb-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.sb-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  min-width: 190px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  background: #0c1426;
+  border: 1px solid #222d4d;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+  animation: sb-pop 0.16s ease;
+}
+.sb-menu.sb-menu--down,
+.sb--down .sb-menu {
+  top: calc(100% + 0.5rem);
+  bottom: auto;
+}
+
+.sb-item {
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #dbe4f8;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+}
+.sb-item:hover,
+.sb-item:focus-visible {
+  background: rgba(56, 189, 248, 0.12);
+  color: #fff;
+  outline: none;
+}
+.sb-item--main {
+  color: #38bdf8;
+}
+.sb-item--copy {
+  margin-top: 0.2rem;
+  border-top: 1px solid #1a2340;
+  border-radius: 0 0 9px 9px;
+}
+
+.sb-toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.5rem);
+  transform: translateX(-50%);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #060d20;
+  background: #38bdf8;
+  border-radius: 999px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.sb-toast:not(:empty) {
+  opacity: 1;
+}
+
+@keyframes sb-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-menu {
+    animation: none;
+  }
+  .sb-btn {
+    transition: none;
+  }
+}

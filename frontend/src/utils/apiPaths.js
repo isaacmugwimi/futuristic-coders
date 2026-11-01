@@ -40,4 +40,16 @@ export const API_PATHS = {
     VERIFY: (certificateNo) =>
       `/api/students/verify-certificate/${encodeURIComponent(certificateNo)}`,
   },
+  BLOG: {
+    // GET: published posts
+    GET_PUBLISHED: "/api/blog/get-published-posts",
+
+    // GET: one published post by its slug
+    GET_PUBLISHED_BY_SLUG: (slug) =>
+      `/api/blog/get-post-by-slug/${encodeURIComponent(slug)}`,
+
+    CATEGORIES: {
+      GET_ALL: "/api/blog/get-all-categories",
+    },
+  },
 };
