@@ -38,19 +38,9 @@ function Arrow() {
   );
 }
 
-function Meta({ post }) {
-  return (
-    <p className="bl-meta">
-      <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
-      <span className="bl-dot" aria-hidden="true">
-        ·
-      </span>
-      <span>{post.minutes} min read</span>
-    </p>
-  );
-}
-
 function PostCard({ post, featured = false }) {
+  const href = `/blog/${encodeURIComponent(post.slug)}`;
+
   return (
     <article
       className={`bl-card bl-${accentFor(post.category)} ${featured ? "bl-card--featured" : ""}`}
@@ -70,12 +60,16 @@ function PostCard({ post, featured = false }) {
       </div>
 
       <div className="bl-body">
-        <Meta post={post} />
+        <p className="bl-meta">
+          <time dateTime={post.publishedAt}>
+            {formatDate(post.publishedAt)}
+          </time>
+          <span className="bl-dot" aria-hidden="true" />
+          <span>{post.minutes} min read</span>
+        </p>
+
         <h3 className="bl-card-title">
-          <Link
-            href={`/blog/${encodeURIComponent(post.slug)}`}
-            className="bl-card-link"
-          >
+          <Link href={href} className="bl-card-link">
             {post.title}
           </Link>
         </h3>
@@ -96,7 +90,7 @@ function PostCard({ post, featured = false }) {
           <span className="bl-actions">
             <ShareButton
               variant="icon"
-              path={`/blog/${encodeURIComponent(post.slug)}`}
+              path={href}
               title={post.title}
               text={post.excerpt}
             />
@@ -107,6 +101,38 @@ function PostCard({ post, featured = false }) {
         </div>
       </div>
     </article>
+  );
+}
+
+// Little terminal in the hero that lists the newest posts
+function Terminal({ posts }) {
+  return (
+    <aside className="bl-term" aria-label="Latest articles">
+      <div className="bl-term-bar" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <em>latest.sh</em>
+      </div>
+      <div className="bl-term-body">
+        <p className="bl-term-cmd">
+          <b>$</b> blog --latest
+        </p>
+        {posts.map((p) => (
+          <Link
+            key={p.slug}
+            href={`/blog/${encodeURIComponent(p.slug)}`}
+            className={`bl-term-line bl-${accentFor(p.category)}`}
+          >
+            <time dateTime={p.publishedAt}>{formatDate(p.publishedAt)}</time>
+            <span className="bl-term-title">{p.title}</span>
+          </Link>
+        ))}
+        <p className="bl-term-cmd">
+          <b>$</b> <span className="bl-caret" aria-hidden="true" />
+        </p>
+      </div>
+    </aside>
   );
 }
 
@@ -178,6 +204,8 @@ export default function Blog({ initialPosts, initialCategories }) {
   const rest = featured ? filtered.slice(1) : filtered;
   const visible = rest.slice(0, shown);
   const countFor = (id) => posts.filter((p) => p.category === id).length;
+  const latest = posts.slice(1, 4); // featured already shows posts[0]
+  const showTerminal = !loading && !failed && latest.length > 0;
 
   // Cursor-follow glow: one handler for the whole grid
   function onPointerMove(e) {
@@ -197,42 +225,37 @@ export default function Blog({ initialPosts, initialCategories }) {
   return (
     <section className="bl">
       <div className="bl-inner">
-        <header className="bl-header">
-          <h1 className="bl-title">
-            Stories, guides and <span className="bl-grad">lessons learned</span>
-          </h1>
-          <p className="bl-lede">
-            Practical writing on coding, careers and growing up with technology,
-            from the people who teach it.
-          </p>
+        <header className={`bl-hero ${showTerminal ? "has-term" : ""}`}>
+          <div className="bl-hero-copy">
+            <h1 className="bl-title">
+              Stories, guides and lessons learned
+              <span className="bl-caret bl-caret--title" aria-hidden="true" />
+            </h1>
+            <p className="bl-lede">
+              Practical writing on coding, careers and growing up with
+              technology, from the people who teach it.
+            </p>
 
-          <div className="bl-search">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-3.5-3.5" />
-            </svg>
-            <input
-              ref={searchRef}
-              type="search"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setShown(PAGE_SIZE);
-              }}
-              placeholder="Search articles"
-              aria-label="Search articles"
-            />
-            <kbd aria-hidden="true">/</kbd>
+            <div className="bl-search">
+              <span className="bl-prompt" aria-hidden="true">
+                &gt;_
+              </span>
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShown(PAGE_SIZE);
+                }}
+                placeholder="Search articles"
+                aria-label="Search articles"
+              />
+              <kbd aria-hidden="true">/</kbd>
+            </div>
           </div>
+
+          {showTerminal && <Terminal posts={latest} />}
         </header>
 
         {loading ? (
