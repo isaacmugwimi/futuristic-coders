@@ -9,7 +9,9 @@ import programRoutes from "./routes/programs/program.routes.js";
 import studentRoutes from "./routes/students/students.routes.js";
 import testimonialRoutes from "./routes/testimonial/testimonial.routes.js";
 import uploadRoutes from "./routes/uploads/upload.routes.js";
+import blogRoutes from "./routes/blogs/blogs.routes.js";
 import AppError from "./middleware/error/AppError.js";
+
 import { resetDb } from "./database/config/resetUtilDb.js";
 
 const app = express();
@@ -71,6 +73,7 @@ app.use("/api/programs", programRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/blogs", blogRoutes);
 // resetDb();
 // ============================================================================
 // NOT FOUND HANDLER
