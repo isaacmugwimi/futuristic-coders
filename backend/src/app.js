@@ -73,7 +73,7 @@ app.use("/api/programs", programRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/uploads", uploadRoutes);
-app.use("/api/blog", blogRoutes);
+app.use("/api/blogs", blogRoutes);
 // resetDb();
 // ============================================================================
 // NOT FOUND HANDLER

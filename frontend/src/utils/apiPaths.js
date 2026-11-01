@@ -40,7 +40,7 @@ export const API_PATHS = {
     VERIFY: (certificateNo) =>
       `/api/students/verify-certificate/${encodeURIComponent(certificateNo)}`,
   },
-  BLOG: {
+  BLOGS: {
     // GET: published posts
     GET_PUBLISHED: "/api/blog/get-published-posts",
 

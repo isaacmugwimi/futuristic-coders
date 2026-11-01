@@ -3,7 +3,7 @@ import Blog from "../../components/Blogs/Blog/Blog";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 
 const SITE_URL = "https://www.futuristiccoders.co.ke";
-const PAGE_URL = `${SITE_URL}/blog`;
+const PAGE_URL = `${SITE_URL}/blogs`;
 const LOGO_URL = `${SITE_URL}/flogo.png`;
 const ORG_ID = `${SITE_URL}/#organization`;
 

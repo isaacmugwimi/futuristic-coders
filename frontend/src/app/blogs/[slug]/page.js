@@ -41,7 +41,7 @@ export async function generateMetadata({ params }) {
 
   const description =
     post.excerpt || post.content.replace(/[#*_`>\[\]]/g, "").slice(0, 155);
-  const url = `${SITE_URL}/blog/${encodeURIComponent(post.slug)}`;
+  const url = `${SITE_URL}/blogs/${encodeURIComponent(post.slug)}`;
   const title = `${post.title} | Futuristic Coders`;
   const image = post.image || LOGO_URL;
 
