@@ -43,6 +43,7 @@ import {
 } from "@/src/hooks/students/useStudentQueries";
 import { usePrograms } from "@/src/hooks/programs/useProgramQueries";
 import { useIssueCertificate } from "@/src/hooks/students/useStudentMutation";
+import QueryState, { isBlocked } from "../QueryState/QueryState";
 
 /**
  * CertificatesPage.jsx
@@ -60,13 +61,8 @@ const errorMessage = (err, fallback) =>
   err?.response?.data?.message ?? err?.message ?? fallback;
 
 export default function CertificatesPage() {
-  const {
-    data: studentsResponse,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useAllStudents();
+  const studentsQuery = useAllStudents();
+  const studentsResponse = studentsQuery.data;
   const { data: programsResponse } = usePrograms();
   const issueMutation = useIssueCertificate();
 
@@ -289,35 +285,16 @@ export default function CertificatesPage() {
 
   const TabIcon = tab === "completion" ? GraduationCap : Handshake;
 
-  /* ---------------- loading / error ---------------- */
-  if (isLoading) {
+  if (isBlocked(studentsQuery)) {
     return (
-      <div className="cp">
-        <div className="cp-empty" role="status">
-          <h3>Loading certificates…</h3>
-        </div>
-      </div>
+      <QueryState
+        query={studentsQuery}
+        resource="certificates"
+        variant="table"
+        stats={4}
+      />
     );
   }
-
-  if (isError) {
-    return (
-      <div className="cp">
-        <div className="cp-empty" role="alert">
-          <h3>Could not load certificates</h3>
-          <p>{errorMessage(error, "Something went wrong.")}</p>
-          <button
-            type="button"
-            className="cp-btn cp-btn--primary"
-            onClick={() => refetch()}
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   /* ---------------- render ---------------- */
   return (
     <div className="cp">

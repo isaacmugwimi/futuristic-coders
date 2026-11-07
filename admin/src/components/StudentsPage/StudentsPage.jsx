@@ -53,7 +53,7 @@ import {
   useRecordPayment,
   useRevokeCertificate,
 } from "@/src/hooks/students/useStudentMutation";
-
+import QueryState, { isBlocked } from "../QueryState/QueryState";
 /**
  * StudentsPage.jsx
  * Stats, the Current / Completed tabs, search + filters, and all the actions.
@@ -188,13 +188,8 @@ function matches(student, f, tab) {
 export default function StudentsPage() {
   // Loads every page of students once; search, filters, sorting and paging
   // then run on the client.
-  const {
-    data: studentsResponse,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useAllStudents();
+const studentsQuery = useAllStudents();
+const studentsResponse = studentsQuery.data;
   const { data: statsResponse } = useStudentStats();
   const { data: programsResponse, isLoading: programsLoading } = usePrograms();
 
@@ -746,29 +741,12 @@ export default function StudentsPage() {
     onDelete: askDelete,
   };
 
-  /* ---------------- loading / error ---------------- */
-  if (isLoading) {
-    return (
-      <div className="sp">
-        <p role="status" className="sp-state">
-          Loading students…
-        </p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="sp">
-        <div role="alert" className="sp-state">
-          <p>{errorMessage(error, "Could not load students.")}</p>
-          <button type="button" className="sp-add" onClick={() => refetch()}>
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
+// Every hook above runs before this early return.
+if (isBlocked(studentsQuery)) {
+  return (
+    <QueryState query={studentsQuery} resource="students" variant="table" />
+  );
+}
 
   // Used by both tabs.
   const programFilter = (
