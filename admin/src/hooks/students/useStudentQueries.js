@@ -24,25 +24,6 @@ const STALE_TIME = 1000 * 60;
 const hasValue = (value) =>
   value !== undefined && value !== null && value !== "";
 
-// ----------------------------------------------------------------------------
-// QUERY KEYS (the mutations hooks invalidate by these prefixes)
-//
-// ["students", "list", params]         student list
-// ["students", "stats"]                summary cards
-// ["students", "detail", studentId]    one student + enrollments
-//
-// ["enrollments", "student", studentId]
-// ["enrollments", "program", programId]
-// ["enrollments", "detail", enrollmentId]
-// ["enrollments", "payments", enrollmentId]
-// ["enrollments", "attendance", enrollmentId]
-// ["enrollments", "eligibility", enrollmentId, params]
-// ["enrollments", "certificates", enrollmentId]
-// ["enrollments", "assessments", enrollmentId]
-//
-// ["certificates", "verify", certificateNo]
-// ----------------------------------------------------------------------------
-
 // ============================================================================
 // GET ALL STUDENTS (search, filter, sort, paginate)
 // ============================================================================

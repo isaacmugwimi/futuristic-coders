@@ -10,6 +10,10 @@ const PAYMENT_FILTERS = ["unpaid", "partial", "paid"];
 const ATTENDANCE_STATUSES = ["present", "absent", "late", "excused"];
 const CERTIFICATE_TYPES = ["completion", "participation"];
 
+// "students"    = one row per student (their latest enrollment)
+// "enrollments" = one row per enrollment
+const STUDENT_VIEWS = ["students", "enrollments"];
+
 // Must match the sort whitelist in the student model.
 const STUDENT_SORT_FIELDS = [
   "full_name",
@@ -65,7 +69,7 @@ export const studentIdParamsSchema = idParams();
 // Route: /:id  (enrollments)
 export const enrollmentIdParamsSchema = idParams();
 
-// Route: /program/:programId
+// Route: /get-program-enrollments/:programId
 export const enrollmentProgramParamsSchema = idParams("programId");
 
 // Route: /:id  (payments)
@@ -82,7 +86,7 @@ export const assessmentIdParamsSchema = idParams();
 
 // =====================================================
 // CERTIFICATE NUMBER PARAMS
-// Route: /verify/:certificateNo
+// Route: /verify-certificate/:certificateNo
 // =====================================================
 
 export const certificateNoParamsSchema = Joi.object({
@@ -96,8 +100,9 @@ export const certificateNoParamsSchema = Joi.object({
 
 // =====================================================
 // GET STUDENTS QUERY
-// Route: /students?search=amina&status=active&page=1&limit=10
+// Route: /get-all-students?search=amina&status=active&page=1&limit=10
 // "all" and "" mean "no filter" (the service handles them).
+// view=enrollments returns one row per enrollment instead of one per student.
 // =====================================================
 
 export const getStudentsQuerySchema = Joi.object({
@@ -130,11 +135,13 @@ export const getStudentsQuerySchema = Joi.object({
   page: Joi.number().integer().min(1),
 
   limit: Joi.number().integer().min(1).max(100),
+
+  view: Joi.string().valid(...STUDENT_VIEWS),
 }).unknown(false);
 
 // =====================================================
 // FORCE DELETE QUERY
-// Route: DELETE /students/:id?force=true
+// Route: DELETE /delete-student/:id?force=true
 // Kept as a string because the controller checks === "true".
 // =====================================================
 
@@ -162,6 +169,7 @@ const paymentFields = {
   paid_at: Joi.string().trim().isoDate(),
 };
 
+// Shared by createStudentSchema and enrollStudentSchema.
 const initialPaymentSchema = Joi.object(paymentFields)
   .or("paymentMethod", "payment_method")
   .unknown(false);
@@ -283,8 +291,9 @@ export const updateStudentSchema = Joi.object({
   .unknown(false);
 
 // =====================================================
-// ENROL STUDENT IN A PROGRAM
-// Route: POST /students/:id/enrollments
+// ENROL AN EXISTING STUDENT IN A PROGRAM
+// Route: POST /enroll-student/:id
+// Can also record a first payment (deposit) for the new enrollment.
 // =====================================================
 
 export const enrollStudentSchema = Joi.object({
@@ -302,6 +311,9 @@ export const enrollStudentSchema = Joi.object({
   enrolled_on: dateSchema.allow(null),
 
   notes: optionalText(5000),
+
+  // Optional first payment (deposit)
+  initialPayment: initialPaymentSchema,
 })
   .or("programId", "program_id")
   .unknown(false);
@@ -343,7 +355,7 @@ export const updateEnrollmentStatusSchema = Joi.object({
 
 // =====================================================
 // RECORD PAYMENT
-// Route: POST /enrollments/:id/payments
+// Route: POST /record-payment/:id
 // =====================================================
 
 export const recordPaymentSchema = Joi.object({
@@ -366,7 +378,7 @@ export const updatePaymentStatusSchema = Joi.object({
 
 // =====================================================
 // RECORD ATTENDANCE (single student)
-// Route: POST /enrollments/:id/attendance
+// Route: POST /record-attendance/:id
 // =====================================================
 
 export const recordAttendanceSchema = Joi.object({
@@ -385,7 +397,7 @@ export const recordAttendanceSchema = Joi.object({
 
 // =====================================================
 // RECORD CLASS ATTENDANCE (whole register for one session)
-// Route: POST /attendance/class
+// Route: POST /record-class-attendance
 // =====================================================
 
 const attendanceRecordSchema = Joi.object({
@@ -414,7 +426,7 @@ export const recordClassAttendanceSchema = Joi.object({
 
 // =====================================================
 // CERTIFICATE ELIGIBILITY QUERY
-// Route: /enrollments/:id/certificate-eligibility?minAttendance=75
+// Route: /check-certificate-eligibility/:id?minAttendance=75
 // =====================================================
 
 export const certificateEligibilityQuerySchema = Joi.object({
@@ -423,8 +435,8 @@ export const certificateEligibilityQuerySchema = Joi.object({
 
 // =====================================================
 // ISSUE CERTIFICATE
-// Route: POST /enrollments/:id/certificates
-// The body is optional; the type defaults to "completion".
+// Route: POST /issue-certificate/:id
+// The body is optional; the type is worked out from the enrollment.
 // =====================================================
 
 export const issueCertificateSchema = Joi.object({
@@ -437,7 +449,7 @@ export const issueCertificateSchema = Joi.object({
 
 // =====================================================
 // CREATE ASSESSMENT
-// Route: POST /enrollments/:id/assessments
+// Route: POST /create-assessment/:id
 // =====================================================
 
 export const createAssessmentSchema = Joi.object({

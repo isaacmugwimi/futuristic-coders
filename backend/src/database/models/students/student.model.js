@@ -404,6 +404,7 @@ export const getAllStudents = async (filters = {}) => {
     county,
     sort_by = "created_at",
     sort_order = "desc",
+    view = "students",
   } = filters;
 
   const page = Math.max(1, parseInt(filters.page, 10) || 1);
@@ -445,7 +446,13 @@ export const getAllStudents = async (filters = {}) => {
     STUDENT_SORT_COLUMNS[sort_by] ?? STUDENT_SORT_COLUMNS.created_at;
   const direction = String(sort_order).toLowerCase() === "asc" ? "ASC" : "DESC";
 
-  const fromSql = `
+  const fromSql =
+    view === "enrollments"
+      ? `
+    FROM students s
+    LEFT JOIN (${ENROLLMENT_SELECT}) le ON le.student_id = s.id
+  `
+      : `
     FROM students s
     LEFT JOIN LATERAL (
       ${ENROLLMENT_SELECT}
@@ -468,6 +475,9 @@ export const getAllStudents = async (filters = {}) => {
   const result = await query(
     `SELECT
       s.*,
+      (SELECT COUNT(*)::int
+         FROM student_enrollments ec
+        WHERE ec.student_id = s.id) AS enrollment_count,
       le.id AS enrollment_id,
       le.program_id,
       le.program_title,
@@ -488,11 +498,10 @@ export const getAllStudents = async (filters = {}) => {
       le.certificate_status
     ${fromSql}
     ${whereSql}
-    ORDER BY ${sortColumn} ${direction} NULLS LAST, s.id
+    ORDER BY ${sortColumn} ${direction} NULLS LAST, s.id, le.id
     LIMIT ${limitParam} OFFSET ${offsetParam}`,
     params,
   );
-
   return {
     students: result.rows,
     total,
@@ -608,13 +617,15 @@ export const getStudentStats = async () => {
   const result = await query(
     `SELECT
       (SELECT COUNT(*)::int FROM students) AS total_students,
+      COUNT(*)::int AS total_enrollments,
       COUNT(*) FILTER (WHERE x.status = 'active')::int AS active,
       COUNT(*) FILTER (WHERE x.status = 'on_hold')::int AS on_hold,
       COUNT(*) FILTER (WHERE x.status = 'dropped')::int AS dropped,
       COUNT(*) FILTER (WHERE x.status = 'completed')::int AS completed,
       COALESCE(SUM(x.agreed_fee), 0) AS total_fees,
       COALESCE(SUM(x.amount_paid), 0) AS total_collected,
-      COALESCE(SUM(x.balance), 0) AS total_outstanding
+      COALESCE(SUM(x.balance) FILTER (WHERE x.status <> 'dropped'), 0)
+        AS total_outstanding
     FROM (${ENROLLMENT_SELECT}) x`,
   );
 

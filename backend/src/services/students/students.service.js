@@ -433,6 +433,25 @@ const assertReferenceUnused = async (client, reference) => {
   }
 };
 
+// Records the first deposit for a brand-new enrollment.
+const recordInitialPayment = async (client, enrollment, paymentInput) => {
+  if (!paymentInput) return;
+
+  if (paymentInput.amount > Number(enrollment.agreed_fee) + 0.001) {
+    throw new AppError(
+      `Initial payment exceeds the agreed fee of ${formatMoney(enrollment.agreed_fee)}.`,
+      400,
+    );
+  }
+
+  await assertReferenceUnused(client, paymentInput.reference);
+
+  await createPayment(client, {
+    enrollment_id: enrollment.id,
+    ...paymentInput,
+  });
+};
+
 // ------------------------------------------------------------
 // Input parsers shared by several services
 // ------------------------------------------------------------
@@ -603,22 +622,7 @@ export const createStudentService = async (data, user) => {
         agreed_fee: enrollmentInput.agreedFee,
         notes: enrollmentInput.notes,
       });
-
-      if (paymentInput) {
-        if (paymentInput.amount > Number(enrollment.agreed_fee) + 0.001) {
-          throw new AppError(
-            `Initial payment exceeds the agreed fee of ${formatMoney(enrollment.agreed_fee)}.`,
-            400,
-          );
-        }
-
-        await assertReferenceUnused(client, paymentInput.reference);
-
-        await createPayment(client, {
-          enrollment_id: enrollment.id,
-          ...paymentInput,
-        });
-      }
+      await recordInitialPayment(client, enrollment, paymentInput);
     }
 
     return student.id;
@@ -663,6 +667,7 @@ export const getAllStudentsService = async (filters = {}) => {
     sort_order: field(filters, "sortOrder", "sort_order"),
     page: filters.page,
     limit: filters.limit,
+    view: filters.view === "enrollments" ? "enrollments" : "students",
   });
 };
 
@@ -810,6 +815,11 @@ export const enrollStudentService = async (studentId, data, user) => {
 
   const input = parseEnrollmentInput(data);
 
+  const initialPayment = data.initialPayment ?? null;
+  const paymentInput = initialPayment
+    ? parsePaymentInput({ ...initialPayment, status: "successful" })
+    : null;
+
   const enrollmentId = await withTransaction(async (client) => {
     const studentResult = await client.query(
       `SELECT id FROM students WHERE id = $1`,
@@ -830,6 +840,8 @@ export const enrollStudentService = async (studentId, data, user) => {
       agreed_fee: input.agreedFee,
       notes: input.notes,
     });
+
+    await recordInitialPayment(client, enrollment, paymentInput);
 
     return enrollment.id;
   });
