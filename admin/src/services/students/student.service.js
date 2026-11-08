@@ -11,9 +11,9 @@ export const createStudent = async (studentData) => {
   const { data } = await api.post(API_PATHS.STUDENTS.CREATE, studentData);
   return data;
 };
-
 // params: search, status, programId, paymentStatus, ageGroup, county,
-// sortBy, sortOrder, page, limit
+// sortBy, sortOrder, page, limit,
+// view ("students" = one row per student, "enrollments" = one row per enrollment)
 export const getAllStudents = async (params = {}) => {
   const { data } = await api.get(API_PATHS.STUDENTS.GET_ALL, { params });
   return data;

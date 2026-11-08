@@ -47,18 +47,18 @@ export const useStudents = (params = {}) =>
 // and returns one combined list. Use it on screens that search, filter and
 // sort on the client. The result has the same shape as one page:
 // { data, pagination }.
-export const useAllStudents = () =>
+export const useAllStudents = ({ view } = {}) =>
   useQuery({
-    queryKey: ["students", "list", "all"],
+    queryKey: ["students", "list", "all", view ?? "students"],
     queryFn: async () => {
       const limit = 100;
 
-      const first = await getAllStudents({ page: 1, limit });
+      const first = await getAllStudents({ page: 1, limit, view });
       const totalPages = first?.pagination?.totalPages ?? 1;
 
       const rest = await Promise.all(
         Array.from({ length: totalPages - 1 }, (_, index) =>
-          getAllStudents({ page: index + 2, limit }),
+          getAllStudents({ page: index + 2, limit, view }),
         ),
       );
 

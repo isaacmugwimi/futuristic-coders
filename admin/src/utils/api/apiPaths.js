@@ -103,7 +103,8 @@ export const API_PATHS = {
 
     // Read
     // Query params: search, status, programId, paymentStatus, ageGroup,
-    // county, sortBy, sortOrder, page, limit
+    // county, sortBy, sortOrder, page, limit,
+    // view ("students" = one row per student, "enrollments" = one row per enrollment)
     GET_ALL: "/api/students/get-all-students",
 
     GET_STATS: "/api/students/get-student-stats",

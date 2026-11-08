@@ -326,3 +326,21 @@ export function toUiStudent(row, weeksByProgram = new Map()) {
         : null,
   };
 }
+
+
+// ============================================================================
+// BACKEND -> UI ENROLLMENT ROW
+// ============================================================================
+
+// Used when the list is requested with ?view=enrollments, where a student with
+// several programs comes back as several rows. `id` must be unique per row, so
+// it is the enrollment ID (or the student ID for a student with no enrollment
+// yet). The student's own ID is kept in `studentId`.
+export function toUiEnrollment(row, weeksByProgram = new Map()) {
+  return {
+    ...toUiStudent(row, weeksByProgram),
+    id: row.enrollment_id ?? row.id,
+    studentId: row.id,
+    enrollmentCount: Number(row.enrollment_count ?? 0),
+  };
+}

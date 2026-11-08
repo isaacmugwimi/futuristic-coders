@@ -1,0 +1,380 @@
+.ep {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ep-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- stats ---------- */
+.ep-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.ep-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.ep-stat__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.ep-stat__icon--blue { background: #eff6ff; color: #2563eb; }
+.ep-stat__icon--green { background: #ecfdf5; color: #059669; }
+.ep-stat__icon--violet { background: #f5f3ff; color: #7c3aed; }
+.ep-stat__icon--rose { background: #fff1f2; color: #e11d48; }
+
+.ep-stat__value {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ep-stat__label {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+/* ---------- card + toolbar ---------- */
+.ep-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ep-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ep-search {
+  flex: 1 1 240px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+}
+
+.ep-search:focus-within {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+.ep-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  color: #0f172a;
+}
+
+.ep-search button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.ep-select {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  color: #0f172a;
+}
+
+.ep-clear,
+.ep-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ep-clear {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #475569;
+}
+
+.ep-clear:hover {
+  background: #f1f5f9;
+}
+
+.ep-add {
+  margin-left: auto;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.ep-add:hover {
+  background: #1d4ed8;
+}
+
+/* ---------- table ---------- */
+.ep-table-wrap {
+  overflow-x: auto;
+}
+
+.ep-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ep-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #64748b;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.ep-table td {
+  padding: 12px 16px;
+  border-top: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #0f172a;
+}
+
+.ep-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.ep-name {
+  display: block;
+}
+
+.ep-sub {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.ep-cert {
+  font-size: 0.82rem;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.ep-col-actions {
+  text-align: right;
+}
+
+.ep-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 90px;
+  font-size: 0.82rem;
+}
+
+.ep-meter {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.ep-meter span {
+  display: block;
+  height: 100%;
+  background: #2563eb;
+}
+
+/* ---------- pills + status select ---------- */
+.ep-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.ep-pill--paid { background: #ecfdf5; color: #047857; }
+.ep-pill--partial { background: #fffbeb; color: #b45309; }
+.ep-pill--pending { background: #fef2f2; color: #b91c1c; }
+
+.ep-status {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ep-status:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ep-status--active { background: #ecfdf5; color: #047857; }
+.ep-status--on_hold { background: #fffbeb; color: #b45309; }
+.ep-status--dropped { background: #fef2f2; color: #b91c1c; }
+.ep-status--completed { background: #f5f3ff; color: #6d28d9; }
+
+/* ---------- row actions ---------- */
+.ep-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ep-iconbtn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+}
+
+.ep-iconbtn:hover {
+  background: #f1f5f9;
+}
+
+.ep-iconbtn--danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* ---------- empty state ---------- */
+.ep-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 16px;
+  text-align: center;
+}
+
+.ep-empty > span {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.ep-empty h3 {
+  margin: 6px 0 0;
+}
+
+.ep-empty p {
+  margin: 0 0 8px;
+  color: #64748b;
+}
+
+.ep-empty .ep-add {
+  margin-left: 0;
+}
+
+/* ---------- footer ---------- */
+.ep-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.ep-footer p {
+  margin: 0;
+  margin-right: auto;
+}
+
+.ep-per-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ep-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ep-pager button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.ep-pager button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .ep-add {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
