@@ -39,8 +39,8 @@ import {
 } from "@/src/hooks/students/useStudentMutation";
 
 import QueryState, { isBlocked } from "../QueryState/QueryState";
-import EnrollModal from "../EnrollModal/EnrollModal";
 import { ConfirmDialog, Toast } from "../StudentModals/StudentModals";
+import EnrollModal from "./EnrollModal/EnrollModal";
 
 /**
  * EnrollmentsPage.jsx
