@@ -30,6 +30,8 @@ import {
   getAssessmentsByEnrollment,
   updateAssessment,
   deleteAssessment,
+  getPaymentStats,
+  getAllPayments,
 } from "../../database/models/students/student.model.js";
 
 import { getProgramById } from "../../database/models/programs/program.model.js";
@@ -1088,6 +1090,51 @@ export const getEnrollmentPaymentsService = async (enrollmentId) => {
   ]);
 
   return { financials, payments };
+};
+
+// ============================================================
+// GET ALL PAYMENTS (search, filter, sort, paginate)
+// ============================================================
+
+export const getAllPaymentsService = async (filters = {}) => {
+  const status = normalizeFilter(filters.status);
+
+  if (status && !PAYMENT_STATUSES.includes(status)) {
+    throw new AppError("Invalid payment status filter.", 400);
+  }
+
+  const program_id = normalizeFilter(field(filters, "programId", "program_id"));
+
+  if (program_id) {
+    assertUuid(program_id, "program ID");
+  }
+
+  const date_from = normalizeFilter(field(filters, "dateFrom", "date_from"));
+  const date_to = normalizeFilter(field(filters, "dateTo", "date_to"));
+
+  if (date_from) parseDate(date_from, "Start date");
+  if (date_to) parseDate(date_to, "End date");
+
+  return await getAllPayments({
+    search: typeof filters.search === "string" ? filters.search : undefined,
+    status,
+    method: normalizeFilter(filters.method),
+    program_id,
+    date_from,
+    date_to,
+    sort_by: field(filters, "sortBy", "sort_by"),
+    sort_order: field(filters, "sortOrder", "sort_order"),
+    page: filters.page,
+    limit: filters.limit,
+  });
+};
+
+// ============================================================
+// GET PAYMENT STATS
+// ============================================================
+
+export const getPaymentStatsService = async () => {
+  return await getPaymentStats();
 };
 
 // ============================================================

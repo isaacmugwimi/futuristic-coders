@@ -301,6 +301,37 @@ export const getEnrollmentPayments = asyncHandler(async (req, res) => {
 });
 
 // ============================================================
+// GET ALL PAYMENTS
+// GET /api/students/get-all-payments?search=&status=&method=&programId=
+//     &dateFrom=&dateTo=&sortBy=&sortOrder=&page=&limit=
+// ============================================================
+
+export const getAllPayments = asyncHandler(async (req, res) => {
+  const { payments, total, page, limit, total_pages } =
+    await studentService.getAllPaymentsService(req.query);
+
+  return res.status(200).json({
+    success: true,
+    count: payments.length,
+    pagination: { total, page, limit, totalPages: total_pages },
+    data: payments,
+  });
+});
+
+// ============================================================
+// GET PAYMENT STATS
+// GET /api/students/get-payment-stats
+// ============================================================
+
+export const getPaymentStats = asyncHandler(async (req, res) => {
+  const stats = await studentService.getPaymentStatsService();
+
+  return res.status(200).json({ success: true, data: stats });
+});
+
+
+
+// ============================================================
 // UPDATE PAYMENT STATUS
 // PATCH /api/payments/:id/status
 // Body: { "status": "pending" | "successful" | "failed" | "refunded" }

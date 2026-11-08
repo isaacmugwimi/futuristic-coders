@@ -104,6 +104,7 @@ export const deleteEnrollment = async (enrollmentId, options = {}) => {
   return data;
 };
 
+
 // ============================================================================
 // STUDENTS — PAYMENTS
 // ============================================================================
@@ -130,6 +131,18 @@ export const updatePaymentStatus = async (paymentId, status) => {
     API_PATHS.STUDENTS.PAYMENTS.UPDATE_STATUS(paymentId),
     { status },
   );
+  return data;
+};
+
+// params: search, status, method, programId, dateFrom, dateTo, sortBy,
+// sortOrder, page, limit
+export const getAllPayments = async (params = {}) => {
+  const { data } = await api.get(API_PATHS.STUDENTS.PAYMENTS.GET_ALL, { params });
+  return data;
+};
+
+export const getPaymentStats = async () => {
+  const { data } = await api.get(API_PATHS.STUDENTS.PAYMENTS.GET_STATS);
   return data;
 };
 

@@ -34,6 +34,7 @@ const invalidateStudentData = (queryClient) =>
   Promise.all([
     queryClient.invalidateQueries({ queryKey: ["students"] }),
     queryClient.invalidateQueries({ queryKey: ["enrollments"] }),
+    queryClient.invalidateQueries({ queryKey: ["payments"] }),
   ]);
 
 // ============================================================================

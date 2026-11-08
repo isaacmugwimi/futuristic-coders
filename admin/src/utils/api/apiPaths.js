@@ -162,6 +162,8 @@ export const API_PATHS = {
         `/api/students/update-payment-status/${paymentId}`,
 
       DELETE: (paymentId) => `/api/students/delete-payment/${paymentId}`,
+      GET_ALL: "/api/students/get-all-payments",
+      GET_STATS: "/api/students/get-payment-stats",
     },
 
     // ------------------------------------------------------------------------

@@ -139,6 +139,40 @@ export const getStudentsQuerySchema = Joi.object({
   view: Joi.string().valid(...STUDENT_VIEWS),
 }).unknown(false);
 
+const PAYMENT_SORT_FIELDS = ["paid_at", "amount", "full_name", "status"];
+
+export const getPaymentsQuerySchema = Joi.object({
+  search: Joi.string().trim().max(100).allow(""),
+
+  status: Joi.string().valid(...PAYMENT_STATUSES, "all", ""),
+
+  method: Joi.string().trim().max(30).allow("", "all"),
+
+  programId: uuidSchema.allow("", "all"),
+
+  program_id: uuidSchema.allow("", "all"),
+
+  dateFrom: dateSchema.allow(""),
+
+  date_from: dateSchema.allow(""),
+
+  dateTo: dateSchema.allow(""),
+
+  date_to: dateSchema.allow(""),
+
+  sortBy: Joi.string().valid(...PAYMENT_SORT_FIELDS),
+
+  sort_by: Joi.string().valid(...PAYMENT_SORT_FIELDS),
+
+  sortOrder: Joi.string().lowercase().valid("asc", "desc"),
+
+  sort_order: Joi.string().lowercase().valid("asc", "desc"),
+
+  page: Joi.number().integer().min(1),
+
+  limit: Joi.number().integer().min(1).max(100),
+}).unknown(false);
+
 // =====================================================
 // FORCE DELETE QUERY
 // Route: DELETE /delete-student/:id?force=true

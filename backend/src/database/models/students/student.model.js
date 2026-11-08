@@ -854,6 +854,137 @@ export const getPaymentById = async (id) => {
 };
 
 // ─────────────────────────────────────────────
+// READ ALL PAYMENTS (search, filter, sort, paginate)
+// ─────────────────────────────────────────────
+
+const PAYMENT_SORT_COLUMNS = {
+  paid_at: "sp.paid_at",
+  amount: "sp.amount",
+  full_name: "s.full_name",
+  status: "sp.status",
+};
+
+export const getAllPayments = async (filters = {}) => {
+  const {
+    search,
+    status,
+    method,
+    program_id,
+    date_from,
+    date_to,
+    sort_by = "paid_at",
+    sort_order = "desc",
+  } = filters;
+
+  const page = Math.max(1, parseInt(filters.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(filters.limit, 10) || 10));
+  const offset = (page - 1) * limit;
+
+  const params = [];
+  const where = [];
+
+  const addParam = (value) => {
+    params.push(value);
+    return `$${params.length}`;
+  };
+
+  if (search && search.trim()) {
+    const p = addParam(`%${search.trim()}%`);
+    where.push(
+      `(s.full_name ILIKE ${p}
+        OR s.student_no ILIKE ${p}
+        OR sp.reference ILIKE ${p}
+        OR p.title ILIKE ${p})`,
+    );
+  }
+
+  if (status) where.push(`sp.status = ${addParam(status)}`);
+  if (method) where.push(`sp.payment_method = ${addParam(method)}`);
+  if (program_id) where.push(`e.program_id = ${addParam(program_id)}`);
+  if (date_from) {
+    where.push(
+      `(sp.paid_at AT TIME ZONE 'Africa/Nairobi')::date >= ${addParam(date_from)}::date`,
+    );
+  }
+  if (date_to) {
+    where.push(
+      `(sp.paid_at AT TIME ZONE 'Africa/Nairobi')::date <= ${addParam(date_to)}::date`,
+    );
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  // Whitelist the sort column and direction: never interpolate user input.
+  const sortColumn =
+    PAYMENT_SORT_COLUMNS[sort_by] ?? PAYMENT_SORT_COLUMNS.paid_at;
+  const direction = String(sort_order).toLowerCase() === "asc" ? "ASC" : "DESC";
+
+  const fromSql = `
+    FROM student_payments sp
+    JOIN student_enrollments e ON e.id = sp.enrollment_id
+    JOIN students s ON s.id = e.student_id
+    JOIN programs p ON p.id = e.program_id
+  `;
+
+  const countResult = await query(
+    `SELECT COUNT(*)::int AS total ${fromSql} ${whereSql}`,
+    params,
+  );
+
+  const total = countResult.rows[0].total;
+
+  const limitParam = addParam(limit);
+  const offsetParam = addParam(offset);
+
+  const result = await query(
+    `SELECT
+      sp.*,
+      e.student_id,
+      e.program_id,
+      s.student_no,
+      s.full_name,
+      p.title AS program_title
+    ${fromSql}
+    ${whereSql}
+    ORDER BY ${sortColumn} ${direction}, sp.id
+    LIMIT ${limitParam} OFFSET ${offsetParam}`,
+    params,
+  );
+
+  return {
+    payments: result.rows,
+    total,
+    page,
+    limit,
+    total_pages: Math.max(1, Math.ceil(total / limit)),
+  };
+};
+
+// ─────────────────────────────────────────────
+// PAYMENT STATS (summary cards)
+// ─────────────────────────────────────────────
+
+export const getPaymentStats = async () => {
+  const result = await query(
+    `SELECT
+      COALESCE(SUM(amount) FILTER (WHERE status = 'successful'), 0)
+        AS total_collected,
+      COALESCE(SUM(amount) FILTER (
+        WHERE status = 'successful'
+          AND date_trunc('month', paid_at AT TIME ZONE 'Africa/Nairobi')
+            = date_trunc('month', NOW() AT TIME ZONE 'Africa/Nairobi')
+      ), 0) AS collected_this_month,
+      COALESCE(SUM(amount) FILTER (WHERE status = 'refunded'), 0)
+        AS total_refunded,
+      COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count,
+      COUNT(*) FILTER (WHERE status = 'failed')::int AS failed_count
+    FROM student_payments`,
+  );
+
+  return result.rows[0];
+};
+
+// ─────────────────────────────────────────────
 // UPDATE PAYMENT STATUS
 // ─────────────────────────────────────────────
 

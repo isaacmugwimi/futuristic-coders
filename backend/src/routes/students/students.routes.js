@@ -31,6 +31,8 @@ import {
   getAssessments,
   updateAssessment,
   deleteAssessment,
+  getAllPayments,
+  getPaymentStats,
 } from "../../controller/students/student.controller.js";
 
 import {
@@ -65,6 +67,7 @@ import {
   getStudentsQuerySchema,
   forceDeleteQuerySchema,
   certificateEligibilityQuerySchema,
+  getPaymentsQuerySchema,
 } from "../../middleware/validators/students/student.validator.js";
 
 const router = Router();
@@ -269,6 +272,24 @@ router.delete(
   authorizeRoles("admin"),
   validate(paymentIdParamsSchema, "params"),
   deletePayment,
+);
+
+// Get every payment with student and program names — admin only
+// Supports search, filters, sorting and pagination
+router.get(
+  "/get-all-payments",
+  authenticateUser,
+  authorizeRoles("admin"),
+  validate(getPaymentsQuerySchema, "query"),
+  getAllPayments,
+);
+
+// Payment summary figures (collected this month, total, pending, failed) — admin only
+router.get(
+  "/get-payment-stats",
+  authenticateUser,
+  authorizeRoles("admin"),
+  getPaymentStats,
 );
 
 // ======================================

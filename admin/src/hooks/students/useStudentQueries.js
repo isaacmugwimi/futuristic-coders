@@ -15,6 +15,8 @@ import {
   getEnrollmentCertificates,
   verifyCertificate,
   getEnrollmentAssessments,
+  getAllPayments,
+  getPaymentStats,
 } from "@/src/services/students/student.service";
 
 // Fees, balances and attendance change often, so data goes stale faster
@@ -201,5 +203,26 @@ export const useEnrollmentAssessments = (enrollmentId) =>
     queryKey: ["enrollments", "assessments", enrollmentId],
     queryFn: () => getEnrollmentAssessments(enrollmentId),
     enabled: hasValue(enrollmentId),
+    staleTime: STALE_TIME,
+  });
+
+
+  // ============================================================================
+// GET ALL PAYMENTS (filtered and paged by the backend)
+// ============================================================================
+
+export const usePayments = (params = {}) =>
+  useQuery({
+    queryKey: ["payments", "list", params],
+    queryFn: () => getAllPayments(params),
+    staleTime: STALE_TIME,
+    // Keeps the current page on screen while the next one loads.
+    placeholderData: (previousData) => previousData,
+  });
+
+export const usePaymentStats = () =>
+  useQuery({
+    queryKey: ["payments", "stats"],
+    queryFn: getPaymentStats,
     staleTime: STALE_TIME,
   });
