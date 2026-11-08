@@ -28,7 +28,7 @@ import {
   formatDate,
   honorsFor,
   listOf,
-  toUiStudent,
+  toUiEnrollment,
 } from "@/src/data/students";
 
 import {
@@ -61,7 +61,7 @@ const errorMessage = (err, fallback) =>
   err?.response?.data?.message ?? err?.message ?? fallback;
 
 export default function CertificatesPage() {
-  const studentsQuery = useAllStudents();
+  const studentsQuery = useAllStudents({ view: "enrollments" });
   const studentsResponse = studentsQuery.data;
   const { data: programsResponse } = usePrograms();
   const issueMutation = useIssueCertificate();
@@ -101,9 +101,9 @@ export default function CertificatesPage() {
     const weeksByProgram = new Map(
       programs.map((p) => [p.id, p.duration_weeks]),
     );
-    return listOf(studentsResponse).map((row) =>
-      toUiStudent(row, weeksByProgram),
-    );
+    return listOf(studentsResponse)
+      .map((row) => toUiEnrollment(row, weeksByProgram))
+      .filter((s) => s.enrollmentId); // a student with no enrollment has no certificate
   }, [studentsResponse, programs]);
 
   /* ---------------- who gets which certificate ---------------- */
@@ -121,7 +121,10 @@ export default function CertificatesPage() {
     };
   }, [students, eligibility]);
 
-  const urlStudent = students.find((s) => s.id === paramId) ?? null;
+  const urlStudent =
+    students.find((s) => s.id === paramId) ??
+    students.find((s) => s.studentId === paramId) ??
+    null;
   const urlType = urlStudent
     ? urlStudent.certificate
       ? typeOf(urlStudent)
@@ -311,8 +314,8 @@ export default function CertificatesPage() {
             (on hold, dropped, or their program period has ended).
           </p>
           <p>
-            Mark students as completed on the{" "}
-            <Link href="/dashboard/students">Students page</Link>.
+            Mark enrollments as completed on the{" "}
+            <Link href="/dashboard/enrollments">Enrollments page</Link>.
           </p>
         </div>
       </div>
@@ -572,9 +575,9 @@ export default function CertificatesPage() {
                 ? "Certificates of Completion appear here once students finish their program."
                 : "Certificates of Participation appear here for students who paid in full but didn't finish."}
             </p>
-            <Link href="/dashboard/students" className="cp-btn cp-btn--primary">
-              Go to Students
-            </Link>
+           <Link href="/dashboard/enrollments" className="cp-btn cp-btn--primary">
+  Go to Enrollments
+</Link>
           </div>
         ) : list.length === 0 ? (
           <div className="cp-empty">
