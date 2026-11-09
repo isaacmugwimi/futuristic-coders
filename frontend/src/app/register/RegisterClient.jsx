@@ -57,33 +57,20 @@ function RegisterForm() {
   const [submitError, setSubmitError] = useState("");
   const [honeypot, setHoneypot] = useState("");
 
+  // Only the fields the backend stores.
   const [formData, setFormData] = useState({
     // Parent
     parentName: "",
     parentPhone: "",
     parentEmail: "",
-    parentOccupation: "",
-    emergencyContact: "",
     location: "",
 
     // Child
     childName: "",
     ageGroup: "",
-    gender: "",
-    schoolGrade: "",
-    codingExperience: "",
 
     // Program
     programId: "",
-    preferredTime: "",
-    preferredMode: "",
-    deviceType: "",
-    internetAccess: "",
-    heardAboutUs: "",
-    startDate: "",
-
-    // Extra
-    medicalNotes: "",
     notes: "",
   });
 
@@ -129,13 +116,10 @@ function RegisterForm() {
     if (step === 2) {
       if (!formData.childName.trim()) newErrors.childName = true;
       if (!formData.ageGroup) newErrors.ageGroup = true;
-      if (!formData.gender) newErrors.gender = true;
     }
 
     if (step === 3) {
       if (!formData.programId) newErrors.programId = true;
-      if (!formData.preferredTime) newErrors.preferredTime = true;
-      if (!formData.deviceType) newErrors.deviceType = true;
     }
 
     setErrors(newErrors);
@@ -153,8 +137,7 @@ function RegisterForm() {
     setStep((s) => Math.max(s - 1, 1));
   };
 
-  // Maps the form to what the backend expects.
-  // Core fields go to real columns; the rest travel in `details`.
+  // Sends exactly what the backend accepts (see submitRegistrationSchema).
   const buildPayload = () => {
     const f = formData;
     return clean({
@@ -167,20 +150,6 @@ function RegisterForm() {
       programId: f.programId,
       notes: f.notes.trim(),
       website: honeypot, // honeypot: stays empty for real visitors
-      details: clean({
-        gender: f.gender,
-        schoolGrade: f.schoolGrade.trim(),
-        codingExperience: f.codingExperience,
-        emergencyContact: f.emergencyContact.trim(),
-        parentOccupation: f.parentOccupation.trim(),
-        preferredTime: f.preferredTime,
-        preferredMode: f.preferredMode,
-        deviceType: f.deviceType,
-        internetAccess: f.internetAccess,
-        heardAboutUs: f.heardAboutUs,
-        startDate: f.startDate,
-        medicalNotes: f.medicalNotes.trim(),
-      }),
     });
   };
 
@@ -342,30 +311,8 @@ function RegisterForm() {
                     )}
                   </div>
 
-                  <div className="reg-field">
-                    <label>Emergency Contact</label>
-                    <input
-                      type="tel"
-                      name="emergencyContact"
-                      placeholder="+254 700 111 222"
-                      value={formData.emergencyContact}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="reg-field">
-                    <label>Parent Occupation</label>
-                    <input
-                      type="text"
-                      name="parentOccupation"
-                      placeholder="e.g. Teacher"
-                      value={formData.parentOccupation}
-                      onChange={handleChange}
-                    />
-                  </div>
-
                   <div className="reg-field reg-field--full">
-                    <label>Location / City</label>
+                    <label>Location / County</label>
                     <input
                       type="text"
                       name="location"
@@ -412,7 +359,7 @@ function RegisterForm() {
                     )}
                   </div>
 
-                  <div className="reg-field">
+                  <div className="reg-field reg-field--full">
                     <label>
                       Age Group <span>*</span>
                     </label>
@@ -433,50 +380,6 @@ function RegisterForm() {
                       </p>
                     )}
                   </div>
-
-                  <div className="reg-field">
-                    <label>
-                      Gender <span>*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className={errors.gender ? "reg-input-error" : ""}
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="Male">Boy</option>
-                      <option value="Female">Girl</option>
-                    </select>
-                    {errors.gender && (
-                      <p className="reg-error-msg">Please select a gender</p>
-                    )}
-                  </div>
-
-                  <div className="reg-field">
-                    <label>School Grade / Class</label>
-                    <input
-                      type="text"
-                      name="schoolGrade"
-                      placeholder="e.g. Grade 6"
-                      value={formData.schoolGrade}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="reg-field">
-                    <label>Coding Experience</label>
-                    <select
-                      name="codingExperience"
-                      value={formData.codingExperience}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      <option value="None">None</option>
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
@@ -489,8 +392,8 @@ function RegisterForm() {
                     <FaGraduationCap />
                   </div>
                   <div>
-                    <h2>Program & Preferences</h2>
-                    <p>Choose your program and let us know your preferences.</p>
+                    <h2>Program</h2>
+                    <p>Choose the program you want to join.</p>
                   </div>
                 </div>
 
@@ -522,121 +425,14 @@ function RegisterForm() {
                     )}
                   </div>
 
-                  <div className="reg-field">
-                    <label>
-                      Preferred Class Time <span>*</span>
-                    </label>
-                    <select
-                      name="preferredTime"
-                      value={formData.preferredTime}
-                      onChange={handleChange}
-                      className={errors.preferredTime ? "reg-input-error" : ""}
-                    >
-                      <option value="">Choose Time</option>
-                      <option value="Morning">Morning (8am – 12pm)</option>
-                      <option value="Afternoon">Afternoon (1pm – 5pm)</option>
-                    </select>
-                    {errors.preferredTime && (
-                      <p className="reg-error-msg">
-                        Please select a class time
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="reg-field">
-                    <label>
-                      Available Device <span>*</span>
-                    </label>
-                    <select
-                      name="deviceType"
-                      value={formData.deviceType}
-                      onChange={handleChange}
-                      className={errors.deviceType ? "reg-input-error" : ""}
-                    >
-                      <option value="">Select Device</option>
-                      <option value="Laptop">Laptop</option>
-                      <option value="Desktop">Desktop</option>
-                      <option value="Tablet">Tablet</option>
-                    </select>
-                    {errors.deviceType && (
-                      <p className="reg-error-msg">Please select a device</p>
-                    )}
-                  </div>
-
                   <div className="reg-field reg-field--full">
                     <label>Additional Notes</label>
                     <textarea
                       name="notes"
                       rows={4}
                       maxLength={1000}
-                      placeholder="Any special requirements or questions..."
+                      placeholder="Preferred class time, special requirements or questions..."
                       value={formData.notes}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="reg-field">
-                    <label>Learning Mode</label>
-                    <select
-                      name="preferredMode"
-                      value={formData.preferredMode}
-                      onChange={handleChange}
-                    >
-                      <option value="">Choose Mode</option>
-                      <option value="Online">Online</option>
-                      <option value="Physical">Physical</option>
-                      <option value="Hybrid">Hybrid</option>
-                    </select>
-                  </div>
-
-                  <div className="reg-field">
-                    <label>Internet Access</label>
-                    <select
-                      name="internetAccess"
-                      value={formData.internetAccess}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      <option value="Good">Good</option>
-                      <option value="Average">Average</option>
-                      <option value="Limited">Limited</option>
-                    </select>
-                  </div>
-
-                  <div className="reg-field">
-                    <label>How Did You Hear About Us?</label>
-                    <select
-                      name="heardAboutUs"
-                      value={formData.heardAboutUs}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select</option>
-                      <option value="Facebook">Facebook</option>
-                      <option value="Instagram">Instagram</option>
-                      <option value="Friend">Friend</option>
-                      <option value="School">School</option>
-                      <option value="Google">Google</option>
-                    </select>
-                  </div>
-
-                  <div className="reg-field">
-                    <label>Preferred Start Date</label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="reg-field reg-field--full">
-                    <label>Medical Conditions / Special Needs</label>
-                    <textarea
-                      name="medicalNotes"
-                      rows={3}
-                      maxLength={1000}
-                      placeholder="Optional..."
-                      value={formData.medicalNotes}
                       onChange={handleChange}
                     />
                   </div>
@@ -678,16 +474,6 @@ function RegisterForm() {
                     </div>
 
                     <div className="reg-summary-row">
-                      <span>Emergency Contact</span>
-                      <strong>{formData.emergencyContact || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Occupation</span>
-                      <strong>{formData.parentOccupation || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
                       <span>Location</span>
                       <strong>{formData.location || "—"}</strong>
                     </div>
@@ -706,83 +492,24 @@ function RegisterForm() {
                       <span>Age Group</span>
                       <strong>{formData.ageGroup || "—"}</strong>
                     </div>
-
-                    <div className="reg-summary-row">
-                      <span>Gender</span>
-                      <strong>{formData.gender || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>School Grade</span>
-                      <strong>{formData.schoolGrade || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Coding Experience</span>
-                      <strong>{formData.codingExperience || "—"}</strong>
-                    </div>
                   </div>
 
                   {/* PROGRAM */}
                   <div className="reg-summary-group">
-                    <h4>Program & Preferences</h4>
+                    <h4>Program</h4>
 
                     <div className="reg-summary-row">
                       <span>Course</span>
                       <strong>{selectedProgram?.title || "—"}</strong>
                     </div>
 
-                    <div className="reg-summary-row">
-                      <span>Preferred Time</span>
-                      <strong>{formData.preferredTime || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Learning Mode</span>
-                      <strong>{formData.preferredMode || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Device</span>
-                      <strong>{formData.deviceType || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Internet Access</span>
-                      <strong>{formData.internetAccess || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Start Date</span>
-                      <strong>{formData.startDate || "—"}</strong>
-                    </div>
-
-                    <div className="reg-summary-row">
-                      <span>Heard About Us</span>
-                      <strong>{formData.heardAboutUs || "—"}</strong>
-                    </div>
+                    {formData.notes && (
+                      <div className="reg-summary-block">
+                        <span>Notes</span>
+                        <p>{formData.notes}</p>
+                      </div>
+                    )}
                   </div>
-
-                  {/* NOTES */}
-                  {(formData.notes || formData.medicalNotes) && (
-                    <div className="reg-summary-group">
-                      <h4>Additional Information</h4>
-
-                      {formData.notes && (
-                        <div className="reg-summary-block">
-                          <span>Notes</span>
-                          <p>{formData.notes}</p>
-                        </div>
-                      )}
-
-                      {formData.medicalNotes && (
-                        <div className="reg-summary-block">
-                          <span>Medical / Special Needs</span>
-                          <p>{formData.medicalNotes}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Honeypot: hidden from people, bots tend to fill it in */}
