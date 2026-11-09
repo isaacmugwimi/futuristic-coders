@@ -419,10 +419,29 @@
   text-align: right;
 }
 
-.reg-summary-notes {
+.reg-summary-block {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.reg-summary-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.reg-summary-block span {
+  display: block;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.reg-summary-block p {
   font-size: 0.85rem;
   color: #94a3b8;
   line-height: 1.7;
+  white-space: pre-wrap; /* keeps the parent's line breaks */
+  word-break: break-word;
 }
 
 /* ─── NAV BUTTONS ────────────────────────────────────────── */
@@ -615,16 +634,19 @@
     grid-column: 1;
   }
 
+  .reg-stepper-item {
+    min-width: 0;
+    flex: 1;
+  }
+
   .reg-step-line {
-    width: 48px;
+    left: 50%;
+    width: 100%;
+    margin: 0;
   }
 
   .reg-step-label {
     display: none;
-  }
-
-  .reg-stepper {
-    gap: 0;
   }
 
   .reg-trust {
@@ -650,4 +672,45 @@
     justify-content: center;
     order: 1;
   }
+  .reg-field input,
+  .reg-field select,
+  .reg-field textarea {
+    font-size: 16px;
+  }
+}
+
+.reg-hp {
+  position: absolute;
+  left: -9999px;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+/* Back button is now disabled while submitting; the program list loads async */
+.reg-btn-back:disabled,
+.reg-field select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dark calendar picker and dropdown arrows on the dark inputs */
+.reg-field input,
+.reg-field select,
+.reg-field textarea {
+  color-scheme: dark;
+}
+
+/* Long emails shouldn't squash the label on the confirm step */
+.reg-summary-row {
+  gap: 16px;
+}
+
+.reg-summary-row strong {
+  word-break: break-word;
+}
+
+/* Completed step labels (the JSX now adds .done) */
+.reg-step-label.done {
+  color: #94a3b8;
 }

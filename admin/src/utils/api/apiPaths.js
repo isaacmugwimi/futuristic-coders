@@ -224,6 +224,24 @@ export const API_PATHS = {
         `/api/students/delete-assessment/${assessmentId}`,
     },
   },
+    // ==========================================================================
+  // REGISTRATIONS (requests submitted from the public website)
+  // ==========================================================================
+
+  REGISTRATIONS: {
+    // Query params: status (pending | approved | rejected | all), search
+    // Response: { count, counts: { pending, approved, rejected }, data: [...] }
+    GET_ALL: "/api/registrations/get-all-registrations",
+
+    // Body (optional): { agreedFee, enrolledOn }
+    // Creates the student (or reuses a match) and enrolls them.
+    APPROVE: (registrationId) =>
+      `/api/registrations/approve-registration/${registrationId}`,
+
+    // Body (optional): { reason }
+    REJECT: (registrationId) =>
+      `/api/registrations/reject-registration/${registrationId}`,
+  },
 
   // ==========================================================================
   // TESTIMONIALS

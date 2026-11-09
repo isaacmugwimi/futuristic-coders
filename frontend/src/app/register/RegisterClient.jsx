@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useForm, ValidationError } from "@formspree/react";
-import { useState } from "react";
 import {
   FaUser,
   FaChild,
@@ -13,6 +11,8 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { FiCheck } from "react-icons/fi";
+import { useSubmitRegistration } from "../../hooks/registrations/useRegistrationMutation";
+import { usePublishedPrograms } from "../../hooks/programs/useProgramQueries";
 import "./register.css";
 import "../../global.css";
 
@@ -23,14 +23,34 @@ const STEPS = [
   { id: 4, label: "Confirmation", icon: <FiCheck /> },
 ];
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^[+\d\s\-().]{7,30}$/;
+
+// Drops empty values so we never send "" to the API.
+const clean = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj).filter(([, v]) =>
+      typeof v === "string" ? v.trim() !== "" : v != null,
+    ),
+  );
+
 function RegisterForm() {
   const searchParams = useSearchParams();
   const selectedCourse = searchParams.get("course") || "";
-  const [readyToSubmit, setReadyToSubmit] = useState(false);
 
-  const [state, handleSubmit] = useForm("xpqblykn");
+  const { data: programs = [], isLoading: programsLoading } =
+    usePublishedPrograms();
+
+  const {
+    mutateAsync: sendRegistration,
+    isPending: submitting,
+    isSuccess: succeeded,
+  } = useSubmitRegistration();
+
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState("");
+  const [honeypot, setHoneypot] = useState("");
 
   const [formData, setFormData] = useState({
     // Parent
@@ -49,7 +69,7 @@ function RegisterForm() {
     codingExperience: "",
 
     // Program
-    course: selectedCourse,
+    programId: "",
     preferredTime: "",
     preferredMode: "",
     deviceType: "",
@@ -62,11 +82,31 @@ function RegisterForm() {
     notes: "",
   });
 
+  // Preselect the program from ?course= once the list has loaded.
+  // Matches the program's slug, id or title.
+  useEffect(() => {
+    if (!programs.length || !selectedCourse) return;
+
+    const wanted = selectedCourse.trim().toLowerCase();
+    const match = programs.find((p) =>
+      [p.slug, p.id, p.title].some(
+        (v) => v && String(v).toLowerCase() === wanted,
+      ),
+    );
+
+    if (match) {
+      setFormData((f) => (f.programId ? f : { ...f, programId: match.id }));
+    }
+  }, [programs, selectedCourse]);
+
+  const selectedProgram = programs.find((p) => p.id === formData.programId);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((f) => ({ ...f, [name]: value }));
     // Clear error for this field when user types
-    if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: false });
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: false }));
     }
   };
 
@@ -74,18 +114,21 @@ function RegisterForm() {
     const newErrors = {};
 
     if (step === 1) {
-      if (!formData.parentName) newErrors.parentName = true;
-      if (!formData.parentPhone) newErrors.parentPhone = true;
-      if (!formData.parentEmail) newErrors.parentEmail = true;
+      if (!formData.parentName.trim()) newErrors.parentName = true;
+      if (!PHONE_RE.test(formData.parentPhone.trim()))
+        newErrors.parentPhone = true;
+      if (!EMAIL_RE.test(formData.parentEmail.trim()))
+        newErrors.parentEmail = true;
     }
 
     if (step === 2) {
-      if (!formData.childName) newErrors.childName = true;
+      if (!formData.childName.trim()) newErrors.childName = true;
       if (!formData.ageGroup) newErrors.ageGroup = true;
       if (!formData.gender) newErrors.gender = true;
     }
 
     if (step === 3) {
+      if (!formData.programId) newErrors.programId = true;
       if (!formData.preferredTime) newErrors.preferredTime = true;
       if (!formData.deviceType) newErrors.deviceType = true;
     }
@@ -96,40 +139,73 @@ function RegisterForm() {
 
   const next = () => {
     if (!validateStep()) return;
-
-    if (step === 3) {
-      setStep(4);
-
-      setTimeout(() => {
-        setReadyToSubmit(true);
-      }, 0);
-
-      return;
-    }
-
-    setStep((s) => s + 1);
+    setStep((s) => Math.min(s + 1, 4));
   };
 
   const prev = () => {
     setErrors({});
+    setSubmitError("");
     setStep((s) => Math.max(s - 1, 1));
+  };
+
+  // Maps the form to what the backend expects.
+  // Core fields go to real columns; the rest travel in `details`.
+  const buildPayload = () => {
+    const f = formData;
+    return clean({
+      fullName: f.childName.trim(),
+      guardianName: f.parentName.trim(),
+      guardianPhone: f.parentPhone.trim(),
+      email: f.parentEmail.trim(),
+      ageGroup: f.ageGroup,
+      county: f.location.trim(),
+      programId: f.programId,
+      notes: f.notes.trim(),
+      website: honeypot, // honeypot: stays empty for real visitors
+      details: clean({
+        gender: f.gender,
+        schoolGrade: f.schoolGrade.trim(),
+        codingExperience: f.codingExperience,
+        emergencyContact: f.emergencyContact.trim(),
+        parentOccupation: f.parentOccupation.trim(),
+        preferredTime: f.preferredTime,
+        preferredMode: f.preferredMode,
+        deviceType: f.deviceType,
+        internetAccess: f.internetAccess,
+        heardAboutUs: f.heardAboutUs,
+        startDate: f.startDate,
+        medicalNotes: f.medicalNotes.trim(),
+      }),
+    });
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (step !== 4) return;
-    await handleSubmit(e);
+    if (step !== 4 || submitting) return;
+
+    setSubmitError("");
+    try {
+      await sendRegistration(buildPayload());
+    } catch (err) {
+      setSubmitError(
+        err?.response?.data?.message ??
+          "Something went wrong. Please try again.",
+      );
+    }
   };
 
   /* ── SUCCESS ── */
-  if (state.succeeded) {
+  if (succeeded) {
     return (
       <div className="reg-success">
         <div className="reg-success-icon">
           <FaCheckCircle />
         </div>
-        <h1>You're Enrolled! 🎉</h1>
-        <p>We've received your registration and will be in touch shortly.</p>
+        <h1>Registration Received! 🎉</h1>
+        <p>
+          Our team will review it and contact you shortly to confirm your
+          child's spot.
+        </p>
         <a href="/" className="reg-success-btn">
           Back to Home
         </a>
@@ -166,7 +242,7 @@ function RegisterForm() {
                 {step > s.id ? <FiCheck size={16} /> : s.icon}
               </div>
               <span
-                className={`reg-step-label ${step === s.id ? "active" : ""} ${step === s.id ? "done" : ""}`}
+                className={`reg-step-label ${step === s.id ? "active" : ""} ${step > s.id ? "done" : ""}`}
               >
                 {s.label}
               </span>
@@ -184,7 +260,8 @@ function RegisterForm() {
           <form
             onSubmit={handleFormSubmit}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && step !== 4) {
+              // Stop Enter from submitting, but allow new lines in textareas.
+              if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
                 e.preventDefault();
               }
             }}
@@ -224,7 +301,7 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>
-                      Phone Number <span>*</span> 
+                      Phone Number <span>*</span>
                     </label>
                     <input
                       type="tel"
@@ -235,7 +312,9 @@ function RegisterForm() {
                       className={errors.parentPhone ? "reg-input-error" : ""}
                     />
                     {errors.parentPhone && (
-                      <p className="reg-error-msg">Phone number is required</p>
+                      <p className="reg-error-msg">
+                        Enter a valid phone number
+                      </p>
                     )}
                   </div>
 
@@ -252,49 +331,43 @@ function RegisterForm() {
                       className={errors.parentEmail ? "reg-input-error" : ""}
                     />
                     {errors.parentEmail && (
-                      <p className="reg-error-msg">Email address is required</p>
+                      <p className="reg-error-msg">
+                        Enter a valid email address
+                      </p>
                     )}
-                    <ValidationError
-                      prefix="Email"
-                      field="parentEmail"
-                      errors={state.errors}
+                  </div>
+
+                  <div className="reg-field">
+                    <label>Emergency Contact</label>
+                    <input
+                      type="tel"
+                      name="emergencyContact"
+                      placeholder="+254 700 111 222"
+                      value={formData.emergencyContact}
+                      onChange={handleChange}
                     />
+                  </div>
 
-                    <div className="reg-field">
-                      <label>Emergency Contact</label>
+                  <div className="reg-field">
+                    <label>Parent Occupation</label>
+                    <input
+                      type="text"
+                      name="parentOccupation"
+                      placeholder="e.g. Teacher"
+                      value={formData.parentOccupation}
+                      onChange={handleChange}
+                    />
+                  </div>
 
-                      <input
-                        type="tel"
-                        name="emergencyContact"
-                        placeholder="+254 700 111 222"
-                        value={formData.emergencyContact}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div className="reg-field">
-                      <label>Parent Occupation</label>
-
-                      <input
-                        type="text"
-                        name="parentOccupation"
-                        placeholder="e.g. Teacher"
-                        value={formData.parentOccupation}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    <div className="reg-field reg-field--full">
-                      <label>Location / City</label>
-
-                      <input
-                        type="text"
-                        name="location"
-                        placeholder="e.g. Nairobi"
-                        value={formData.location}
-                        onChange={handleChange}
-                      />
-                    </div>
+                  <div className="reg-field reg-field--full">
+                    <label>Location / City</label>
+                    <input
+                      type="text"
+                      name="location"
+                      placeholder="e.g. Nairobi"
+                      value={formData.location}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
               </div>
@@ -374,9 +447,9 @@ function RegisterForm() {
                       <p className="reg-error-msg">Please select a gender</p>
                     )}
                   </div>
+
                   <div className="reg-field">
                     <label>School Grade / Class</label>
-
                     <input
                       type="text"
                       name="schoolGrade"
@@ -388,7 +461,6 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>Coding Experience</label>
-
                     <select
                       name="codingExperience"
                       value={formData.codingExperience}
@@ -419,14 +491,30 @@ function RegisterForm() {
 
                 <div className="reg-fields">
                   <div className="reg-field reg-field--full">
-                    <label>Selected Program</label>
-                    <input
-                      type="text"
-                      name="course"
-                      value={formData.course}
+                    <label>
+                      Program <span>*</span>
+                    </label>
+                    <select
+                      name="programId"
+                      value={formData.programId}
                       onChange={handleChange}
-                      placeholder="e.g. Web Development"
-                    />
+                      disabled={programsLoading}
+                      className={errors.programId ? "reg-input-error" : ""}
+                    >
+                      <option value="">
+                        {programsLoading
+                          ? "Loading programs…"
+                          : "Select a program"}
+                      </option>
+                      {programs.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.title}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.programId && (
+                      <p className="reg-error-msg">Please choose a program</p>
+                    )}
                   </div>
 
                   <div className="reg-field">
@@ -475,6 +563,7 @@ function RegisterForm() {
                     <textarea
                       name="notes"
                       rows={4}
+                      maxLength={1000}
                       placeholder="Any special requirements or questions..."
                       value={formData.notes}
                       onChange={handleChange}
@@ -483,7 +572,6 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>Learning Mode</label>
-
                     <select
                       name="preferredMode"
                       value={formData.preferredMode}
@@ -498,7 +586,6 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>Internet Access</label>
-
                     <select
                       name="internetAccess"
                       value={formData.internetAccess}
@@ -513,7 +600,6 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>How Did You Hear About Us?</label>
-
                     <select
                       name="heardAboutUs"
                       value={formData.heardAboutUs}
@@ -530,7 +616,6 @@ function RegisterForm() {
 
                   <div className="reg-field">
                     <label>Preferred Start Date</label>
-
                     <input
                       type="date"
                       name="startDate"
@@ -541,10 +626,10 @@ function RegisterForm() {
 
                   <div className="reg-field reg-field--full">
                     <label>Medical Conditions / Special Needs</label>
-
                     <textarea
                       name="medicalNotes"
                       rows={3}
+                      maxLength={1000}
                       placeholder="Optional..."
                       value={formData.medicalNotes}
                       onChange={handleChange}
@@ -639,7 +724,7 @@ function RegisterForm() {
 
                     <div className="reg-summary-row">
                       <span>Course</span>
-                      <strong>{formData.course || "—"}</strong>
+                      <strong>{selectedProgram?.title || "—"}</strong>
                     </div>
 
                     <div className="reg-summary-row">
@@ -695,37 +780,51 @@ function RegisterForm() {
                   )}
                 </div>
 
-                {/* Hidden inputs so Formspree receives all data */}
-                {Object.entries(formData).map(([key, val]) => (
-                  <input key={key} type="hidden" name={key} value={val} />
-                ))}
+                {/* Honeypot: hidden from people, bots tend to fill it in */}
+                <input
+                  type="text"
+                  name="website"
+                  className="reg-hp"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                />
+
+                {submitError && (
+                  <p className="reg-error-msg" role="alert">
+                    {submitError}
+                  </p>
+                )}
               </div>
             )}
 
             {/* ── NAV BUTTONS ── */}
             <div className="reg-nav">
               {step > 1 && (
-                <button type="button" className="reg-btn-back" onClick={prev}>
+                <button
+                  type="button"
+                  className="reg-btn-back"
+                  onClick={prev}
+                  disabled={submitting}
+                >
                   <FaArrowLeft size={14} /> Back
                 </button>
               )}
 
-              {step < 4 || !readyToSubmit ? (
+              {step < 4 ? (
                 <button type="button" className="reg-btn-next" onClick={next}>
                   Continue <FaArrowRight size={14} />
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
                   className="reg-btn-submit"
-                  disabled={state.submitting}
-                  // onClick={async (e) => {
-                  //   await handleSubmit(e);
-                  // }}
+                  onClick={handleFormSubmit}
+                  disabled={submitting}
                 >
-                  {state.submitting
-                    ? "Submitting..."
-                    : "Complete Registration ✓"}
+                  {submitting ? "Submitting..." : "Complete Registration ✓"}
                 </button>
               )}
             </div>
@@ -735,7 +834,7 @@ function RegisterForm() {
         {/* TRUST STRIP */}
         <div className="reg-trust">
           <span>🔒 Secure & Private</span>
-          <span>📧 Confirmation sent to your email</span>
+          <span>✅ Every request is reviewed by our team</span>
           <span>📞 We'll call within 24 hours</span>
         </div>
       </div>
