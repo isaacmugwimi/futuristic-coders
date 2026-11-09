@@ -38,8 +38,13 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const selectedCourse = searchParams.get("course") || "";
 
-  const { data: programs = [], isLoading: programsLoading } =
+  const { data: programsData, isLoading: programsLoading } =
     usePublishedPrograms();
+
+  // The API may send an array or { data: [...] } / { programs: [...] }.
+  const programs = Array.isArray(programsData)
+    ? programsData
+    : (programsData?.data ?? programsData?.programs ?? []);
 
   const {
     mutateAsync: sendRegistration,
