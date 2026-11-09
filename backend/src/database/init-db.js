@@ -1,5 +1,6 @@
 import { createBlogTables } from "./models/blogs/blogs.model.js";
 import { createProgramTables } from "./models/programs/program.model.js";
+import { createRegistrationTables } from "./models/students/registration.model.js";
 import { createStudentTables } from "./models/students/student.model.js";
 import { createTestimonialTables } from "./models/testimonial/testimonial.model.js";
 import { createRefreshTokensTable } from "./models/token/refreshToken.model.js";
@@ -12,8 +13,9 @@ export const initDb = async () => {
     await createProgramTables();
     await createRefreshTokensTable();
     await createStudentTables();
-    await createTestimonialTables()
-    await createBlogTables()
+    await createRegistrationTables();
+    await createTestimonialTables();
+    await createBlogTables();
 
     console.log("✅ Tables initialized");
   } catch (error) {

@@ -52,4 +52,8 @@ export const API_PATHS = {
       GET_ALL: "/api/blog/get-all-categories",
     },
   },
+  REGISTRATIONS: {
+    // POST: submit a student registration from the website form
+    SUBMIT: "/api/registrations/submit-registration",
+  },
 };

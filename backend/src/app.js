@@ -11,6 +11,8 @@ import testimonialRoutes from "./routes/testimonial/testimonial.routes.js";
 import uploadRoutes from "./routes/uploads/upload.routes.js";
 import blogRoutes from "./routes/blogs/blogs.routes.js";
 import AppError from "./middleware/error/AppError.js";
+import registrationRoutes from "./routes/students/registration.routes.js";
+
 
 import { resetDb } from "./database/config/resetUtilDb.js";
 
@@ -74,6 +76,7 @@ app.use("/api/students", studentRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/blog", blogRoutes);
+app.use("/api/registrations", registrationRoutes);
 // resetDb();
 // ============================================================================
 // NOT FOUND HANDLER
