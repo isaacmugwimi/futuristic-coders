@@ -522,7 +522,20 @@ const parsePaymentInput = (data) => {
     status,
   };
 };
-
+// Shared with registration.service.js
+export {
+  EMAIL_REGEX,
+  field,
+  normalizeFilter,
+  requireUser,
+  assertUuid,
+  cleanText,
+  normalizePhone,
+  withTransaction,
+  assertProgramAcceptsEnrollment,
+  assertNoOpenEnrollment,
+  parseEnrollmentInput,
+};
 // ============================================================
 // CREATE STUDENT (optionally enrol + take a first payment)
 // ============================================================
