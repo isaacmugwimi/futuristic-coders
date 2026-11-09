@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+    UserPlus,
   BookOpen,
   FileText,
   CreditCard,
@@ -22,6 +23,12 @@ export const MAIN_NAV = [
     label: "Students",
     subtitle: "Track progress and performance",
     icon: Users,
+  },
+    {
+    href: "/dashboard/registrations",
+    label: "Registrations",
+    subtitle: "Review requests from the website",
+    icon: UserPlus,
   },
   {
     href: "/dashboard/programs",
